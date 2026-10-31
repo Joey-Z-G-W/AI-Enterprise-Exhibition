@@ -24,5 +24,6 @@ __pycache__/
 *.egg-info/
 /build/
 /dist/
+/frontend/dist/
 .DS_Store
 Thumbs.db
