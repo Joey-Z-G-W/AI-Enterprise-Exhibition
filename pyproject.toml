@@ -1,0 +1,25 @@
+[project]
+name = "exhibition-guide"
+version = "0.1.0"
+description = "Independent service for the exhibition AI guide"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn>=0.30,<1.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27,<1.0",
+    "pytest>=8,<10",
+]
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/exhibition_guide"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
