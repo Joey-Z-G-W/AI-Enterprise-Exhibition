@@ -1,0 +1,24 @@
+# Local planning documents are submitted only by the owner.
+/_docs/
+/docs/
+
+# Credentials and runtime data
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.sqlite
+*.sqlite3
+*.db
+/data/
+/models/
+/avatar_models/
+/logs/
+
+# Development environments
+.venv/
+node_modules/
+__pycache__/
+.DS_Store
+Thumbs.db
