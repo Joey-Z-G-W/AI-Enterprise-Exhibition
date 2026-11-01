@@ -4,11 +4,12 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Annotated
 
 import httpx
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 
 from exhibition_guide.answer import AnswerService, QuestionRequest, QuestionResponse, error_response
 from exhibition_guide.config import AppConfig, load_config
-from exhibition_guide.evidence_model import ModelEvidenceEvaluator
+from exhibition_guide.evidence_model import ModelEvidenceEvaluator, ModelQuestionRewriter
+from exhibition_guide.context import ContextStore, Invalidation, Rewriter
 from exhibition_guide.knowledge import KnowledgeClient
 from exhibition_guide.llm import ModelClient
 
@@ -17,7 +18,7 @@ def get_answer_service(request: Request) -> AnswerService | None:
     return request.app.state.answer_service
 
 
-def create_app(config: AppConfig | None = None, *, service: AnswerService | None = None) -> FastAPI:
+def create_app(config: AppConfig | None = None, *, service: AnswerService | None = None, rewriter: Rewriter | None = None) -> FastAPI:
     """No filesystem configuration access; callers explicitly supply enabled config."""
     config = config if config is not None else AppConfig()
 
@@ -36,13 +37,18 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
                     KnowledgeClient(http), ModelEvidenceEvaluator(model),
                     kb_id=config.knowledge.kb_id, timeout=config.llm.timeout_seconds,
                 )
+                application.state.rewriter = ModelQuestionRewriter(model)
             try:
                 yield
             finally:
+                application.state.history.clear()
                 application.state.answer_service = None
+                application.state.rewriter = rewriter
 
     application = FastAPI(title="Exhibition Guide", lifespan=lifespan)
     application.state.answer_service = service
+    application.state.history = ContextStore()
+    application.state.rewriter = rewriter
 
     @application.get("/health")
     def health() -> dict[str, str]:
@@ -55,14 +61,25 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
     ) -> QuestionResponse:
         result = (
             error_response(request, "service_not_configured")
-            if answer_service is None else await answer_service.answer(request)
+            if answer_service is None else await application.state.history.answer(request, answer_service, application.state.rewriter)
         )
         if result.status == "error":
             response.status_code = (
                 503 if result.error_code == "service_not_configured"
+                else 429 if result.error_code == "visitor_capacity"
+                else 409 if result.error_code in {"turn_stale", "turn_conflict", "turn_cancelled", "visitor_retired"}
                 else 504 if result.error_code and result.error_code.endswith("_timeout") else 502
             )
         return result
+
+    @application.post("/visitors/{visitor_id}/invalidate")
+    async def invalidate(visitor_id: str, body: Invalidation) -> dict:
+        if not visitor_id.strip() or len(visitor_id) > 128:
+            raise HTTPException(422, "invalid visitor identity")
+        try:
+            return application.state.history.invalidate(visitor_id, body)
+        except ValueError:
+            raise HTTPException(429, "visitor_capacity") from None
 
     return application
 

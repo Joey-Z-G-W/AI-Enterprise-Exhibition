@@ -12,6 +12,7 @@ source = source.slice(0, source.indexOf('  const connected =')) + `
     mode, connection, notice, handoff, question, answer, recordingHint, setQuestion, pending, submittedQuestion, questionError, answerSpeechStatus, demoStatus, speechPending };
 }`;
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+const markupCompiled = ts.transpileModule(fs.readFileSync('frontend/src/App.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
 
 function harness() {
   let cursor = 0, serial = 0, now = 0;
@@ -26,6 +27,7 @@ function harness() {
       const method = init.method || 'GET'; requests.push({ url, method, signal: init.signal, body: init.body });
       const custom = overrides.get(`${method} ${url}`);
       if (custom) return custom(init);
+      if (url.startsWith('/guide/visitors/') && url.endsWith('/invalidate')) { const b=JSON.parse(init.body); return response({visitor_id:decodeURIComponent(url.split('/')[3]),cancelled_through:b.through_turn_seq,retired:b.retire}); }
       if (url === '/opentalking/sessions' && method === 'POST') {
         const id = `sess_${++serial}`; states.set(id, 'ready'); return response({ session_id: id });
       }
@@ -50,6 +52,7 @@ function harness() {
     window: { setTimeout: (callback, delay) => { if (delay === 300 || delay === 750) queueMicrotask(() => { now += delay; callback(); }); return 1; }, clearTimeout: () => {} },
     EventSource: class { handlers = {}; addEventListener(name, callback) { this.handlers[name] = callback; } emit(name) { this.handlers[name]?.(); } close() { this.closed = true; } },
     require: (name) => {
+      if (name === 'react/jsx-runtime') return require(path.resolve('frontend/node_modules/react/jsx-runtime'));
       if (name === './presetQuestions') {
         const config = { exports: {} };
         vm.runInNewContext(ts.transpileModule(fs.readFileSync('frontend/src/presetQuestions.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, config);
@@ -69,9 +72,12 @@ function harness() {
     },
   };
   vm.runInNewContext(compiled, sandbox);
+  const markupExports = {};
+  vm.runInNewContext(markupCompiled, { ...sandbox, exports: markupExports });
   const render = () => { cursor = 0; return exported.default(); };
+  const markup = () => { cursor = 0; return require(path.resolve('frontend/node_modules/react-dom/server')).renderToStaticMarkup(markupExports.default()); };
   const app = render(); app.video.current = { paused: false, srcObject: null };
-  return { render, requests, overrides, states, captures, playbacks, response, created: () => serial };
+  return { render, markup, requests, overrides, states, captures, playbacks, response, created: () => serial };
 }
 
 // Execute actual App handlers with isolated API/media/hook doubles, never real devices.
@@ -80,8 +86,8 @@ const previews=h=>h.requests.filter(r=>r.url==='/opentalking/tts/preview');
 function errorAnswer(h) {
   h.overrides.set('POST /guide/questions',init=>{
     const body=JSON.parse(init.body);
-    assert.deepEqual(Object.keys(body).sort(),['question','turn_id','visitor_id']);
-    return h.response({visitor_id:body.visitor_id,turn_id:body.turn_id,status:'error',text:'unconfigured',sources:[],error_code:'service_not_configured'},503);
+    assert.deepEqual(Object.keys(body).sort(),['question','turn_id','turn_seq','visitor_id']);
+    return h.response({visitor_id:body.visitor_id,turn_id:body.turn_id,turn_seq:body.turn_seq,status:'error',text:'unconfigured',sources:[],error_code:'service_not_configured'},503);
   });
 }
 function answerFixture(h) {
@@ -154,7 +160,7 @@ const watchdog=setTimeout(()=>{console.error('Race checks failed to settle');pro
  // Bad business identity envelopes, including media SID in visitor field, are rejected.
  for(const fault of ['visitor','turn','missing-visitor','missing-turn','media-as-visitor','legacy-field']){
   const h=harness();await h.render().connect();h.overrides.set('POST /guide/questions',init=>{
-   const body=JSON.parse(init.body),result={visitor_id:body.visitor_id,turn_id:body.turn_id,status:'answer',text:'wrong',sources:[]};
+   const body=JSON.parse(init.body),result={visitor_id:body.visitor_id,turn_id:body.turn_id,turn_seq:body.turn_seq,status:'answer',text:'wrong',sources:[]};
    if(fault==='visitor')result.visitor_id='other';if(fault==='turn')result.turn_id='other';if(fault==='missing-visitor')delete result.visitor_id;
    if(fault==='missing-turn')delete result.turn_id;if(fault==='media-as-visitor')result.visitor_id='sess_1';if(fault==='legacy-field'){result.session_id='sess_1';delete result.visitor_id;}
    return h.response(result);

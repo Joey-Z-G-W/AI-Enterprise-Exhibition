@@ -5,7 +5,7 @@ const base = fs.readFileSync('tests/frontend/visitor-races.cjs','utf8')
   .replace('demoStatus, speechPending };','demoStatus, speechPending, conversation, updateConversation, conversationList, followConversation };');
 const checks = String.raw`
 const watchdog=setTimeout(()=>{console.error('Conversation checks timed out');process.exitCode=1;},10000);
-function business(h,status='error',text='服务暂不可用',sources=[]){h.overrides.set('POST /guide/questions',init=>{const b=JSON.parse(init.body);return h.response({visitor_id:b.visitor_id,turn_id:b.turn_id,status,text,sources},status==='error'?503:200);});}
+function business(h,status='error',text='服务暂不可用',sources=[]){h.overrides.set('POST /guide/questions',init=>{const b=JSON.parse(init.body);return h.response({visitor_id:b.visitor_id,turn_id:b.turn_id,turn_seq:b.turn_seq,status,text,sources},status==='error'?503:200);});}
 function media(h){h.overrides.set('POST /opentalking/tts/preview',()=>new Response(new Blob(['wav']),{headers:{'content-type':'audio/wav'}}));h.overrides.set('POST /opentalking/sessions/sess_1/speak_flashtalk_audio',()=>h.response({session_id:'sess_1',status:'queued'}));}
 (async()=>{
  let count=0;

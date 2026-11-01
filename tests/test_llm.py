@@ -113,31 +113,67 @@ def test_transport_errors(error_type, expected):
     asyncio.run(run())
 
 
-def test_overall_deadline_and_caller_cancellation():
+def test_complete_overall_deadline(record_property):
     async def run():
-        started = asyncio.Event()
-        stopped = asyncio.Event()
+        started, stopped = asyncio.Event(), asyncio.Event()
         async def handler(_):
             started.set()
             try:
-                await asyncio.sleep(10)
+                await asyncio.Event().wait()
             finally:
                 stopped.set()
         async with ModelClient(config(0.02), http_client=httpx.AsyncClient(
             transport=httpx.MockTransport(handler))) as model:
             with pytest.raises(ModelError, match="timeout"):
                 await model.complete("测试")
+            record_property("transport_started_before_deadline", started.is_set())
+            # The total deadline includes SDK preparation before transport entry.
+            if started.is_set():
+                assert stopped.is_set()
+    asyncio.run(run())
+
+
+def test_call_deadline_cleans_up_started_coroutine():
+    async def run():
+        started, stopped = asyncio.Event(), asyncio.Event()
+        async def blocking():
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                stopped.set()
+        async with ModelClient(config(0.02), http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _: None))) as model:
+            with pytest.raises(ModelError, match="timeout"):
+                await model._call(blocking())
+            assert started.is_set()
             assert stopped.is_set()
-        started.clear()
-        stopped.clear()
+    asyncio.run(run())
+
+
+def test_complete_caller_cancellation_cleans_up_started_transport():
+    async def run():
+        started, stopped = asyncio.Event(), asyncio.Event()
+        async def handler(_):
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                stopped.set()
         async with ModelClient(config(), http_client=httpx.AsyncClient(
             transport=httpx.MockTransport(handler))) as model:
             pending = asyncio.create_task(model.complete("测试"))
-            await started.wait()
-            pending.cancel()
-            with pytest.raises(asyncio.CancelledError):
-                await pending
-            assert stopped.is_set()
+            try:
+                await asyncio.wait_for(started.wait(), timeout=1)
+                assert started.is_set()
+                pending.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await pending
+                assert stopped.is_set()
+            finally:
+                if not pending.done():
+                    pending.cancel()
+                await asyncio.gather(pending, return_exceptions=True)
     asyncio.run(run())
 
 

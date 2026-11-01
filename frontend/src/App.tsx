@@ -5,9 +5,10 @@ import { recordingMessage, startRecording, type Recording } from "./lib/recordin
 import { PRESET_QUESTIONS } from "./presetQuestions";
 
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
+const CANCELLATION_UNKNOWN = "旧问答取消尚未确认，新的问题暂不提交。请断开后重新连接并重新选择问题，或联系工作人员。";
 type Connection = "idle" | "connecting" | "ready" | "playing" | "disconnecting" | "error";
 type BusinessResult = {
-  visitor_id: string; turn_id: string;
+  visitor_id: string; turn_id: string; turn_seq: number;
   status: "answer" | "clarify" | "handoff" | "error";
   text: string; error_code?: string | null;
   sources: { excerpt: string; source: { status: "known" | "unknown"; filename: string | null } }[];
@@ -16,7 +17,8 @@ type ActiveSession = {
   mediaSessionId: string | null; visitorId: string; controller: AbortController; playback?: Playback; events?: EventSource;
   creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
 };
-type TurnIdentity = { visitorId: string; turnId: string };
+type TurnIdentity = { visitorId: string; turnId: string; turnSeq: number };
+type BusinessBarrier = { visitorId: string; through: number; status: "pending" | "unknown" | "confirmed"; promise: Promise<boolean> };
 type ConversationTurn = TurnIdentity & {
   question: string; input: "text" | "voice";
   status: "requesting" | "recording" | "transcribing" | "pending" | "completed" | "cancelled" | "error" | "no_text";
@@ -41,6 +43,7 @@ function isBusinessResult(value: unknown): value is BusinessResult {
   if (!value || typeof value !== "object") return false;
   const item = value as BusinessResult;
   return typeof item.visitor_id === "string" && !!item.visitor_id && typeof item.turn_id === "string" && !!item.turn_id && !("session_id" in item)
+    && Number.isSafeInteger(item.turn_seq) && item.turn_seq > 0
     && Object.hasOwn(answerLabels, item.status) && typeof item.text === "string"
     && Array.isArray(item.sources) && item.sources.every((citation) =>
       citation && typeof citation.excerpt === "string" && citation.source
@@ -92,6 +95,8 @@ async function releaseSession(id: string): Promise<boolean> {
 export default function App() {
   const video = useRef<HTMLVideoElement>(null);
   const visitorId = useRef<string | null>(null);
+  const turnSequence = useRef(0);
+  const businessBarrier = useRef<BusinessBarrier | null>(null);
   if (visitorId.current === null) visitorId.current = crypto.randomUUID();
   const active = useRef<ActiveSession | null>(null);
   const retired = useRef<ActiveSession | null>(null);
@@ -110,6 +115,7 @@ export default function App() {
   const [resettingVisitor, setResettingVisitor] = useState(false);
   const [handoff, setHandoff] = useState({ question: "", reason: "" });
   const [notice, setNotice] = useState("");
+  const [businessWarning, setBusinessWarning] = useState("");
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [question, setQuestion] = useState("");
   const [submittedQuestion, setSubmittedQuestion] = useState("");
@@ -139,13 +145,13 @@ export default function App() {
     }
   };
 
-  function updateConversation(identity: TurnIdentity, patch: Partial<ConversationTurn>, append = false) {
+  function updateConversation(identity: Pick<TurnIdentity, "visitorId" | "turnId"> & Partial<TurnIdentity>, patch: Partial<ConversationTurn>, append = false) {
     setConversation((rows) => {
       // Check inside the queued updater too: reset may run before React applies it.
       if (identity.visitorId !== visitorId.current) return rows;
       const index = rows.findIndex((row) => row.visitorId === identity.visitorId && row.turnId === identity.turnId);
       if (index < 0) return append
-        ? [...rows, { ...identity, question: "", input: "text" as const, status: "pending" as const, ...patch }].slice(-20)
+        ? [...rows, { ...identity, turnSeq: identity.turnSeq ?? 0, question: "", input: "text" as const, status: "pending" as const, ...patch }].slice(-20)
         : rows;
       if (rows[index].status === "cancelled") return rows;
       return rows.map((row, position) => position === index ? { ...row, ...patch } : row);
@@ -165,7 +171,39 @@ export default function App() {
     busy.current = false;
   }
 
-  function detach(): ActiveSession | null {
+  function newTurn(): TurnIdentity {
+    return { visitorId: visitorId.current!, turnId: crypto.randomUUID(), turnSeq: ++turnSequence.current };
+  }
+
+  function invalidateBusiness(visitor: string, through: number, retire = false): Promise<boolean> {
+    if (through === 0 && !retire) return Promise.resolve(true);
+    const barrier: BusinessBarrier = { visitorId: visitor, through, status: "pending", promise: Promise.resolve(false) };
+    businessBarrier.current = barrier;
+    if (visitorId.current === visitor) setBusinessWarning("正在确认旧问答取消；确认前不会提交新的问题。");
+    barrier.promise = (async () => {
+      try {
+        // Independent request: the media AbortController is about to be aborted.
+        const result = await jsonRequest<{ visitor_id: string; cancelled_through: number; retired: boolean }>(
+          `/guide/visitors/${encodeURIComponent(visitor)}/invalidate`, post({ through_turn_seq: through, retire }), 3000,
+        );
+        return result.visitor_id === visitor && Number.isSafeInteger(result.cancelled_through)
+          && result.cancelled_through >= through && (!retire || result.retired === true);
+      } catch { return false; }
+    })().then((confirmed) => {
+      barrier.status = confirmed ? "confirmed" : "unknown";
+      if (businessBarrier.current === barrier && visitorId.current === visitor) {
+        setBusinessWarning(confirmed ? "" : CANCELLATION_UNKNOWN);
+      }
+      return confirmed;
+    });
+    return barrier.promise;
+  }
+
+  function detach(cancelBusiness = true): ActiveSession | null {
+    if (cancelBusiness) {
+      const visitor = active.current?.visitorId ?? visitorId.current!;
+      void invalidateBusiness(visitor, turnSequence.current);
+    }
     if (presetRequest.current) updateConversation(presetRequest.current, { status: "cancelled" });
     presetRequest.current = null;
     generation.current += 1;
@@ -239,6 +277,9 @@ export default function App() {
 
   useEffect(() => {
     const dispose = () => {
+      void fetch(`/guide/visitors/${encodeURIComponent(visitorId.current!)}/invalidate`, {
+        ...post({ through_turn_seq: turnSequence.current, retire: true }), keepalive: true,
+      }).catch(() => {}); // best effort only; no claim of an acknowledged retirement
       const session = active.current;
       active.current = null;
       if (session) retired.current = session;
@@ -271,6 +312,12 @@ export default function App() {
     const token = {};
     transition.current = token;
     setTransitioning(true);
+    const barrier = businessBarrier.current;
+    // Explicit reconnect can retry an unknown watermark once; internal media
+    // rebuilding neither retries it nor treats connection success as its ACK.
+    if ((intent === "connect" || intent === "resume") && barrier?.visitorId === visitorId.current && barrier.status === "unknown") {
+      void invalidateBusiness(barrier.visitorId, barrier.through);
+    }
     const epoch = generation.current;
     setNotice("正在确认旧会话已关闭…");
     const released = await closeRetired();
@@ -358,9 +405,12 @@ export default function App() {
     if (visitorReset.current) return;
     const token = {};
     visitorReset.current = token;
+    const retirement = invalidateBusiness(visitorId.current!, turnSequence.current, true);
     // Business identity changes only for a new group, before cancelling old async work.
     visitorId.current = crypto.randomUUID();
-    detach();
+    turnSequence.current = 0;
+    setBusinessWarning("");
+    detach(false);
     // Clear after detach, which may otherwise leave the previous speech-stop notice.
     setQuestion("");
     setSubmittedQuestion("");
@@ -380,6 +430,7 @@ export default function App() {
     try {
       // The existing transition token also makes takeover/unload cancel this reconnection.
       await connect("reset");
+      if (!await retirement && visitorReset.current === token && turnSequence.current === 0) setNotice("新访客已隔离；旧访客服务端清理尚未确认，请联系工作人员核实。");
     } finally {
       if (visitorReset.current === token) {
         visitorReset.current = null;
@@ -405,7 +456,7 @@ export default function App() {
       detach();
       setConnection("idle");
     }
-    const selection = { visitorId: visitorId.current!, turnId: crypto.randomUUID(), text };
+    const selection = { ...newTurn(), text };
     presetRequest.current = selection;
     updateConversation(selection, { question: text, input: "text", status: "pending" }, true);
     setQuestion(text);
@@ -433,7 +484,7 @@ export default function App() {
 
   async function sendQuestion(session: ActiveSession, text: string, identity?: TurnIdentity, input: "text" | "voice" = identity ? "voice" : "text") {
     if (!current(session)) return;
-    const turn = { session, visitorId: identity?.visitorId ?? session.visitorId, turnId: identity?.turnId ?? crypto.randomUUID(), spoken: false };
+    const turn = { session, ...(identity ?? newTurn()), spoken: false };
     if (turn.visitorId !== visitorId.current) return;
     questionTurn.current = turn;
     const valid = () => current(session) && questionTurn.current === turn;
@@ -444,10 +495,23 @@ export default function App() {
     setQuestionError("");
     setAnswerSpeechStatus("");
     try {
-      const response = await request("/guide/questions", post({ visitor_id: turn.visitorId, turn_id: turn.turnId, question: text }, session.controller.signal), 30000);
+      let barrier;
+      do {
+        barrier = businessBarrier.current;
+        const confirmed = barrier?.visitorId !== turn.visitorId || await barrier.promise;
+        if (!valid()) return;
+        // A superseded acknowledgement must not paint an error for the latest turn.
+        if (businessBarrier.current !== barrier) continue;
+        if (!confirmed) {
+          setQuestionError(CANCELLATION_UNKNOWN);
+          updateConversation(turn, { status: "error", error: CANCELLATION_UNKNOWN });
+          return;
+        }
+      } while (businessBarrier.current !== barrier && businessBarrier.current?.visitorId === turn.visitorId);
+      const response = await request("/guide/questions", post({ visitor_id: turn.visitorId, turn_id: turn.turnId, turn_seq: turn.turnSeq, question: text }, session.controller.signal), 30000);
       let body: unknown;
       try { body = await response.json(); } catch { throw new RequestError("response"); }
-      if (!isBusinessResult(body) || body.visitor_id !== turn.visitorId || body.turn_id !== turn.turnId) throw new RequestError("response");
+      if (!isBusinessResult(body) || body.visitor_id !== turn.visitorId || body.turn_id !== turn.turnId || body.turn_seq !== turn.turnSeq) throw new RequestError("response");
       if (!response.ok && body.status !== "error") throw new RequestError("response");
       if (valid()) {
         setAnswer(body);
@@ -470,7 +534,7 @@ export default function App() {
     const session = active.current;
     if (visitorReset.current || !session?.mediaSessionId || !current(session) || busy.current || speech.current
       || !["ready", "playing"].includes(connection)) return;
-    const turn: VoiceTurn = { session, visitorId: session.visitorId, turnId: crypto.randomUUID() };
+    const turn: VoiceTurn = { session, ...newTurn() };
     voiceTurn.current = turn;
     const valid = () => current(session) && turn.visitorId === visitorId.current && voiceTurn.current === turn;
     updateConversation(turn, { input: "voice", status: "requesting" }, true);
@@ -603,6 +667,7 @@ export default function App() {
           </div>
         </div>
         {notice && <p className="notice" role="alert">{notice}</p>}
+        {businessWarning && <p className="notice business-warning" role="alert">{businessWarning}</p>}
       </section>
       <section className="conversation-panel" aria-label="问题与回答">
         <div className="section-heading"><span className="eyebrow">资料问答</span><h2>您想了解什么？</h2><p>选择一个问题，或录音提问，查看真实回答和资料来源。</p></div>

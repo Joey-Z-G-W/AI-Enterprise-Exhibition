@@ -18,7 +18,7 @@ from exhibition_guide.config import AppConfig
 app = create_app(AppConfig())
 
 
-REQUEST = {"visitor_id": "visitors-a", "turn_id": "turn-1", "question": "电池容量是多少？"}
+REQUEST = {"visitor_id": "visitors-a", "turn_id": "turn-1", "turn_seq": 1, "question": "电池容量是多少？"}
 TEXT = "A产品的电池容量为50 kWh。"
 DECISION = {"verdict": "sufficient", "answer_text": "这款A产品配有50 kWh电池。", "quotes": [{"snippet_index": 0, "excerpt": TEXT}]}
 
@@ -43,6 +43,7 @@ def configure(retrieval=None, decision=None, *, timeout=1.0):
     evaluator = AsyncMock(return_value=decision if decision is not None else DECISION)
     service = AnswerService(knowledge, evaluator, kb_id="kb_demo", timeout=timeout)
     app.dependency_overrides[get_answer_service] = lambda: service
+    app.state.rewriter = AsyncMock(return_value={"verdict":"resolved", "question":REQUEST["question"]})
     return knowledge, evaluator
 
 
@@ -50,7 +51,7 @@ def test_default_is_explicitly_unconfigured(client):
     response = client.post("/questions", json=REQUEST)
     assert response.status_code == 503
     assert response.json() == {
-        "visitor_id": "visitors-a", "turn_id": "turn-1", "status": "error",
+        "visitor_id": "visitors-a", "turn_id": "turn-1", "turn_seq": 1, "status": "error",
         "text": "问答服务暂不可用，请联系现场销售。", "sources": [],
         "error_code": "service_not_configured",
     }
@@ -62,7 +63,7 @@ def test_blank_input_is_rejected(client, field):
 
 
 @pytest.mark.parametrize("body", [
-    {"session_id": "sess_old", "turn_id": "turn-1", "question": "价格？"},
+    {"session_id": "sess_old", "turn_id": "turn-1", "turn_seq": 1, "question": "价格？"},
     {**REQUEST, "session_id": "sess_old"},
     {key: value for key, value in REQUEST.items() if key != "visitor_id"},
 ])
@@ -72,8 +73,8 @@ def test_media_session_field_is_not_a_business_identity_alias(client, body):
 
 def test_same_visitor_new_turns_and_new_group_echo_only_business_identity(client):
     configure()
-    for visitor, turn in [("group-a", "turn-1"), ("group-a", "turn-2"), ("group-b", "turn-3")]:
-        response = client.post("/questions", json={**REQUEST, "visitor_id": visitor, "turn_id": turn})
+    for seq, (visitor, turn) in enumerate([("group-a", "turn-1"), ("group-a", "turn-2"), ("group-b", "turn-3")], 1):
+        response = client.post("/questions", json={**REQUEST, "visitor_id": visitor, "turn_id": turn, "turn_seq": seq})
         assert response.status_code == 200
         assert response.json()["visitor_id"] == visitor
         assert response.json()["turn_id"] == turn

@@ -23,6 +23,7 @@ class _StrictModel(BaseModel):
 class QuestionRequest(_StrictModel):
     visitor_id: str = Field(min_length=1, max_length=128)
     turn_id: str = Field(min_length=1, max_length=128)
+    turn_seq: int = Field(ge=1, le=9007199254740991)
     question: str = Field(min_length=1, max_length=2000)
 
     @field_validator("visitor_id", "turn_id", "question")
@@ -57,6 +58,7 @@ class AnswerSource(BaseModel):
 class QuestionResponse(BaseModel):
     visitor_id: str
     turn_id: str
+    turn_seq: int
     status: Literal["answer", "clarify", "handoff", "error"]
     text: str
     sources: list[AnswerSource] = Field(default_factory=list)
@@ -65,7 +67,7 @@ class QuestionResponse(BaseModel):
 
 def error_response(request: QuestionRequest, code: str) -> QuestionResponse:
     return QuestionResponse(
-        visitor_id=request.visitor_id, turn_id=request.turn_id, status="error",
+        visitor_id=request.visitor_id, turn_id=request.turn_id, turn_seq=request.turn_seq, status="error",
         text="问答服务暂不可用，请联系现场销售。", error_code=code,
     )
 
@@ -84,8 +86,9 @@ class AnswerService:
         self.kb_id = kb_id
         self.timeout = timeout
 
-    async def answer(self, request: QuestionRequest) -> QuestionResponse:
-        deadline = asyncio.get_running_loop().time() + self.timeout
+    async def answer(self, request: QuestionRequest, *, deadline: float | None = None) -> QuestionResponse:
+        own_deadline = asyncio.get_running_loop().time() + self.timeout
+        deadline = min(deadline, own_deadline) if deadline is not None else own_deadline
         try:
             async with asyncio.timeout_at(deadline):
                 retrieval = await self.knowledge.query(self.kb_id, request.question.strip())
@@ -99,7 +102,7 @@ class AnswerService:
             return error_response(request, "retrieval_timeout")
         if isinstance(retrieval, KnowledgeError):
             return error_response(request, f"retrieval_{retrieval.code}")
-        identity = {"visitor_id": request.visitor_id, "turn_id": request.turn_id}
+        identity = {"visitor_id": request.visitor_id, "turn_id": request.turn_id, "turn_seq": request.turn_seq}
         handoff = QuestionResponse(
             **identity, status="handoff", text="现有资料不足以可靠回答，请由现场销售为您确认。",
         )

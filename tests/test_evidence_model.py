@@ -11,14 +11,44 @@ from pydantic import SecretStr
 
 from exhibition_guide.answer import AnswerService, QuestionRequest
 from exhibition_guide.config import AppConfig, KnowledgeConfig, ModelConfig
-from exhibition_guide.evidence_model import ModelEvidenceEvaluator
+from exhibition_guide.evidence_model import ModelEvidenceEvaluator, ModelQuestionRewriter, REWRITE_SYSTEM
 from exhibition_guide.knowledge import KnowledgeResults, KnowledgeSnippet, KnownSource
-from exhibition_guide.llm import ModelError
+from exhibition_guide.llm import ModelClient, ModelError
 from exhibition_guide import main
 
 QUOTE = "2014年在厦门成立锐伽联创广告公司"
 ANSWER = "官网介绍，锐伽联创广告公司于2014年在厦门成立。"
-REQUEST = QuestionRequest(visitor_id="group-a", turn_id="turn-1", question="公司何时在厦门成立？")
+REQUEST = QuestionRequest(visitor_id="group-a", turn_id="turn-1", turn_seq=1, question="公司何时在厦门成立？")
+
+
+@pytest.mark.parametrize("history,question", [
+    ((("介绍2021年成都科学馆的天文展", "该展设有三个展区。"),), "它怎么预约？"),
+    ((("介绍2021年成都科学馆的天文展", "该展设有三个展区。"),), "南京图书馆几点开放？"),
+    ((("甲展和乙展分别在哪里？", "甲展在东馆，乙展在西馆。"),), "它何时结束？"),
+])
+def test_rewriter_real_sdk_wire_preserves_structured_history_without_answering(history, question):
+    seen = []
+    raw = '{"verdict":"ambiguous","question":"您指的是哪个展览？"}'
+    def handler(request):
+        seen.append(json.loads(request.content))
+        return httpx.Response(200, json={"id":"offline", "object":"chat.completion", "created":0,
+            "model":"deepseek-flash", "choices":[{"index":0,"message":{"role":"assistant","content":raw},"finish_reason":"stop"}]})
+    async def run():
+        async with ModelClient(ModelConfig(enabled=True, api_key="offline-fixture"),
+            http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))) as model:
+            result = await ModelQuestionRewriter(model)(question, history)
+            assert result == raw  # No rewriting of the provider's decision in the adapter.
+    asyncio.run(run())
+    assert len(seen) == 1
+    wire = seen[0]
+    assert wire["model"] == "deepseek-flash" and wire["max_tokens"] == 2048
+    assert wire["stream"] is False and wire["thinking"] == {"type":"disabled"}
+    assert [m["role"] for m in wire["messages"]] == ["system", "user"]
+    assert wire["messages"][0]["content"] == REWRITE_SYSTEM
+    assert json.loads(wire["messages"][1]["content"]) == {
+        "question":question, "history":[{"question":q,"answer":a} for q,a in history]}
+    assert "身份限定" in REWRITE_SYSTEM and "必须补全对象" in REWRITE_SYSTEM
+    assert "多个同样合理" in REWRITE_SYSTEM and "不是本轮事实证据" in REWRITE_SYSTEM
 
 
 def decision(**changes):
