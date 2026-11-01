@@ -3,6 +3,7 @@
 /docs/
 
 # Credentials and runtime data
+/config/local.toml
 .env
 .env.*
 !.env.example
