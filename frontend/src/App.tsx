@@ -16,6 +16,15 @@ type ActiveSession = {
   creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
 };
 type TurnIdentity = { visitorId: string; turnId: string };
+type ConversationTurn = TurnIdentity & {
+  question: string; input: "text" | "voice";
+  status: "requesting" | "recording" | "transcribing" | "pending" | "completed" | "cancelled" | "error" | "no_text";
+  result?: BusinessResult; error?: string; speechStatus?: string;
+};
+const conversationLabels: Record<ConversationTurn["status"], string> = {
+  requesting: "等待麦克风授权", recording: "正在录音", transcribing: "正在识别",
+  pending: "正在查询资料", completed: "已完成", cancelled: "已取消", error: "处理失败", no_text: "未识别到文字",
+};
 type VoiceTurn = TurnIdentity & { session: ActiveSession; capture?: Recording };
 type Speech = {
   session: ActiveSession; visitorId: string; turnId?: string; kind: "answer" | "demo";
@@ -111,12 +120,38 @@ export default function App() {
   const [answerSpeechStatus, setAnswerSpeechStatus] = useState("");
   const [recordingState, setRecordingState] = useState<"idle" | "requesting" | "recording" | "transcribing">("idle");
   const [recordingHint, setRecordingHint] = useState("");
+  const [conversation, setConversation] = useState<ConversationTurn[]>([]);
+  const conversationList = useRef<HTMLDivElement>(null);
+  const followConversation = useRef(true);
   const current = (session: ActiveSession) => modeRef.current === "assistant"
     && active.current === session && session.visitorId === visitorId.current && !session.controller.signal.aborted;
   const currentSpeech = (item: Speech) => current(item.session) && item.visitorId === visitorId.current && speech.current === item
     && (item.kind === "demo" || (questionTurn.current?.session === item.session && questionTurn.current.turnId === item.turnId));
-  const setSpeechStatus = (item: Speech, text: string) =>
-    item.kind === "demo" ? setDemoStatus(text) : setAnswerSpeechStatus(text);
+  const setSpeechStatus = (item: Speech, text: string) => {
+    if (item.kind === "demo") setDemoStatus(text);
+    else {
+      setAnswerSpeechStatus(text);
+      if (item.turnId) updateConversation({ visitorId: item.visitorId, turnId: item.turnId }, { speechStatus: text });
+    }
+  };
+
+  function updateConversation(identity: TurnIdentity, patch: Partial<ConversationTurn>, append = false) {
+    setConversation((rows) => {
+      // Check inside the queued updater too: reset may run before React applies it.
+      if (identity.visitorId !== visitorId.current) return rows;
+      const index = rows.findIndex((row) => row.visitorId === identity.visitorId && row.turnId === identity.turnId);
+      if (index < 0) return append
+        ? [...rows, { ...identity, question: "", input: "text" as const, status: "pending" as const, ...patch }].slice(-20)
+        : rows;
+      if (rows[index].status === "cancelled") return rows;
+      return rows.map((row, position) => position === index ? { ...row, ...patch } : row);
+    });
+  }
+
+  useEffect(() => {
+    const list = conversationList.current;
+    if (list && followConversation.current) list.scrollTop = list.scrollHeight;
+  }, [conversation]);
 
   function finishSpeech(item: Speech) {
     if (!currentSpeech(item) || item.phase !== "ended" || !item.acknowledged) return;
@@ -129,6 +164,9 @@ export default function App() {
   function detach(): ActiveSession | null {
     generation.current += 1;
     const session = active.current;
+    if (session) setConversation((rows) => rows.map((row) =>
+      row.visitorId === session.visitorId && ["requesting", "recording", "transcribing", "pending"].includes(row.status)
+        ? { ...row, status: "cancelled" } : row));
     active.current = null;
     if (session) retired.current = session;
     transition.current = null;
@@ -320,6 +358,8 @@ export default function App() {
     setQuestion("");
     setSubmittedQuestion("");
     setAnswer(null);
+    setConversation([]);
+    followConversation.current = true;
     setQuestionError("");
     setHandoff({ question: "", reason: "" });
     setNotice("");
@@ -364,6 +404,7 @@ export default function App() {
     if (turn.visitorId !== visitorId.current) return;
     questionTurn.current = turn;
     const valid = () => current(session) && questionTurn.current === turn;
+    updateConversation(turn, { question: text, input: identity ? "voice" : "text", status: "pending" }, true);
     setPending(true);
     setSubmittedQuestion(text);
     setAnswer(null);
@@ -377,12 +418,16 @@ export default function App() {
       if (!response.ok && body.status !== "error") throw new RequestError("response");
       if (valid()) {
         setAnswer(body);
+        updateConversation(turn, { result: body, status: body.status === "error" ? "error" : "completed" });
         setPending(false);
         if (body.status === "handoff") await takeOver(body.text, text);
         else if (body.status === "answer" || body.status === "clarify") await speakText(session, body.text, "answer", turn.turnId);
       }
     } catch (error) {
-      if (valid()) setQuestionError(messageFor(error));
+      if (valid()) {
+        setQuestionError(messageFor(error));
+        updateConversation(turn, { status: "error", error: messageFor(error) });
+      }
     } finally {
       if (valid()) { if (!speech.current) busy.current = false; setPending(false); }
     }
@@ -395,17 +440,19 @@ export default function App() {
     const turn: VoiceTurn = { session, visitorId: session.visitorId, turnId: crypto.randomUUID() };
     voiceTurn.current = turn;
     const valid = () => current(session) && turn.visitorId === visitorId.current && voiceTurn.current === turn;
+    updateConversation(turn, { input: "voice", status: "requesting" }, true);
     busy.current = true;
     setRecordingState("requesting");
     setRecordingHint("请允许本轮麦克风访问；未开始前不会录音。");
     try {
       turn.capture = startRecording(session.controller.signal,
-        () => { if (valid()) { setRecordingState("recording"); setRecordingHint("正在录音，最长30秒。说完请点击结束。"); } },
-        (limitReached) => { if (valid()) { setRecordingState("transcribing"); setRecordingHint(limitReached ? "已达30秒上限，麦克风已关闭，正在识别…" : "麦克风已关闭，正在识别…"); } },
+        () => { if (valid()) { setRecordingState("recording"); updateConversation(turn, { status: "recording" }); setRecordingHint("正在录音，最长30秒。说完请点击结束。"); } },
+        (limitReached) => { if (valid()) { setRecordingState("transcribing"); updateConversation(turn, { status: "transcribing" }); setRecordingHint(limitReached ? "已达30秒上限，麦克风已关闭，正在识别…" : "麦克风已关闭，正在识别…"); } },
       );
       const audio = await turn.capture.result;
       if (!valid()) return;
       setRecordingState("transcribing");
+      updateConversation(turn, { status: "transcribing" });
       setRecordingHint("麦克风已关闭，正在识别…");
       const form = new FormData();
       form.set("file", audio.blob, audio.filename);
@@ -417,15 +464,19 @@ export default function App() {
       if (!valid()) return;
       if (transcript.session_id !== session.mediaSessionId || typeof transcript.text !== "string") throw new RequestError("response");
       const text = transcript.text.trim();
-      if (!text) { setRecordingHint("没有识别到文字，请靠近麦克风重新录音。"); return; }
-      if (text.length > 2000) { setRecordingHint("识别内容过长，请缩短问题后重新录音。"); return; }
+      if (!text) { setRecordingHint("没有识别到文字，请靠近麦克风重新录音。"); updateConversation(turn, { status: "no_text" }); return; }
+      if (text.length > 2000) { setRecordingHint("识别内容过长，请缩短问题后重新录音。"); updateConversation(turn, { status: "error", error: "识别内容超过2000字，未提交问题。" }); return; }
       setQuestion(text);
       setRecordingState("idle");
       setRecordingHint("语音已识别并提交，麦克风已关闭。");
       await sendQuestion(session, text, turn);
     } catch (error) {
-      if (valid()) setRecordingHint(error instanceof RequestError && error.kind === "timeout"
-        ? "语音识别超时，请重试或输入文字。" : recordingMessage(error));
+      if (valid()) {
+        const message = error instanceof RequestError && error.kind === "timeout"
+          ? "语音识别超时，请重试或输入文字。" : recordingMessage(error);
+        setRecordingHint(message);
+        updateConversation(turn, { status: "error", error: message });
+      }
     } finally {
       turn.capture?.cancel();
       if (valid()) {
@@ -542,15 +593,7 @@ export default function App() {
           <span>{speechPending ? "先停止播报，准备好后再次点击录音" : "点击才采集 · 最长30秒"}</span>
           {recordingHint && <p role="status">{recordingHint}</p>}
         </div>
-        <div className="answer-area" aria-live="polite">
-          {submittedQuestion && <p className="submitted"><span>本轮问题</span>{submittedQuestion}</p>}
-          {pending ? <p className="muted">正在获取资料回答，请稍候…</p> : questionError ? <p className="notice" role="alert">{questionError}</p> : answer ? <>
-            <span className={`answer-label ${answer.status}`}>{answerLabels[answer.status]}</span>
-            <p className="answer-text">{answer.status === "error" ? (answer.error_code === "service_not_configured" ? "问答服务尚未配置真实模型，暂时无法回答。您可以体验下方的固定文本播报。" : "问答服务暂不可用，请联系现场销售。") : answer.text}</p>
-            {answerSpeechStatus && <p className="muted" role="status">{answerSpeechStatus}</p>}
-            {answer.sources.length > 0 && <div className="sources"><h3>本轮资料来源</h3>{answer.sources.map((citation, index) => <div key={index}><strong>{citation.source.status === "known" ? citation.source.filename : "来源未知"}</strong><p>{citation.excerpt}</p></div>)}</div>}
-          </> : <div className="answer-empty"><span>答</span><p>回答会显示在这里<small>尚未接入真实问答模型，提交后会明确提示服务状态。</small></p></div>}
-        </div>
+        <p className="conversation-link"><a href="#conversation-history">查看本组对话记录 ↓</a></p>
         <aside className="demo-panel">
           <div className="demo-heading"><h3>固定文本播报</h3><span>非 LLM</span></div>
           <p>{DEMO_TEXT}</p><small>仅体验声音与口型，不作为您问题的答案。</small>
@@ -559,6 +602,31 @@ export default function App() {
         </aside>
       </section>
     </div>
+    <section id="conversation-history" className="conversation-history" aria-labelledby="conversation-title">
+      <div className="conversation-history-heading">
+        <div><span className="eyebrow">本组访客</span><h2 id="conversation-title">对话记录</h2><p>保留最近20轮 · 语音仅显示最终识别文字</p></div>
+        <button className="secondary" onClick={() => {
+          followConversation.current = true;
+          if (conversationList.current) conversationList.current.scrollTop = conversationList.current.scrollHeight;
+        }}>查看最新</button>
+      </div>
+      <div className="conversation-log" ref={conversationList} role="log" aria-label="本组最近20轮对话" aria-live="polite" tabIndex={0}
+        onScroll={() => {
+          const list = conversationList.current;
+          if (list) followConversation.current = list.scrollHeight - list.scrollTop - list.clientHeight < 48;
+        }}>
+        {conversation.length === 0 ? <p className="conversation-empty">尚无对话。输入问题或完成录音后，问题、回答和来源会保留在这里。</p> : conversation.map((turn, index) => <article className="conversation-turn" key={`${turn.visitorId}:${turn.turnId}`} aria-label={`第${index + 1}轮对话`}>
+          <div className="conversation-turn-heading"><span>{turn.input === "voice" ? "语音提问" : "文字提问"}</span><span className={`turn-status ${turn.status}`}>{turn.result && turn.status === "completed" ? answerLabels[turn.result.status] : conversationLabels[turn.status]}</span></div>
+          <p className="conversation-question">{turn.question || (turn.status === "cancelled" ? "录音已取消，未获得最终识别文字。" : turn.status === "no_text" ? "未识别到文字，本轮未提问。" : "尚未获得最终识别文字。")}</p>
+          {turn.result && <div className="conversation-answer"><span className="eyebrow">导览回答</span><p className="answer-text">{turn.result.status === "error" ? (turn.result.error_code === "service_not_configured" ? "问答服务尚未配置，暂时无法回答，请联系现场销售。" : "问答服务暂不可用，请联系现场销售。") : turn.result.text}</p>
+            {turn.result.sources.length > 0 && <details className="conversation-sources"><summary>资料来源（{turn.result.sources.length}）</summary>{turn.result.sources.map((citation, sourceIndex) => <div className="sources" key={sourceIndex}><strong>{citation.source.status === "known" ? citation.source.filename : "来源未知"}</strong><p>{citation.excerpt}</p></div>)}</details>}
+          </div>}
+          {turn.error && <p className="notice">{turn.error}</p>}
+          {turn.speechStatus && <p className="muted">{turn.speechStatus}</p>}
+          {turn.status === "cancelled" && turn.question && <p className="muted">本轮处理已取消，迟到结果不会更新此记录。</p>}
+        </article>)}
+      </div>
+    </section>
     <footer>有需要时，请联系现场销售继续为您讲解。<span>展厅导览 · 最小原型</span></footer>
   </main>;
 }
