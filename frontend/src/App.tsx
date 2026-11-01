@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { jsonRequest, messageFor, post, request, RequestError } from "./lib/api";
 import { startPlayback, type Playback } from "./lib/webrtc";
 import { recordingMessage, startRecording, type Recording } from "./lib/recording";
+import { PRESET_QUESTIONS } from "./presetQuestions";
 
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
 type Connection = "idle" | "connecting" | "ready" | "playing" | "disconnecting" | "error";
@@ -123,6 +124,9 @@ export default function App() {
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
   const conversationList = useRef<HTMLDivElement>(null);
   const followConversation = useRef(true);
+  const presetRequest = useRef<(TurnIdentity & { text: string }) | null>(null);
+  const presetRunner = useRef<object | null>(null);
+  const [presetPreparing, setPresetPreparing] = useState(false);
   const current = (session: ActiveSession) => modeRef.current === "assistant"
     && active.current === session && session.visitorId === visitorId.current && !session.controller.signal.aborted;
   const currentSpeech = (item: Speech) => current(item.session) && item.visitorId === visitorId.current && speech.current === item
@@ -162,6 +166,8 @@ export default function App() {
   }
 
   function detach(): ActiveSession | null {
+    if (presetRequest.current) updateConversation(presetRequest.current, { status: "cancelled" });
+    presetRequest.current = null;
     generation.current += 1;
     const session = active.current;
     if (session) setConversation((rows) => rows.map((row) =>
@@ -239,6 +245,7 @@ export default function App() {
       generation.current += 1;
       transition.current = null;
       visitorReset.current = null;
+      presetRequest.current = null;
       voiceTurn.current?.capture?.cancel();
       voiceTurn.current = null;
       session?.controller.abort();
@@ -257,7 +264,7 @@ export default function App() {
     return () => { window.removeEventListener("pagehide", dispose); dispose(); };
   }, []);
 
-  async function connect(intent: "connect" | "resume" | "record" | "reset" = "connect") {
+  async function connect(intent: "connect" | "resume" | "record" | "reset" | "preset" = "connect") {
     if (active.current || transition.current || (visitorReset.current && intent !== "reset")
       || (connection === "disconnecting" && intent !== "reset")
       || (modeRef.current === "human" && intent !== "resume" && intent !== "reset")) return;
@@ -389,22 +396,48 @@ export default function App() {
     await connect("record");
   }
 
-  async function submitQuestion(event: React.FormEvent) {
-    event.preventDefault();
-    const session = active.current;
-    const text = question.trim();
-    if (visitorReset.current || !session?.mediaSessionId || !current(session) || !text || busy.current) return;
-    busy.current = true;
-    await sendQuestion(session, text);
+  async function selectPreset(text: string) {
+    if (!PRESET_QUESTIONS.some((question) => question === text) || visitorReset.current || modeRef.current !== "assistant"
+      || (!presetRunner.current && (!active.current?.mediaSessionId || transition.current || !["ready", "playing"].includes(connection)))) return;
+    // One media replacement at a time; clicks while retiring/connecting replace only the queued selection.
+    if (presetRequest.current) updateConversation(presetRequest.current, { status: "cancelled" });
+    if (!presetRunner.current) {
+      detach();
+      setConnection("idle");
+    }
+    const selection = { visitorId: visitorId.current!, turnId: crypto.randomUUID(), text };
+    presetRequest.current = selection;
+    updateConversation(selection, { question: text, input: "text", status: "pending" }, true);
+    setQuestion(text);
+    setRecordingHint("未提交录音已丢弃；选择问题不会打开麦克风。");
+    if (presetRunner.current) return;
+    const runner = {};
+    presetRunner.current = runner;
+    setPresetPreparing(true);
+    try {
+      await connect("preset");
+      const selected = presetRequest.current;
+      const session = active.current;
+      if (!selected || selected.visitorId !== visitorId.current) return;
+      if (!session?.mediaSessionId || !current(session) || !session.playback) {
+        updateConversation(selected, { status: "error", error: "媒体准备未完成，本轮问题未提交。请确认连接后重新选择。" });
+        return;
+      }
+      presetRequest.current = null;
+      busy.current = true;
+      void sendQuestion(session, selected.text, selected, "text");
+    } finally {
+      if (presetRunner.current === runner) { presetRunner.current = null; setPresetPreparing(false); }
+    }
   }
 
-  async function sendQuestion(session: ActiveSession, text: string, identity?: TurnIdentity) {
+  async function sendQuestion(session: ActiveSession, text: string, identity?: TurnIdentity, input: "text" | "voice" = identity ? "voice" : "text") {
     if (!current(session)) return;
     const turn = { session, visitorId: identity?.visitorId ?? session.visitorId, turnId: identity?.turnId ?? crypto.randomUUID(), spoken: false };
     if (turn.visitorId !== visitorId.current) return;
     questionTurn.current = turn;
     const valid = () => current(session) && questionTurn.current === turn;
-    updateConversation(turn, { question: text, input: identity ? "voice" : "text", status: "pending" }, true);
+    updateConversation(turn, { question: text, input, status: "pending" }, true);
     setPending(true);
     setSubmittedQuestion(text);
     setAnswer(null);
@@ -473,7 +506,7 @@ export default function App() {
     } catch (error) {
       if (valid()) {
         const message = error instanceof RequestError && error.kind === "timeout"
-          ? "语音识别超时，请重试或输入文字。" : recordingMessage(error);
+          ? "语音识别超时，请重试或选择预设问题。" : recordingMessage(error);
         setRecordingHint(message);
         updateConversation(turn, { status: "error", error: message });
       }
@@ -572,18 +605,17 @@ export default function App() {
         {notice && <p className="notice" role="alert">{notice}</p>}
       </section>
       <section className="conversation-panel" aria-label="问题与回答">
-        <div className="section-heading"><span className="eyebrow">资料问答</span><h2>您想了解什么？</h2><p>输入产品或方案问题，查看回答和资料来源。</p></div>
+        <div className="section-heading"><span className="eyebrow">资料问答</span><h2>您想了解什么？</h2><p>选择一个问题，或录音提问，查看真实回答和资料来源。</p></div>
         {mode === "human" && <aside className="handoff-panel" role="status">
           <h3>销售接管中</h3><p>{handoff.reason}</p>
           <p><strong>待接管问题：</strong>{handoff.question || "尚无文字问题，请直接向销售说明。"}</p>
           <small>问答、录音与自动播报已暂停。恢复后重连数字人并保留本组访客，不重发旧问题。</small>
           <button className="secondary" disabled={resettingVisitor || transitioning || connection === "disconnecting"} onClick={() => void connect("resume")}>{transitioning ? "正在确认会话关闭…" : "恢复问答"}</button>
         </aside>}
-        <form onSubmit={submitQuestion}>
-          <label htmlFor="question">您的问题</label>
-          <textarea id="question" maxLength={2000} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="例如：这款产品的电池容量是多少？" disabled={resettingVisitor || mode === "human" || pending || recordingState !== "idle"} rows={3} />
-          <div className="form-footer"><span>{question.length} / 2000</span><button className="primary" disabled={resettingVisitor || mode === "human" || !connected || pending || speechPending || recordingState !== "idle" || !question.trim()}>{pending ? "正在查询…" : "提交问题 ↗"}</button></div>
-        </form>
+        <div className="preset-questions" aria-label="推荐问题">
+          {PRESET_QUESTIONS.map((text) => <button key={text} className="preset-question" disabled={resettingVisitor || mode === "human" || (!connected && !presetPreparing) || (transitioning && !presetPreparing)} onClick={() => void selectPreset(text)}>{text}<span aria-hidden="true">↗</span></button>)}
+        </div>
+        <p className="preset-hint" role="status">{presetPreparing ? "正在隔离上一轮声画，随后提交最后选择的问题…" : "可随时选择其他问题；未提交的录音会被丢弃，不会自动开麦。"}</p>
         <div className="recording-controls">
           <button className={recordingState === "recording" ? "recording-stop" : "secondary"}
             disabled={resettingVisitor || mode === "human" || !connected || transitioning || pending || ["requesting", "transcribing"].includes(recordingState)}
@@ -615,7 +647,7 @@ export default function App() {
           const list = conversationList.current;
           if (list) followConversation.current = list.scrollHeight - list.scrollTop - list.clientHeight < 48;
         }}>
-        {conversation.length === 0 ? <p className="conversation-empty">尚无对话。输入问题或完成录音后，问题、回答和来源会保留在这里。</p> : conversation.map((turn, index) => <article className="conversation-turn" key={`${turn.visitorId}:${turn.turnId}`} aria-label={`第${index + 1}轮对话`}>
+        {conversation.length === 0 ? <p className="conversation-empty">尚无对话。选择问题或完成录音后，问题、回答和来源会保留在这里。</p> : conversation.map((turn, index) => <article className="conversation-turn" key={`${turn.visitorId}:${turn.turnId}`} aria-label={`第${index + 1}轮对话`}>
           <div className="conversation-turn-heading"><span>{turn.input === "voice" ? "语音提问" : "文字提问"}</span><span className={`turn-status ${turn.status}`}>{turn.result && turn.status === "completed" ? answerLabels[turn.result.status] : conversationLabels[turn.status]}</span></div>
           <p className="conversation-question">{turn.question || (turn.status === "cancelled" ? "录音已取消，未获得最终识别文字。" : turn.status === "no_text" ? "未识别到文字，本轮未提问。" : "尚未获得最终识别文字。")}</p>
           {turn.result && <div className="conversation-answer"><span className="eyebrow">导览回答</span><p className="answer-text">{turn.result.status === "error" ? (turn.result.error_code === "service_not_configured" ? "问答服务尚未配置，暂时无法回答，请联系现场销售。" : "问答服务暂不可用，请联系现场销售。") : turn.result.text}</p>

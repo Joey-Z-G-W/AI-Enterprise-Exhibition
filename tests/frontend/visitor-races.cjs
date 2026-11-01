@@ -7,7 +7,7 @@ const deferred = () => { let resolve, reject; const promise = new Promise((yes, 
 const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 let source = fs.readFileSync('frontend/src/App.tsx', 'utf8');
 source = source.slice(0, source.indexOf('  const connected =')) + `
-  return { connect, disconnect, takeOver, prepareRecording, beginRecording, playDemo, submitQuestion, sendQuestion,
+  return { connect, disconnect, takeOver, prepareRecording, beginRecording, playDemo, selectPreset, sendQuestion,
     active, retired, video, modeRef, voiceTurn, speech, questionTurn, busy, transition, resetVisitor, visitorReset, visitorId, resettingVisitor,
     mode, connection, notice, handoff, question, answer, recordingHint, setQuestion, pending, submittedQuestion, questionError, answerSpeechStatus, demoStatus, speechPending };
 }`;
@@ -50,6 +50,11 @@ function harness() {
     window: { setTimeout: (callback, delay) => { if (delay === 300 || delay === 750) queueMicrotask(() => { now += delay; callback(); }); return 1; }, clearTimeout: () => {} },
     EventSource: class { handlers = {}; addEventListener(name, callback) { this.handlers[name] = callback; } emit(name) { this.handlers[name]?.(); } close() { this.closed = true; } },
     require: (name) => {
+      if (name === './presetQuestions') {
+        const config = { exports: {} };
+        vm.runInNewContext(ts.transpileModule(fs.readFileSync('frontend/src/presetQuestions.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, config);
+        return config.exports;
+      }
       if (name === 'react') return react;
       if (name === './lib/api') return api;
       if (name === './lib/webrtc') return { startPlayback: async (id, video, signal) => {

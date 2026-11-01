@@ -95,11 +95,11 @@ export function startRecording(
 }
 
 export function recordingMessage(error: unknown): string {
-  if (!(error instanceof RecordingError)) return "语音识别暂不可用，请重试或输入文字。";
+  if (!(error instanceof RecordingError)) return "语音识别暂不可用，请重试或选择预设问题。";
   return {
-    permission: "未获得麦克风权限，请允许访问后重试，或输入文字。",
+    permission: "未获得麦克风权限，请允许访问后重试，或选择预设问题。",
     device: "未找到可用麦克风，请检查设备后重试。",
-    unsupported: "当前浏览器不支持录音，请使用支持录音的浏览器或输入文字。",
+    unsupported: "当前浏览器不支持录音，请使用支持录音的浏览器或选择预设问题。",
     empty: "没有录到有效音频，请重新录音。",
     timeout: "录音等待超时，本轮已取消，请重试。",
     failed: "录音未成功，麦克风已关闭，请重试。",
