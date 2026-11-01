@@ -16,6 +16,10 @@ type ActiveSession = {
   creation?: Promise<string>; retirement?: Promise<boolean>;
 };
 type VoiceTurn = { session: ActiveSession; capture?: Recording };
+type Speech = {
+  session: ActiveSession; turnId?: string; kind: "answer" | "demo";
+  phase: "preparing" | "sent" | "playing" | "ended"; acknowledged: boolean;
+};
 const labels: Record<Connection, string> = {
   idle: "尚未连接", connecting: "正在准备数字人", ready: "媒体已连接，等待播放",
   playing: "画面播放中", disconnecting: "正在断开", error: "连接失败",
@@ -62,8 +66,9 @@ export default function App() {
   const generation = useRef(0);
   const busy = useRef(false);
   const voiceTurn = useRef<VoiceTurn | null>(null);
-  const demoTimer = useRef<number>();
-  const demoPhase = useRef<"idle" | "preparing" | "sent" | "playing">("idle");
+  const speechTimer = useRef<number>();
+  const speech = useRef<Speech | null>(null);
+  const questionTurn = useRef<{ session: ActiveSession; id: string; spoken: boolean } | null>(null);
   const [connection, setConnection] = useState<Connection>("idle");
   const [mode, setMode] = useState<"assistant" | "human">("assistant");
   const [transitioning, setTransitioning] = useState(false);
@@ -76,11 +81,24 @@ export default function App() {
   const [questionError, setQuestionError] = useState("");
   const [pending, setPending] = useState(false);
   const [demoStatus, setDemoStatus] = useState("");
-  const [demoPending, setDemoPending] = useState(false);
+  const [speechPending, setSpeechPending] = useState(false);
+  const [answerSpeechStatus, setAnswerSpeechStatus] = useState("");
   const [recordingState, setRecordingState] = useState<"idle" | "requesting" | "recording" | "transcribing">("idle");
   const [recordingHint, setRecordingHint] = useState("");
   const current = (session: ActiveSession) => modeRef.current === "assistant"
     && active.current === session && !session.controller.signal.aborted;
+  const currentSpeech = (item: Speech) => current(item.session) && speech.current === item
+    && (item.kind === "demo" || (questionTurn.current?.session === item.session && questionTurn.current.id === item.turnId));
+  const setSpeechStatus = (item: Speech, text: string) =>
+    item.kind === "demo" ? setDemoStatus(text) : setAnswerSpeechStatus(text);
+
+  function finishSpeech(item: Speech) {
+    if (!currentSpeech(item) || item.phase !== "ended" || !item.acknowledged) return;
+    window.clearTimeout(speechTimer.current);
+    speech.current = null;
+    setSpeechPending(false);
+    busy.current = false;
+  }
 
   function detach(): ActiveSession | null {
     generation.current += 1;
@@ -94,11 +112,13 @@ export default function App() {
     session?.controller.abort();
     session?.events?.close();
     session?.playback?.close();
-    window.clearTimeout(demoTimer.current);
-    demoPhase.current = "idle";
+    window.clearTimeout(speechTimer.current);
+    if (speech.current) setSpeechStatus(speech.current, "播报已停止，文字保留。");
+    speech.current = null;
+    questionTurn.current = null;
     busy.current = false;
     setPending(false);
-    setDemoPending(false);
+    setSpeechPending(false);
     setSoundBlocked(false);
     setRecordingState("idle");
     setRecordingHint("");
@@ -158,7 +178,9 @@ export default function App() {
       session?.controller.abort();
       session?.events?.close();
       session?.playback?.close();
-      window.clearTimeout(demoTimer.current);
+      window.clearTimeout(speechTimer.current);
+      speech.current = null;
+      questionTurn.current = null;
       const id = retired.current?.id;
       if (id) {
         void fetch(`/opentalking/sessions/${encodeURIComponent(id)}/interrupt`, { method: "POST", keepalive: true }).catch(() => {});
@@ -216,18 +238,19 @@ export default function App() {
       }
       session.events = new EventSource(`/opentalking/sessions/${encodeURIComponent(session.id)}/events`);
       session.events.addEventListener("speech.media_started", () => {
-        if (current(session) && ["sent", "playing"].includes(demoPhase.current)) {
-          demoPhase.current = "playing";
-          setDemoStatus("固定文本正在播报");
+        const item = speech.current;
+        if (item && item.session === session && currentSpeech(item) && ["sent", "playing"].includes(item.phase)) {
+          item.phase = "playing";
+          setSpeechStatus(item, item.kind === "demo" ? "固定文本正在播报" : "回答正在播报");
         }
       });
       session.events.addEventListener("speech.ended", () => {
-        if (!current(session) || !["sent", "playing"].includes(demoPhase.current)) return;
-        window.clearTimeout(demoTimer.current);
-        demoPhase.current = "idle";
-        setDemoPending(false);
-        busy.current = false;
-        setDemoStatus("固定文本播报结束");
+        const item = speech.current;
+        if (!item || item.session !== session || !currentSpeech(item) || !["sent", "playing"].includes(item.phase)) return;
+        item.phase = "ended";
+        setSpeechStatus(item, item.kind === "demo" ? "固定文本播报结束" : "回答播报结束");
+        // Keep the operation locked until its HTTP acknowledgement has also settled.
+        finishSpeech(item);
       });
       session.events.onerror = () => {
         if (current(session)) void disconnect("状态连接已中断，请重新连接数字人。");
@@ -250,7 +273,7 @@ export default function App() {
   }
 
   async function prepareRecording() {
-    if (modeRef.current !== "assistant" || !active.current || demoPhase.current === "idle" || transition.current) return;
+    if (modeRef.current !== "assistant" || !active.current || !speech.current || transition.current) return;
     detach();
     setConnection("idle");
     setDemoStatus("旧播报已停止，正在准备新的录音会话。");
@@ -267,31 +290,37 @@ export default function App() {
   }
 
   async function sendQuestion(session: ActiveSession, text: string) {
+    if (!current(session)) return;
+    const turn = { session, id: crypto.randomUUID(), spoken: false };
+    questionTurn.current = turn;
+    const valid = () => current(session) && questionTurn.current === turn;
     setPending(true);
     setSubmittedQuestion(text);
     setAnswer(null);
     setQuestionError("");
-    const turnId = crypto.randomUUID();
+    setAnswerSpeechStatus("");
     try {
-      const response = await request("/guide/questions", post({ session_id: session.id, turn_id: turnId, question: text }, session.controller.signal), 30000);
+      const response = await request("/guide/questions", post({ session_id: session.id, turn_id: turn.id, question: text }, session.controller.signal), 30000);
       let body: unknown;
       try { body = await response.json(); } catch { throw new RequestError("response"); }
-      if (!isBusinessResult(body) || body.session_id !== session.id || body.turn_id !== turnId) throw new RequestError("response");
+      if (!isBusinessResult(body) || body.session_id !== session.id || body.turn_id !== turn.id) throw new RequestError("response");
       if (!response.ok && body.status !== "error") throw new RequestError("response");
-      if (current(session)) {
+      if (valid()) {
         setAnswer(body);
+        setPending(false);
         if (body.status === "handoff") await takeOver(body.text, text);
+        else if (body.status === "answer" || body.status === "clarify") await speakText(session, body.text, "answer", turn.id);
       }
     } catch (error) {
-      if (current(session)) setQuestionError(messageFor(error));
+      if (valid()) setQuestionError(messageFor(error));
     } finally {
-      if (current(session)) { busy.current = false; setPending(false); }
+      if (valid()) { if (!speech.current) busy.current = false; setPending(false); }
     }
   }
 
   async function beginRecording() {
     const session = active.current;
-    if (!session?.id || !current(session) || busy.current || demoPhase.current !== "idle"
+    if (!session?.id || !current(session) || busy.current || speech.current
       || !["ready", "playing"].includes(connection)) return;
     const turn: VoiceTurn = { session };
     voiceTurn.current = turn;
@@ -331,7 +360,7 @@ export default function App() {
       turn.capture?.cancel();
       if (valid()) {
         voiceTurn.current = null;
-        busy.current = false;
+        if (!speech.current) busy.current = false;
         setRecordingState("idle");
       }
     }
@@ -340,29 +369,47 @@ export default function App() {
   async function playDemo() {
     const session = active.current;
     if (!session?.id || !current(session) || busy.current) return;
+    await speakText(session, DEMO_TEXT, "demo");
+  }
+
+  async function speakText(session: ActiveSession, text: string, kind: Speech["kind"], turnId?: string) {
+    const sessionId = session.id;
+    if (!sessionId || !current(session) || speech.current) return;
+    if (kind === "answer") {
+      const turn = questionTurn.current;
+      if (!turn || turn.session !== session || turn.id !== turnId || turn.spoken) return;
+      turn.spoken = true;
+    }
+    const item: Speech = { session, turnId, kind, phase: "preparing", acknowledged: false };
+    if (!text.trim() || Array.from(text).length > 1000) {
+      setSpeechStatus(item, !text.trim() ? "回答没有可播报文字，仅保留文字显示。" : "回答超过 1000 字，无法自动播报；完整文字已保留。");
+      return;
+    }
+    speech.current = item;
     busy.current = true;
-    demoPhase.current = "preparing";
-    setDemoPending(true);
-    setDemoStatus("正在合成固定演示语音");
+    setSpeechPending(true);
+    setSpeechStatus(item, kind === "demo" ? "正在合成固定演示语音" : "正在合成回答语音");
     try {
-      const audio = await request("/opentalking/tts/preview", post({ text: DEMO_TEXT, tts_provider: "edge", voice: "zh-CN-XiaoxiaoNeural" }, session.controller.signal), 45000);
+      const audio = await request("/opentalking/tts/preview", post({ text, tts_provider: "edge", voice: "zh-CN-XiaoxiaoNeural" }, session.controller.signal), 45000);
       if (!audio.ok || !audio.headers.get("content-type")?.includes("audio/wav")) throw new RequestError("response");
       const blob = await audio.blob();
-      if (!current(session)) return;
+      if (!currentSpeech(item)) return;
       const form = new FormData();
-      form.set("file", blob, "fixed-demo.wav");
-      demoPhase.current = "sent";
-      setDemoStatus("正在发送演示语音");
-      demoTimer.current = window.setTimeout(() => {
-        if (current(session)) void disconnect("演示播放等待超时，已关闭媒体，请重新连接。");
+      form.set("file", blob, kind === "demo" ? "fixed-demo.wav" : "answer.wav");
+      item.phase = "sent";
+      setSpeechStatus(item, kind === "demo" ? "正在发送演示语音" : "正在发送回答语音");
+      speechTimer.current = window.setTimeout(() => {
+        if (currentSpeech(item)) void disconnect("播报等待超时，文字已保留，媒体已关闭，请重新连接。");
       }, 90000);
-      const result = await jsonRequest<{ status: string }>(`/opentalking/sessions/${encodeURIComponent(session.id)}/speak_flashtalk_audio`, { method: "POST", body: form, signal: session.controller.signal }, 30000);
-      if (!current(session)) return;
-      if (result.status !== "queued") throw new RequestError("response");
-      if (demoPhase.current === "sent") setDemoStatus("演示语音已排队，等待实际播放");
+      const result = await jsonRequest<{ session_id: string; status: string }>(`/opentalking/sessions/${encodeURIComponent(sessionId)}/speak_flashtalk_audio`, { method: "POST", body: form, signal: session.controller.signal }, 30000);
+      if (!currentSpeech(item)) return;
+      if (result.session_id !== sessionId || result.status !== "queued") throw new RequestError("response");
+      item.acknowledged = true;
+      if (item.phase === "sent") setSpeechStatus(item, "语音已排队，等待实际播放");
+      finishSpeech(item);
     } catch (error) {
-      if (current(session)) {
-        await disconnect(messageFor(error));
+      if (currentSpeech(item)) {
+        await disconnect(`播报未完成，文字已保留。${messageFor(error)}`);
       }
     }
   }
@@ -413,15 +460,15 @@ export default function App() {
         <form onSubmit={submitQuestion}>
           <label htmlFor="question">您的问题</label>
           <textarea id="question" maxLength={2000} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="例如：这款产品的电池容量是多少？" disabled={mode === "human" || pending || recordingState !== "idle"} rows={3} />
-          <div className="form-footer"><span>{question.length} / 2000</span><button className="primary" disabled={mode === "human" || !connected || pending || demoPending || recordingState !== "idle" || !question.trim()}>{pending ? "正在查询…" : "提交问题 ↗"}</button></div>
+          <div className="form-footer"><span>{question.length} / 2000</span><button className="primary" disabled={mode === "human" || !connected || pending || speechPending || recordingState !== "idle" || !question.trim()}>{pending ? "正在查询…" : "提交问题 ↗"}</button></div>
         </form>
         <div className="recording-controls">
           <button className={recordingState === "recording" ? "recording-stop" : "secondary"}
             disabled={mode === "human" || !connected || transitioning || pending || ["requesting", "transcribing"].includes(recordingState)}
-            onClick={() => demoPending ? void prepareRecording() : recordingState === "recording" ? voiceTurn.current?.capture?.stop() : void beginRecording()}>
-            {demoPending ? "停止播报并准备录音" : recordingState === "recording" ? "结束录音并提问" : recordingState === "requesting" ? "等待麦克风授权…" : recordingState === "transcribing" ? "正在识别语音…" : "开始录音"}
+            onClick={() => speechPending ? void prepareRecording() : recordingState === "recording" ? voiceTurn.current?.capture?.stop() : void beginRecording()}>
+            {speechPending ? "停止播报并准备录音" : recordingState === "recording" ? "结束录音并提问" : recordingState === "requesting" ? "等待麦克风授权…" : recordingState === "transcribing" ? "正在识别语音…" : "开始录音"}
           </button>
-          <span>{demoPending ? "先停止播报，准备好后再次点击录音" : "点击才采集 · 最长30秒"}</span>
+          <span>{speechPending ? "先停止播报，准备好后再次点击录音" : "点击才采集 · 最长30秒"}</span>
           {recordingHint && <p role="status">{recordingHint}</p>}
         </div>
         <div className="answer-area" aria-live="polite">
@@ -429,13 +476,14 @@ export default function App() {
           {pending ? <p className="muted">正在获取资料回答，请稍候…</p> : questionError ? <p className="notice" role="alert">{questionError}</p> : answer ? <>
             <span className={`answer-label ${answer.status}`}>{answerLabels[answer.status]}</span>
             <p className="answer-text">{answer.status === "error" ? (answer.error_code === "service_not_configured" ? "问答服务尚未配置真实模型，暂时无法回答。您可以体验下方的固定文本播报。" : "问答服务暂不可用，请联系现场销售。") : answer.text}</p>
+            {answerSpeechStatus && <p className="muted" role="status">{answerSpeechStatus}</p>}
             {answer.sources.length > 0 && <div className="sources"><h3>本轮资料来源</h3>{answer.sources.map((citation, index) => <div key={index}><strong>{citation.source.status === "known" ? citation.source.filename : "来源未知"}</strong><p>{citation.excerpt}</p></div>)}</div>}
           </> : <div className="answer-empty"><span>答</span><p>回答会显示在这里<small>尚未接入真实问答模型，提交后会明确提示服务状态。</small></p></div>}
         </div>
         <aside className="demo-panel">
           <div className="demo-heading"><h3>固定文本播报</h3><span>非 LLM</span></div>
           <p>{DEMO_TEXT}</p><small>仅体验声音与口型，不作为您问题的答案。</small>
-          <button className="secondary" disabled={mode === "human" || !connected || demoPending || pending || recordingState !== "idle"} onClick={() => void playDemo()}>{demoPending ? "演示处理中…" : "播放固定演示"}</button>
+          <button className="secondary" disabled={mode === "human" || !connected || speechPending || pending || recordingState !== "idle"} onClick={() => void playDemo()}>{speechPending && speech.current?.kind === "demo" ? "演示处理中…" : "播放固定演示"}</button>
           {demoStatus && <p className="demo-status" role="status">{demoStatus}</p>}
         </aside>
       </section>
