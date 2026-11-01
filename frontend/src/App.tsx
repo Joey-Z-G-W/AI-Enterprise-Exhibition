@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { jsonRequest, messageFor, post, request, RequestError } from "./lib/api";
 import { startPlayback, type Playback } from "./lib/webrtc";
+import { recordingMessage, startRecording, type Recording } from "./lib/recording";
 
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
 type Connection = "idle" | "connecting" | "ready" | "playing" | "disconnecting" | "error";
@@ -11,6 +12,7 @@ type BusinessResult = {
   sources: { excerpt: string; source: { status: "known" | "unknown"; filename: string | null } }[];
 };
 type ActiveSession = { id: string | null; controller: AbortController; playback?: Playback; events?: EventSource };
+type VoiceTurn = { session: ActiveSession; capture?: Recording };
 const labels: Record<Connection, string> = {
   idle: "尚未连接", connecting: "正在准备数字人", ready: "媒体已连接，等待播放",
   playing: "画面播放中", disconnecting: "正在断开", error: "连接失败",
@@ -40,6 +42,7 @@ export default function App() {
   const active = useRef<ActiveSession | null>(null);
   const generation = useRef(0);
   const busy = useRef(false);
+  const voiceTurn = useRef<VoiceTurn | null>(null);
   const demoTimer = useRef<number>();
   const demoPhase = useRef<"idle" | "preparing" | "sent" | "playing">("idle");
   const [connection, setConnection] = useState<Connection>("idle");
@@ -52,12 +55,16 @@ export default function App() {
   const [pending, setPending] = useState(false);
   const [demoStatus, setDemoStatus] = useState("");
   const [demoPending, setDemoPending] = useState(false);
+  const [recordingState, setRecordingState] = useState<"idle" | "requesting" | "recording" | "transcribing">("idle");
+  const [recordingHint, setRecordingHint] = useState("");
   const current = (session: ActiveSession) => active.current === session && !session.controller.signal.aborted;
 
   function detach(): ActiveSession | null {
     generation.current += 1;
     const session = active.current;
     active.current = null;
+    voiceTurn.current?.capture?.cancel();
+    voiceTurn.current = null;
     session?.controller.abort();
     session?.events?.close();
     session?.playback?.close();
@@ -67,6 +74,8 @@ export default function App() {
     setPending(false);
     setDemoPending(false);
     setSoundBlocked(false);
+    setRecordingState("idle");
+    setRecordingHint("");
     return session;
   }
 
@@ -86,6 +95,8 @@ export default function App() {
     const dispose = () => {
       const session = active.current;
       active.current = null;
+      voiceTurn.current?.capture?.cancel();
+      voiceTurn.current = null;
       session?.controller.abort();
       session?.events?.close();
       session?.playback?.close();
@@ -161,6 +172,10 @@ export default function App() {
     const text = question.trim();
     if (!session?.id || !current(session) || !text || busy.current) return;
     busy.current = true;
+    await sendQuestion(session, text);
+  }
+
+  async function sendQuestion(session: ActiveSession, text: string) {
     setPending(true);
     setSubmittedQuestion(text);
     setAnswer(null);
@@ -177,6 +192,54 @@ export default function App() {
       if (current(session)) setQuestionError(messageFor(error));
     } finally {
       if (current(session)) { busy.current = false; setPending(false); }
+    }
+  }
+
+  async function beginRecording() {
+    const session = active.current;
+    if (!session?.id || !current(session) || busy.current || demoPhase.current !== "idle"
+      || !["ready", "playing"].includes(connection)) return;
+    const turn: VoiceTurn = { session };
+    voiceTurn.current = turn;
+    const valid = () => current(session) && voiceTurn.current === turn;
+    busy.current = true;
+    setRecordingState("requesting");
+    setRecordingHint("请允许本轮麦克风访问；未开始前不会录音。");
+    try {
+      turn.capture = startRecording(session.controller.signal,
+        () => { if (valid()) { setRecordingState("recording"); setRecordingHint("正在录音，最长30秒。说完请点击结束。"); } },
+        (limitReached) => { if (valid()) { setRecordingState("transcribing"); setRecordingHint(limitReached ? "已达30秒上限，麦克风已关闭，正在识别…" : "麦克风已关闭，正在识别…"); } },
+      );
+      const audio = await turn.capture.result;
+      if (!valid()) return;
+      setRecordingState("transcribing");
+      setRecordingHint("麦克风已关闭，正在识别…");
+      const form = new FormData();
+      form.set("file", audio.blob, audio.filename);
+      form.set("stt_provider", "sensevoice");
+      const transcript = await jsonRequest<{ session_id: string; text: string }>(
+        `/opentalking/sessions/${encodeURIComponent(session.id)}/transcribe`,
+        { method: "POST", body: form, signal: session.controller.signal }, 45000,
+      );
+      if (!valid()) return;
+      if (transcript.session_id !== session.id || typeof transcript.text !== "string") throw new RequestError("response");
+      const text = transcript.text.trim();
+      if (!text) { setRecordingHint("没有识别到文字，请靠近麦克风重新录音。"); return; }
+      if (text.length > 2000) { setRecordingHint("识别内容过长，请缩短问题后重新录音。"); return; }
+      setQuestion(text);
+      setRecordingState("idle");
+      setRecordingHint("语音已识别并提交，麦克风已关闭。");
+      await sendQuestion(session, text);
+    } catch (error) {
+      if (valid()) setRecordingHint(error instanceof RequestError && error.kind === "timeout"
+        ? "语音识别超时，请重试或输入文字。" : recordingMessage(error));
+    } finally {
+      turn.capture?.cancel();
+      if (valid()) {
+        voiceTurn.current = null;
+        busy.current = false;
+        setRecordingState("idle");
+      }
     }
   }
 
@@ -248,9 +311,18 @@ export default function App() {
         <div className="section-heading"><span className="eyebrow">资料问答</span><h2>您想了解什么？</h2><p>输入产品或方案问题，查看回答和资料来源。</p></div>
         <form onSubmit={submitQuestion}>
           <label htmlFor="question">您的问题</label>
-          <textarea id="question" maxLength={2000} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="例如：这款产品的电池容量是多少？" disabled={pending} rows={3} />
-          <div className="form-footer"><span>{question.length} / 2000</span><button className="primary" disabled={!connected || pending || demoPending || !question.trim()}>{pending ? "正在查询…" : "提交问题 ↗"}</button></div>
+          <textarea id="question" maxLength={2000} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="例如：这款产品的电池容量是多少？" disabled={pending || recordingState !== "idle"} rows={3} />
+          <div className="form-footer"><span>{question.length} / 2000</span><button className="primary" disabled={!connected || pending || demoPending || recordingState !== "idle" || !question.trim()}>{pending ? "正在查询…" : "提交问题 ↗"}</button></div>
         </form>
+        <div className="recording-controls">
+          <button className={recordingState === "recording" ? "recording-stop" : "secondary"}
+            disabled={!connected || pending || demoPending || ["requesting", "transcribing"].includes(recordingState)}
+            onClick={() => recordingState === "recording" ? voiceTurn.current?.capture?.stop() : void beginRecording()}>
+            {recordingState === "recording" ? "结束录音并提问" : recordingState === "requesting" ? "等待麦克风授权…" : recordingState === "transcribing" ? "正在识别语音…" : "开始录音"}
+          </button>
+          <span>点击才采集 · 最长30秒</span>
+          {recordingHint && <p role="status">{recordingHint}</p>}
+        </div>
         <div className="answer-area" aria-live="polite">
           {submittedQuestion && <p className="submitted"><span>本轮问题</span>{submittedQuestion}</p>}
           {pending ? <p className="muted">正在获取资料回答，请稍候…</p> : questionError ? <p className="notice" role="alert">{questionError}</p> : answer ? <>
@@ -262,7 +334,7 @@ export default function App() {
         <aside className="demo-panel">
           <div className="demo-heading"><h3>固定文本播报</h3><span>非 LLM</span></div>
           <p>{DEMO_TEXT}</p><small>仅体验声音与口型，不作为您问题的答案。</small>
-          <button className="secondary" disabled={!connected || demoPending || pending} onClick={() => void playDemo()}>{demoPending ? "演示处理中…" : "播放固定演示"}</button>
+          <button className="secondary" disabled={!connected || demoPending || pending || recordingState !== "idle"} onClick={() => void playDemo()}>{demoPending ? "演示处理中…" : "播放固定演示"}</button>
           {demoStatus && <p className="demo-status" role="status">{demoStatus}</p>}
         </aside>
       </section>

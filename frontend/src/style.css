@@ -68,6 +68,11 @@ textarea::placeholder { color: #9da89e; }
 .notice { font-size: 12px; line-height: 1.8; padding: 10px 14px; background: #fbf0e3; color: #8a603c; border-radius: 7px; }
 .stage-panel > .notice { margin: 0 20px 18px; }
 .muted { color: #81917f; font-size: 12px; }
+.recording-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+.recording-controls button { font-size: 12px; padding: 10px 13px; }
+.recording-controls > span { color: #8a958d; font-size: 10px; }
+.recording-controls p { width: 100%; margin: 0; font-size: 11px; color: #637b68; line-height: 1.8; }
+.recording-stop { background: #a34c3d; color: white; }
 footer { max-width: 1396px; margin: 22px auto; padding: 0 42px; display: flex; justify-content: space-between; font-size: 10px; color: #9aa499; }
 @media (max-width: 1000px) { .workspace { gap: 18px; padding: 0 24px; } .topbar { padding: 24px; } .conversation-panel { padding: 24px; } .stage-controls { padding: 18px; flex-wrap: wrap; } .video-stage { min-height: 430px; } }
 @media (max-width: 760px) { .workspace { grid-template-columns: 1fr; padding: 0 16px; } .topbar { padding: 22px 18px; } .mode-note { display: none; } .video-stage { height: 48vh; min-height: 320px; } .conversation-panel { padding: 24px; } footer { padding: 0 18px; gap: 16px; } footer span { display: none; } }
