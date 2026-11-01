@@ -13,7 +13,7 @@ from exhibition_guide.knowledge import (
 from exhibition_guide.main import app, get_answer_service
 
 
-REQUEST = {"session_id": "visitors-a", "turn_id": "turn-1", "question": "电池容量是多少？"}
+REQUEST = {"visitor_id": "visitors-a", "turn_id": "turn-1", "question": "电池容量是多少？"}
 TEXT = "A产品的电池容量为50 kWh。"
 DECISION = {"verdict": "sufficient", "quotes": [{"snippet_index": 0, "excerpt": TEXT}]}
 
@@ -45,15 +45,34 @@ def test_default_is_explicitly_unconfigured(client):
     response = client.post("/questions", json=REQUEST)
     assert response.status_code == 503
     assert response.json() == {
-        "session_id": "visitors-a", "turn_id": "turn-1", "status": "error",
+        "visitor_id": "visitors-a", "turn_id": "turn-1", "status": "error",
         "text": "问答服务暂不可用，请联系现场销售。", "sources": [],
         "error_code": "service_not_configured",
     }
 
 
-@pytest.mark.parametrize("field", ["session_id", "turn_id", "question"])
+@pytest.mark.parametrize("field", ["visitor_id", "turn_id", "question"])
 def test_blank_input_is_rejected(client, field):
     assert client.post("/questions", json={**REQUEST, field: " \n "}).status_code == 422
+
+
+@pytest.mark.parametrize("body", [
+    {"session_id": "sess_old", "turn_id": "turn-1", "question": "价格？"},
+    {**REQUEST, "session_id": "sess_old"},
+    {key: value for key, value in REQUEST.items() if key != "visitor_id"},
+])
+def test_media_session_field_is_not_a_business_identity_alias(client, body):
+    assert client.post("/questions", json=body).status_code == 422
+
+
+def test_same_visitor_new_turns_and_new_group_echo_only_business_identity(client):
+    configure()
+    for visitor, turn in [("group-a", "turn-1"), ("group-a", "turn-2"), ("group-b", "turn-3")]:
+        response = client.post("/questions", json={**REQUEST, "visitor_id": visitor, "turn_id": turn})
+        assert response.status_code == 200
+        assert response.json()["visitor_id"] == visitor
+        assert response.json()["turn_id"] == turn
+        assert "session_id" not in response.json()
 
 
 def test_answer_only_quotes_this_turn_with_server_owned_source(client):
@@ -63,7 +82,7 @@ def test_answer_only_quotes_this_turn_with_server_owned_source(client):
     assert response.status_code == 200
     assert body["status"] == "answer"
     assert body["text"] == "资料记载：\n" + TEXT
-    assert body["session_id"] == REQUEST["session_id"]
+    assert body["visitor_id"] == REQUEST["visitor_id"]
     assert body["turn_id"] == REQUEST["turn_id"]
     assert body["sources"] == [{
         "snippet_index": 0, "excerpt": TEXT,
@@ -157,11 +176,11 @@ def test_old_excerpt_cannot_be_reused_on_next_turn(client):
     knowledge, _ = configure()
     knowledge.query.side_effect = [candidates(), candidates("B产品没有容量资料。")]
     first = client.post("/questions", json=REQUEST)
-    second = client.post("/questions", json={**REQUEST, "session_id": "visitors-b", "turn_id": "turn-2"})
+    second = client.post("/questions", json={**REQUEST, "visitor_id": "visitors-b", "turn_id": "turn-2"})
     assert first.json()["status"] == "answer"
     assert second.json()["status"] == "error"
     assert second.json()["error_code"] == "invalid_model_response"
-    assert second.json()["session_id"] == "visitors-b"
+    assert second.json()["visitor_id"] == "visitors-b"
     assert second.json()["turn_id"] == "turn-2"
     assert second.json()["sources"] == []
 

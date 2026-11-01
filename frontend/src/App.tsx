@@ -6,18 +6,19 @@ import { recordingMessage, startRecording, type Recording } from "./lib/recordin
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
 type Connection = "idle" | "connecting" | "ready" | "playing" | "disconnecting" | "error";
 type BusinessResult = {
-  session_id: string; turn_id: string;
+  visitor_id: string; turn_id: string;
   status: "answer" | "clarify" | "handoff" | "error";
   text: string; error_code?: string | null;
   sources: { excerpt: string; source: { status: "known" | "unknown"; filename: string | null } }[];
 };
 type ActiveSession = {
-  id: string | null; controller: AbortController; playback?: Playback; events?: EventSource;
+  mediaSessionId: string | null; visitorId: string; controller: AbortController; playback?: Playback; events?: EventSource;
   creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
 };
-type VoiceTurn = { session: ActiveSession; capture?: Recording };
+type TurnIdentity = { visitorId: string; turnId: string };
+type VoiceTurn = TurnIdentity & { session: ActiveSession; capture?: Recording };
 type Speech = {
-  session: ActiveSession; turnId?: string; kind: "answer" | "demo";
+  session: ActiveSession; visitorId: string; turnId?: string; kind: "answer" | "demo";
   phase: "preparing" | "sent" | "playing" | "ended"; acknowledged: boolean;
 };
 const labels: Record<Connection, string> = {
@@ -29,7 +30,7 @@ const answerLabels = { answer: "资料回答", clarify: "需要澄清", handoff:
 function isBusinessResult(value: unknown): value is BusinessResult {
   if (!value || typeof value !== "object") return false;
   const item = value as BusinessResult;
-  return typeof item.session_id === "string" && typeof item.turn_id === "string"
+  return typeof item.visitor_id === "string" && !!item.visitor_id && typeof item.turn_id === "string" && !!item.turn_id && !("session_id" in item)
     && Object.hasOwn(answerLabels, item.status) && typeof item.text === "string"
     && Array.isArray(item.sources) && item.sources.every((citation) =>
       citation && typeof citation.excerpt === "string" && citation.source
@@ -80,6 +81,8 @@ async function releaseSession(id: string): Promise<boolean> {
 
 export default function App() {
   const video = useRef<HTMLVideoElement>(null);
+  const visitorId = useRef<string | null>(null);
+  if (visitorId.current === null) visitorId.current = crypto.randomUUID();
   const active = useRef<ActiveSession | null>(null);
   const retired = useRef<ActiveSession | null>(null);
   const modeRef = useRef<"assistant" | "human">("assistant");
@@ -90,7 +93,7 @@ export default function App() {
   const voiceTurn = useRef<VoiceTurn | null>(null);
   const speechTimer = useRef<number>();
   const speech = useRef<Speech | null>(null);
-  const questionTurn = useRef<{ session: ActiveSession; id: string; spoken: boolean } | null>(null);
+  const questionTurn = useRef<TurnIdentity & { session: ActiveSession; spoken: boolean } | null>(null);
   const [connection, setConnection] = useState<Connection>("idle");
   const [mode, setMode] = useState<"assistant" | "human">("assistant");
   const [transitioning, setTransitioning] = useState(false);
@@ -109,9 +112,9 @@ export default function App() {
   const [recordingState, setRecordingState] = useState<"idle" | "requesting" | "recording" | "transcribing">("idle");
   const [recordingHint, setRecordingHint] = useState("");
   const current = (session: ActiveSession) => modeRef.current === "assistant"
-    && active.current === session && !session.controller.signal.aborted;
-  const currentSpeech = (item: Speech) => current(item.session) && speech.current === item
-    && (item.kind === "demo" || (questionTurn.current?.session === item.session && questionTurn.current.id === item.turnId));
+    && active.current === session && session.visitorId === visitorId.current && !session.controller.signal.aborted;
+  const currentSpeech = (item: Speech) => current(item.session) && item.visitorId === visitorId.current && speech.current === item
+    && (item.kind === "demo" || (questionTurn.current?.session === item.session && questionTurn.current.turnId === item.turnId));
   const setSpeechStatus = (item: Speech, text: string) =>
     item.kind === "demo" ? setDemoStatus(text) : setAnswerSpeechStatus(text);
 
@@ -154,11 +157,11 @@ export default function App() {
     if (session.retirement) return session.retirement;
     session.retirement = (async () => {
       // A cancelled creation can still return a server ID; never create another meanwhile.
-      if (!session.id) {
-        try { session.id = await session.creation ?? null; }
+      if (!session.mediaSessionId) {
+        try { session.mediaSessionId = await session.creation ?? null; }
         catch { if (!session.creationRejected) return false; }
       }
-      const closed = session.creationRejected === true || (session.id ? await releaseSession(session.id) : false);
+      const closed = session.creationRejected === true || (session.mediaSessionId ? await releaseSession(session.mediaSessionId) : false);
       if (closed && retired.current === session) retired.current = null;
       return closed;
     })();
@@ -206,7 +209,7 @@ export default function App() {
       window.clearTimeout(speechTimer.current);
       speech.current = null;
       questionTurn.current = null;
-      const id = retired.current?.id;
+      const id = retired.current?.mediaSessionId;
       if (id) {
         void fetch(`/opentalking/sessions/${encodeURIComponent(id)}/interrupt`, { method: "POST", keepalive: true }).catch(() => {});
         void fetch(`/opentalking/sessions/${encodeURIComponent(id)}`, { method: "DELETE", keepalive: true }).catch(() => {});
@@ -235,7 +238,7 @@ export default function App() {
     }
     modeRef.current = "assistant";
     setMode("assistant");
-    const session: ActiveSession = { id: null, controller: new AbortController() };
+    const session: ActiveSession = { mediaSessionId: null, visitorId: visitorId.current!, controller: new AbortController() };
     active.current = session;
     generation.current += 1;
     setConnection("connecting");
@@ -258,18 +261,18 @@ export default function App() {
           || typeof created.session_id !== "string" || !created.session_id) throw new RequestError("response");
         return created.session_id;
       });
-      session.id = await session.creation;
+      session.mediaSessionId = await session.creation;
       if (!current(session)) { await closeRetired(); return; }
       const deadline = Date.now() + 180000;
       while (true) {
-        const status = await jsonRequest<{ state: string }>(`/opentalking/sessions/${encodeURIComponent(session.id)}`, { signal: session.controller.signal });
+        const status = await jsonRequest<{ state: string }>(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}`, { signal: session.controller.signal });
         if (!current(session)) return;
         if (["worker_ready", "ready", "speaking"].includes(status.state)) break;
         if (["error", "closed"].includes(status.state)) throw new RequestError("response");
         if (Date.now() > deadline) throw new RequestError("timeout");
         await new Promise((resolve) => window.setTimeout(resolve, 750));
       }
-      session.events = new EventSource(`/opentalking/sessions/${encodeURIComponent(session.id)}/events`);
+      session.events = new EventSource(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/events`);
       session.events.addEventListener("speech.media_started", () => {
         const item = speech.current;
         if (item && item.session === session && currentSpeech(item) && ["sent", "playing"].includes(item.phase)) {
@@ -288,12 +291,12 @@ export default function App() {
       session.events.onerror = () => {
         if (current(session)) void disconnect("状态连接已中断，请重新连接数字人。");
       };
-      session.playback = await startPlayback(session.id, video.current!, session.controller.signal,
+      session.playback = await startPlayback(session.mediaSessionId, video.current!, session.controller.signal,
         () => { if (current(session)) setSoundBlocked(true); },
         () => { if (current(session)) void disconnect("音视频连接已断开，请重新连接。"); },
       );
       if (!current(session)) { session.playback.close(); return; }
-      await jsonRequest(`/opentalking/sessions/${encodeURIComponent(session.id)}/start`, post({}, session.controller.signal));
+      await jsonRequest(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/start`, post({}, session.controller.signal));
       if (current(session)) {
         setConnection(video.current?.paused ? "ready" : "playing");
         if (intent === "record") setRecordingHint("旧播报已隔离，新会话就绪。请再次点击“开始录音”，此时尚未采集。");
@@ -310,6 +313,8 @@ export default function App() {
     if (visitorReset.current) return;
     const token = {};
     visitorReset.current = token;
+    // Business identity changes only for a new group, before cancelling old async work.
+    visitorId.current = crypto.randomUUID();
     detach();
     // Clear after detach, which may otherwise leave the previous speech-stop notice.
     setQuestion("");
@@ -348,14 +353,15 @@ export default function App() {
     event.preventDefault();
     const session = active.current;
     const text = question.trim();
-    if (visitorReset.current || !session?.id || !current(session) || !text || busy.current) return;
+    if (visitorReset.current || !session?.mediaSessionId || !current(session) || !text || busy.current) return;
     busy.current = true;
     await sendQuestion(session, text);
   }
 
-  async function sendQuestion(session: ActiveSession, text: string) {
+  async function sendQuestion(session: ActiveSession, text: string, identity?: TurnIdentity) {
     if (!current(session)) return;
-    const turn = { session, id: crypto.randomUUID(), spoken: false };
+    const turn = { session, visitorId: identity?.visitorId ?? session.visitorId, turnId: identity?.turnId ?? crypto.randomUUID(), spoken: false };
+    if (turn.visitorId !== visitorId.current) return;
     questionTurn.current = turn;
     const valid = () => current(session) && questionTurn.current === turn;
     setPending(true);
@@ -364,16 +370,16 @@ export default function App() {
     setQuestionError("");
     setAnswerSpeechStatus("");
     try {
-      const response = await request("/guide/questions", post({ session_id: session.id, turn_id: turn.id, question: text }, session.controller.signal), 30000);
+      const response = await request("/guide/questions", post({ visitor_id: turn.visitorId, turn_id: turn.turnId, question: text }, session.controller.signal), 30000);
       let body: unknown;
       try { body = await response.json(); } catch { throw new RequestError("response"); }
-      if (!isBusinessResult(body) || body.session_id !== session.id || body.turn_id !== turn.id) throw new RequestError("response");
+      if (!isBusinessResult(body) || body.visitor_id !== turn.visitorId || body.turn_id !== turn.turnId) throw new RequestError("response");
       if (!response.ok && body.status !== "error") throw new RequestError("response");
       if (valid()) {
         setAnswer(body);
         setPending(false);
         if (body.status === "handoff") await takeOver(body.text, text);
-        else if (body.status === "answer" || body.status === "clarify") await speakText(session, body.text, "answer", turn.id);
+        else if (body.status === "answer" || body.status === "clarify") await speakText(session, body.text, "answer", turn.turnId);
       }
     } catch (error) {
       if (valid()) setQuestionError(messageFor(error));
@@ -384,11 +390,11 @@ export default function App() {
 
   async function beginRecording() {
     const session = active.current;
-    if (visitorReset.current || !session?.id || !current(session) || busy.current || speech.current
+    if (visitorReset.current || !session?.mediaSessionId || !current(session) || busy.current || speech.current
       || !["ready", "playing"].includes(connection)) return;
-    const turn: VoiceTurn = { session };
+    const turn: VoiceTurn = { session, visitorId: session.visitorId, turnId: crypto.randomUUID() };
     voiceTurn.current = turn;
-    const valid = () => current(session) && voiceTurn.current === turn;
+    const valid = () => current(session) && turn.visitorId === visitorId.current && voiceTurn.current === turn;
     busy.current = true;
     setRecordingState("requesting");
     setRecordingHint("请允许本轮麦克风访问；未开始前不会录音。");
@@ -405,18 +411,18 @@ export default function App() {
       form.set("file", audio.blob, audio.filename);
       form.set("stt_provider", "sensevoice");
       const transcript = await jsonRequest<{ session_id: string; text: string }>(
-        `/opentalking/sessions/${encodeURIComponent(session.id)}/transcribe`,
+        `/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/transcribe`,
         { method: "POST", body: form, signal: session.controller.signal }, 45000,
       );
       if (!valid()) return;
-      if (transcript.session_id !== session.id || typeof transcript.text !== "string") throw new RequestError("response");
+      if (transcript.session_id !== session.mediaSessionId || typeof transcript.text !== "string") throw new RequestError("response");
       const text = transcript.text.trim();
       if (!text) { setRecordingHint("没有识别到文字，请靠近麦克风重新录音。"); return; }
       if (text.length > 2000) { setRecordingHint("识别内容过长，请缩短问题后重新录音。"); return; }
       setQuestion(text);
       setRecordingState("idle");
       setRecordingHint("语音已识别并提交，麦克风已关闭。");
-      await sendQuestion(session, text);
+      await sendQuestion(session, text, turn);
     } catch (error) {
       if (valid()) setRecordingHint(error instanceof RequestError && error.kind === "timeout"
         ? "语音识别超时，请重试或输入文字。" : recordingMessage(error));
@@ -432,19 +438,19 @@ export default function App() {
 
   async function playDemo() {
     const session = active.current;
-    if (visitorReset.current || !session?.id || !current(session) || busy.current) return;
+    if (visitorReset.current || !session?.mediaSessionId || !current(session) || busy.current) return;
     await speakText(session, DEMO_TEXT, "demo");
   }
 
   async function speakText(session: ActiveSession, text: string, kind: Speech["kind"], turnId?: string) {
-    const sessionId = session.id;
+    const sessionId = session.mediaSessionId;
     if (!sessionId || !current(session) || speech.current) return;
     if (kind === "answer") {
       const turn = questionTurn.current;
-      if (!turn || turn.session !== session || turn.id !== turnId || turn.spoken) return;
+      if (!turn || turn.session !== session || turn.turnId !== turnId || turn.visitorId !== visitorId.current || turn.spoken) return;
       turn.spoken = true;
     }
-    const item: Speech = { session, turnId, kind, phase: "preparing", acknowledged: false };
+    const item: Speech = { session, visitorId: session.visitorId, turnId, kind, phase: "preparing", acknowledged: false };
     if (!text.trim() || Array.from(text).length > 1000) {
       setSpeechStatus(item, !text.trim() ? "回答没有可播报文字，仅保留文字显示。" : "回答超过 1000 字，无法自动播报；完整文字已保留。");
       return;
@@ -519,7 +525,7 @@ export default function App() {
         {mode === "human" && <aside className="handoff-panel" role="status">
           <h3>销售接管中</h3><p>{handoff.reason}</p>
           <p><strong>待接管问题：</strong>{handoff.question || "尚无文字问题，请直接向销售说明。"}</p>
-          <small>问答、录音与自动播报已暂停。恢复后开启全新会话，不重发旧问题。</small>
+          <small>问答、录音与自动播报已暂停。恢复后重连数字人并保留本组访客，不重发旧问题。</small>
           <button className="secondary" disabled={resettingVisitor || transitioning || connection === "disconnecting"} onClick={() => void connect("resume")}>{transitioning ? "正在确认会话关闭…" : "恢复问答"}</button>
         </aside>}
         <form onSubmit={submitQuestion}>

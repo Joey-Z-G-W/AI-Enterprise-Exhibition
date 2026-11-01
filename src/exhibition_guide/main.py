@@ -25,6 +25,7 @@ async def questions(
     request: QuestionRequest, response: Response,
     service: Annotated[AnswerService | None, Depends(get_answer_service)],
 ) -> QuestionResponse:
+    """Echo business visitor/turn identity; upstream media sessions are independent."""
     result = (
         error_response(request, "service_not_configured")
         if service is None else await service.answer(request)

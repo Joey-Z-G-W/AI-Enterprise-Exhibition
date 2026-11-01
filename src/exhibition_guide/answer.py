@@ -20,11 +20,11 @@ class _StrictModel(BaseModel):
 
 
 class QuestionRequest(_StrictModel):
-    session_id: str = Field(min_length=1, max_length=128)
+    visitor_id: str = Field(min_length=1, max_length=128)
     turn_id: str = Field(min_length=1, max_length=128)
     question: str = Field(min_length=1, max_length=2000)
 
-    @field_validator("session_id", "turn_id", "question")
+    @field_validator("visitor_id", "turn_id", "question")
     @classmethod
     def nonblank(cls, value: str) -> str:
         if not value.strip():
@@ -53,7 +53,7 @@ class AnswerSource(BaseModel):
 
 
 class QuestionResponse(BaseModel):
-    session_id: str
+    visitor_id: str
     turn_id: str
     status: Literal["answer", "clarify", "handoff", "error"]
     text: str
@@ -63,7 +63,7 @@ class QuestionResponse(BaseModel):
 
 def error_response(request: QuestionRequest, code: str) -> QuestionResponse:
     return QuestionResponse(
-        session_id=request.session_id, turn_id=request.turn_id, status="error",
+        visitor_id=request.visitor_id, turn_id=request.turn_id, status="error",
         text="问答服务暂不可用，请联系现场销售。", error_code=code,
     )
 
@@ -92,7 +92,7 @@ class AnswerService:
             return error_response(request, "retrieval_failed")
         if isinstance(retrieval, KnowledgeError):
             return error_response(request, f"retrieval_{retrieval.code}")
-        identity = {"session_id": request.session_id, "turn_id": request.turn_id}
+        identity = {"visitor_id": request.visitor_id, "turn_id": request.turn_id}
         handoff = QuestionResponse(
             **identity, status="handoff", text="现有资料不足以可靠回答，请由现场销售为您确认。",
         )
