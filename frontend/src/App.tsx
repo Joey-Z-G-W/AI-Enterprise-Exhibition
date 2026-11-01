@@ -13,7 +13,7 @@ type BusinessResult = {
 };
 type ActiveSession = {
   id: string | null; controller: AbortController; playback?: Playback; events?: EventSource;
-  creation?: Promise<string>; retirement?: Promise<boolean>;
+  creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
 };
 type VoiceTurn = { session: ActiveSession; capture?: Recording };
 type Speech = {
@@ -35,6 +35,27 @@ function isBusinessResult(value: unknown): value is BusinessResult {
       citation && typeof citation.excerpt === "string" && citation.source
       && ["known", "unknown"].includes(citation.source.status)
       && (citation.source.status === "unknown" || typeof citation.source.filename === "string"));
+}
+
+function isPrecreationRejection(status: number, body: unknown): boolean {
+  if (!body || typeof body !== "object" || Object.keys(body).length !== 1 || !("detail" in body)) return false;
+  const detail = body.detail;
+  // Fixed upstream validates these before session_service.create_session (routes/sessions.py).
+  if (status === 404) return detail === "avatar not found" || detail === "persona not found";
+  if (status === 400 && typeof detail === "string") {
+    return ["invalid avatar_id", "avatar_id and model are required unless persona_id is provided",
+      "user_id is too long", "user_id must not contain whitespace"].includes(detail)
+      || detail.startsWith("invalid avatar: ")
+      || detail.startsWith("model 'quicktalk' is not yet supported on this deployment. Currently available: ");
+  }
+  // FastAPI request-body validation runs before the create handler; other 422 bodies are unknown.
+  return status === 422 && Array.isArray(detail) && detail.length > 0 && detail.every((entry: unknown) => {
+    if (!entry || typeof entry !== "object") return false;
+    const error = entry as { loc?: unknown; type?: unknown; msg?: unknown };
+    return Array.isArray(error.loc) && error.loc[0] === "body"
+      && error.loc.every((part: unknown) => typeof part === "string" || (typeof part === "number" && Number.isInteger(part)))
+      && typeof error.type === "string" && !!error.type && typeof error.msg === "string" && !!error.msg;
+  });
 }
 
 async function releaseSession(id: string): Promise<boolean> {
@@ -63,6 +84,7 @@ export default function App() {
   const retired = useRef<ActiveSession | null>(null);
   const modeRef = useRef<"assistant" | "human">("assistant");
   const transition = useRef<object | null>(null);
+  const visitorReset = useRef<object | null>(null);
   const generation = useRef(0);
   const busy = useRef(false);
   const voiceTurn = useRef<VoiceTurn | null>(null);
@@ -72,6 +94,7 @@ export default function App() {
   const [connection, setConnection] = useState<Connection>("idle");
   const [mode, setMode] = useState<"assistant" | "human">("assistant");
   const [transitioning, setTransitioning] = useState(false);
+  const [resettingVisitor, setResettingVisitor] = useState(false);
   const [handoff, setHandoff] = useState({ question: "", reason: "" });
   const [notice, setNotice] = useState("");
   const [soundBlocked, setSoundBlocked] = useState(false);
@@ -132,9 +155,10 @@ export default function App() {
     session.retirement = (async () => {
       // A cancelled creation can still return a server ID; never create another meanwhile.
       if (!session.id) {
-        try { session.id = await session.creation ?? null; } catch { return false; }
+        try { session.id = await session.creation ?? null; }
+        catch { if (!session.creationRejected) return false; }
       }
-      const closed = session.id ? await releaseSession(session.id) : false;
+      const closed = session.creationRejected === true || (session.id ? await releaseSession(session.id) : false);
       if (closed && retired.current === session) retired.current = null;
       return closed;
     })();
@@ -156,9 +180,9 @@ export default function App() {
 
   async function takeOver(reason = "销售已手动接管。", text?: string) {
     if (modeRef.current === "human") return;
-    const untranscribed = voiceTurn.current && recordingState !== "idle";
+    const untranscribed = !visitorReset.current && voiceTurn.current && recordingState !== "idle";
     setHandoff({
-      question: text ?? (pending ? submittedQuestion : question.trim() || submittedQuestion),
+      question: visitorReset.current ? "" : text ?? (pending ? submittedQuestion : question.trim() || submittedQuestion),
       reason: reason + (untranscribed ? " 本轮录音已取消，尚未获得文字。" : ""),
     });
     modeRef.current = "human";
@@ -173,6 +197,7 @@ export default function App() {
       if (session) retired.current = session;
       generation.current += 1;
       transition.current = null;
+      visitorReset.current = null;
       voiceTurn.current?.capture?.cancel();
       voiceTurn.current = null;
       session?.controller.abort();
@@ -191,9 +216,10 @@ export default function App() {
     return () => { window.removeEventListener("pagehide", dispose); dispose(); };
   }, []);
 
-  async function connect(intent: "connect" | "resume" | "record" = "connect") {
-    if (active.current || transition.current || connection === "disconnecting"
-      || (modeRef.current === "human" && intent !== "resume")) return;
+  async function connect(intent: "connect" | "resume" | "record" | "reset" = "connect") {
+    if (active.current || transition.current || (visitorReset.current && intent !== "reset")
+      || (connection === "disconnecting" && intent !== "reset")
+      || (modeRef.current === "human" && intent !== "resume" && intent !== "reset")) return;
     const token = {};
     transition.current = token;
     setTransitioning(true);
@@ -218,11 +244,18 @@ export default function App() {
     setQuestionError("");
     try {
       // Let creation return its ID after a local cancel so the abandoned session can be deleted.
-      session.creation = jsonRequest<{ session_id: string }>("/opentalking/sessions", post({
+      session.creation = request("/opentalking/sessions", post({
         avatar_id: "companion", model: "quicktalk", tts_provider: "edge", stt_provider: "sensevoice",
         tts_voice: "zh-CN-XiaoxiaoNeural", agent_enabled: false, memory_enabled: false, knowledge_enabled: false,
-      }), 30000).then((created) => {
-        if (typeof created.session_id !== "string" || !created.session_id) throw new RequestError("response");
+      }), 30000).then(async (response) => {
+        let created: unknown;
+        try { created = await response.json(); } catch { throw new RequestError("response"); }
+        if (!response.ok) {
+          session.creationRejected = isPrecreationRejection(response.status, created);
+          throw new RequestError("response");
+        }
+        if (!created || typeof created !== "object" || !("session_id" in created)
+          || typeof created.session_id !== "string" || !created.session_id) throw new RequestError("response");
         return created.session_id;
       });
       session.id = await session.creation;
@@ -266,14 +299,45 @@ export default function App() {
         if (intent === "record") setRecordingHint("旧播报已隔离，新会话就绪。请再次点击“开始录音”，此时尚未采集。");
       }
     } catch (error) {
-      if (current(session)) await disconnect(messageFor(error));
+      if (current(session)) await disconnect(session.creationRejected
+        ? "创建请求已被拒绝，未创建新会话。请检查服务后重试。" : messageFor(error));
     } finally {
       if (transition.current === token) { transition.current = null; setTransitioning(false); }
     }
   }
 
+  async function resetVisitor() {
+    if (visitorReset.current) return;
+    const token = {};
+    visitorReset.current = token;
+    detach();
+    // Clear after detach, which may otherwise leave the previous speech-stop notice.
+    setQuestion("");
+    setSubmittedQuestion("");
+    setAnswer(null);
+    setQuestionError("");
+    setHandoff({ question: "", reason: "" });
+    setNotice("");
+    setRecordingHint("");
+    setDemoStatus("");
+    setAnswerSpeechStatus("");
+    modeRef.current = "assistant";
+    setMode("assistant");
+    setConnection("idle");
+    setResettingVisitor(true);
+    try {
+      // The existing transition token also makes takeover/unload cancel this reconnection.
+      await connect("reset");
+    } finally {
+      if (visitorReset.current === token) {
+        visitorReset.current = null;
+        setResettingVisitor(false);
+      }
+    }
+  }
+
   async function prepareRecording() {
-    if (modeRef.current !== "assistant" || !active.current || !speech.current || transition.current) return;
+    if (visitorReset.current || modeRef.current !== "assistant" || !active.current || !speech.current || transition.current) return;
     detach();
     setConnection("idle");
     setDemoStatus("旧播报已停止，正在准备新的录音会话。");
@@ -284,7 +348,7 @@ export default function App() {
     event.preventDefault();
     const session = active.current;
     const text = question.trim();
-    if (!session?.id || !current(session) || !text || busy.current) return;
+    if (visitorReset.current || !session?.id || !current(session) || !text || busy.current) return;
     busy.current = true;
     await sendQuestion(session, text);
   }
@@ -320,7 +384,7 @@ export default function App() {
 
   async function beginRecording() {
     const session = active.current;
-    if (!session?.id || !current(session) || busy.current || speech.current
+    if (visitorReset.current || !session?.id || !current(session) || busy.current || speech.current
       || !["ready", "playing"].includes(connection)) return;
     const turn: VoiceTurn = { session };
     voiceTurn.current = turn;
@@ -368,7 +432,7 @@ export default function App() {
 
   async function playDemo() {
     const session = active.current;
-    if (!session?.id || !current(session) || busy.current) return;
+    if (visitorReset.current || !session?.id || !current(session) || busy.current) return;
     await speakText(session, DEMO_TEXT, "demo");
   }
 
@@ -442,9 +506,10 @@ export default function App() {
         <div className="stage-controls">
           <div><strong>展厅讲解员</strong><span>固定形象 · 实时音视频</span></div>
           <div className="button-row">
-            <button className="primary" disabled={mode === "human" || transitioning || !["idle", "error"].includes(connection)} onClick={() => void connect()}>连接数字人</button>
+            <button className="primary" disabled={resettingVisitor || mode === "human" || transitioning || !["idle", "error"].includes(connection)} onClick={() => void connect()}>连接数字人</button>
             <button className="secondary" disabled={!active.current || connection === "disconnecting"} onClick={() => void disconnect()}>断开</button>
             <button className="takeover-button" disabled={mode === "human"} onClick={() => void takeOver()}>销售接管</button>
+            <button className="secondary" disabled={resettingVisitor} onClick={() => void resetVisitor()}>{resettingVisitor ? "正在准备新访客…" : "新一组访客"}</button>
           </div>
         </div>
         {notice && <p className="notice" role="alert">{notice}</p>}
@@ -455,16 +520,16 @@ export default function App() {
           <h3>销售接管中</h3><p>{handoff.reason}</p>
           <p><strong>待接管问题：</strong>{handoff.question || "尚无文字问题，请直接向销售说明。"}</p>
           <small>问答、录音与自动播报已暂停。恢复后开启全新会话，不重发旧问题。</small>
-          <button className="secondary" disabled={transitioning || connection === "disconnecting"} onClick={() => void connect("resume")}>{transitioning ? "正在确认会话关闭…" : "恢复问答"}</button>
+          <button className="secondary" disabled={resettingVisitor || transitioning || connection === "disconnecting"} onClick={() => void connect("resume")}>{transitioning ? "正在确认会话关闭…" : "恢复问答"}</button>
         </aside>}
         <form onSubmit={submitQuestion}>
           <label htmlFor="question">您的问题</label>
-          <textarea id="question" maxLength={2000} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="例如：这款产品的电池容量是多少？" disabled={mode === "human" || pending || recordingState !== "idle"} rows={3} />
-          <div className="form-footer"><span>{question.length} / 2000</span><button className="primary" disabled={mode === "human" || !connected || pending || speechPending || recordingState !== "idle" || !question.trim()}>{pending ? "正在查询…" : "提交问题 ↗"}</button></div>
+          <textarea id="question" maxLength={2000} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="例如：这款产品的电池容量是多少？" disabled={resettingVisitor || mode === "human" || pending || recordingState !== "idle"} rows={3} />
+          <div className="form-footer"><span>{question.length} / 2000</span><button className="primary" disabled={resettingVisitor || mode === "human" || !connected || pending || speechPending || recordingState !== "idle" || !question.trim()}>{pending ? "正在查询…" : "提交问题 ↗"}</button></div>
         </form>
         <div className="recording-controls">
           <button className={recordingState === "recording" ? "recording-stop" : "secondary"}
-            disabled={mode === "human" || !connected || transitioning || pending || ["requesting", "transcribing"].includes(recordingState)}
+            disabled={resettingVisitor || mode === "human" || !connected || transitioning || pending || ["requesting", "transcribing"].includes(recordingState)}
             onClick={() => speechPending ? void prepareRecording() : recordingState === "recording" ? voiceTurn.current?.capture?.stop() : void beginRecording()}>
             {speechPending ? "停止播报并准备录音" : recordingState === "recording" ? "结束录音并提问" : recordingState === "requesting" ? "等待麦克风授权…" : recordingState === "transcribing" ? "正在识别语音…" : "开始录音"}
           </button>
@@ -483,7 +548,7 @@ export default function App() {
         <aside className="demo-panel">
           <div className="demo-heading"><h3>固定文本播报</h3><span>非 LLM</span></div>
           <p>{DEMO_TEXT}</p><small>仅体验声音与口型，不作为您问题的答案。</small>
-          <button className="secondary" disabled={mode === "human" || !connected || speechPending || pending || recordingState !== "idle"} onClick={() => void playDemo()}>{speechPending && speech.current?.kind === "demo" ? "演示处理中…" : "播放固定演示"}</button>
+          <button className="secondary" disabled={resettingVisitor || mode === "human" || !connected || speechPending || pending || recordingState !== "idle"} onClick={() => void playDemo()}>{speechPending && speech.current?.kind === "demo" ? "演示处理中…" : "播放固定演示"}</button>
           {demoStatus && <p className="demo-status" role="status">{demoStatus}</p>}
         </aside>
       </section>
