@@ -1,4 +1,6 @@
 import asyncio
+import hashlib
+import json
 from unittest.mock import AsyncMock
 
 import httpx
@@ -10,12 +12,15 @@ from exhibition_guide.knowledge import (
     KnowledgeClient, KnowledgeEmpty, KnowledgeError, KnowledgeResults,
     KnowledgeSnippet, KnownSource, UnknownSource,
 )
-from exhibition_guide.main import app, get_answer_service
+from exhibition_guide.main import create_app, get_answer_service
+from exhibition_guide.config import AppConfig
+
+app = create_app(AppConfig())
 
 
 REQUEST = {"visitor_id": "visitors-a", "turn_id": "turn-1", "question": "电池容量是多少？"}
 TEXT = "A产品的电池容量为50 kWh。"
-DECISION = {"verdict": "sufficient", "quotes": [{"snippet_index": 0, "excerpt": TEXT}]}
+DECISION = {"verdict": "sufficient", "answer_text": "这款A产品配有50 kWh电池。", "quotes": [{"snippet_index": 0, "excerpt": TEXT}]}
 
 
 def candidates(text=TEXT, source=None):
@@ -81,7 +86,7 @@ def test_answer_only_quotes_this_turn_with_server_owned_source(client):
     body = response.json()
     assert response.status_code == 200
     assert body["status"] == "answer"
-    assert body["text"] == "资料记载：\n" + TEXT
+    assert body["text"] == DECISION["answer_text"]
     assert body["visitor_id"] == REQUEST["visitor_id"]
     assert body["turn_id"] == REQUEST["turn_id"]
     assert body["sources"] == [{
@@ -114,7 +119,7 @@ def test_empty_retrieval_hands_off_without_model_call(client):
 ])
 def test_score_one_is_not_sufficient_and_semantic_decision_is_injected(client, verdict, text, status):
     # The fake supplies the semantic verdict; this does NOT test actual model quality.
-    configure(candidates(text), {"verdict": verdict})
+    configure(candidates(text), {"verdict": verdict, "answer_text": "您指的是哪个产品？" if verdict == "ambiguous" else "", "quotes": []})
     response = client.post("/questions", json=REQUEST)
     assert response.status_code == 200
     assert response.json()["status"] == status
@@ -165,7 +170,7 @@ def test_dependency_deadline_is_enforced(client, stage):
     {"verdict": "sufficient", "quotes": [{"snippet_index": 0, "excerpt": TEXT, "filename": "伪造.pdf"}]},
 ])
 def test_invalid_model_output_and_forged_citations_are_errors(client, decision):
-    configure(decision=decision)
+    configure(decision={"answer_text": "资料回答", "quotes": [], **decision})
     response = client.post("/questions", json=REQUEST)
     assert response.status_code == 502
     assert response.json()["error_code"] == "invalid_model_response"
@@ -186,13 +191,19 @@ def test_old_excerpt_cannot_be_reused_on_next_turn(client):
 
 
 def test_service_reuses_real_knowledge_client_with_mock_http_transport(client):
+    original = TEXT.encode("utf-8")
+    context = ('Document Chunks (Each entry has a reference_id refer to the `Reference Document List`):\n\n```json\n'
+        + json.dumps({"reference_id": "1", "content": TEXT})
+        + '\n```\n\nReference Document List (Each entry starts with a [reference_id] that corresponds to entries in the Document Chunks):\n\n```\n[1] test.md\n```\n')
     def handle(request):
         if request.method == "POST":
             return httpx.Response(200, json={
                 "available": True, "indexed": True, "reason": "",
-                "results": [{"doc_id": "", "text": TEXT, "score": 1.0}],
+                "results": [{"doc_id": "", "text": context, "score": 1.0}],
             })
-        return httpx.Response(200, json={"documents": []})
+        if request.url.path.endswith("/file"):
+            return httpx.Response(200, content=original)
+        return httpx.Response(200, json={"documents": [{"id": "doc_test", "kb_id": "kb_demo", "filename": "test.md", "bytes": len(original), "sha256": hashlib.sha256(original).hexdigest()}]})
 
     async def override():
         async with httpx.AsyncClient(
@@ -204,4 +215,4 @@ def test_service_reuses_real_knowledge_client_with_mock_http_transport(client):
     response = client.post("/questions", json=REQUEST)
     assert response.status_code == 200
     assert response.json()["status"] == "answer"
-    assert response.json()["sources"][0]["source"]["status"] == "unknown"
+    assert response.json()["sources"][0]["source"] == {"status": "known", "doc_id": "doc_test", "filename": "test.md"}

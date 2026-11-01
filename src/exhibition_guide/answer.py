@@ -1,4 +1,4 @@
-"""Offline-verifiable answer contract; no production model is configured here."""
+"""Answer decisions with server-validated quotes and caller-owned identity."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from exhibition_guide.knowledge import (
     KnowledgeClient, KnowledgeEmpty, KnowledgeError, KnowledgeResults,
     KnownSource, UnknownSource,
 )
+from exhibition_guide.llm import ModelError
 
 
 class _StrictModel(BaseModel):
@@ -39,10 +40,11 @@ class EvidenceQuote(_StrictModel):
 
 class EvidenceDecision(_StrictModel):
     verdict: Literal["sufficient", "ambiguous", "insufficient", "conflicting"]
-    quotes: list[EvidenceQuote] = Field(default_factory=list)
+    answer_text: str = Field(max_length=1000)
+    quotes: list[EvidenceQuote] = Field(max_length=20)
 
 
-# A future SDK adapter implements this callable. Only tests supply a fake today.
+# Production uses ModelEvidenceEvaluator; tests may inject an explicit substitute.
 EvidenceEvaluator = Callable[[str, tuple[str, ...]], Awaitable[object]]
 
 
@@ -83,13 +85,18 @@ class AnswerService:
         self.timeout = timeout
 
     async def answer(self, request: QuestionRequest) -> QuestionResponse:
+        deadline = asyncio.get_running_loop().time() + self.timeout
         try:
-            async with asyncio.timeout(self.timeout):
+            async with asyncio.timeout_at(deadline):
                 retrieval = await self.knowledge.query(self.kb_id, request.question.strip())
         except TimeoutError:
             return error_response(request, "retrieval_timeout")
         except Exception:
             return error_response(request, "retrieval_failed")
+        if asyncio.current_task().cancelling():
+            raise asyncio.CancelledError
+        if asyncio.get_running_loop().time() >= deadline:
+            return error_response(request, "retrieval_timeout")
         if isinstance(retrieval, KnowledgeError):
             return error_response(request, f"retrieval_{retrieval.code}")
         identity = {"visitor_id": request.visitor_id, "turn_id": request.turn_id}
@@ -102,25 +109,36 @@ class AnswerService:
             return error_response(request, "retrieval_invalid_response")
         snippets = tuple(item.model_copy(deep=True) for item in retrieval.snippets)
         try:
-            async with asyncio.timeout(self.timeout):
+            async with asyncio.timeout_at(deadline):
                 raw_decision = await self.evaluator(
                     request.question.strip(), tuple(item.text for item in snippets),
                 )
         except TimeoutError:
             return error_response(request, "model_timeout")
+        except ModelError as error:
+            safe_codes = {
+                "timeout", "connection_failed", "authentication_failed", "insufficient_balance",
+                "rate_limited", "model_unavailable", "service_unavailable", "request_rejected",
+                "invalid_response", "empty_response", "incomplete_response", "not_configured",
+                "transport_configuration_error", "invalid_request",
+            }
+            return error_response(request, f"model_{error.code}" if error.code in safe_codes else "model_failed")
         except Exception:
             return error_response(request, "model_failed")
+        if asyncio.current_task().cancelling():
+            raise asyncio.CancelledError
+        if asyncio.get_running_loop().time() >= deadline:
+            return error_response(request, "model_timeout")
         try:
-            decision = EvidenceDecision.model_validate(raw_decision)
+            decision = (
+                EvidenceDecision.model_validate_json(raw_decision)
+                if isinstance(raw_decision, str) else EvidenceDecision.model_validate(raw_decision)
+            )
         except ValidationError:
             return error_response(request, "invalid_model_response")
-        if decision.verdict == "ambiguous":
-            return QuestionResponse(
-                **identity, status="clarify", text="请明确您想了解的产品或具体指标。",
-            )
-        if decision.verdict in {"insufficient", "conflicting"}:
-            return handoff
-        if not decision.quotes:
+        if decision.verdict in {"sufficient", "ambiguous"} and not decision.answer_text.strip():
+            return error_response(request, "invalid_model_response")
+        if decision.verdict == "sufficient" and not decision.quotes:
             return error_response(request, "invalid_model_response")
         sources = []
         for quote in decision.quotes:
@@ -134,8 +152,16 @@ class AnswerService:
                 snippet_index=quote.snippet_index, excerpt=quote.excerpt,
                 source=snippets[quote.snippet_index].source,
             ))
+        if decision.verdict == "ambiguous":
+            return QuestionResponse(**identity, status="clarify", text=decision.answer_text, sources=sources)
+        if decision.verdict == "conflicting":
+            return QuestionResponse(
+                **identity, status="handoff", text="现有资料存在冲突，请由现场销售核实后为您确认。", sources=sources,
+            )
+        if decision.verdict == "insufficient":
+            return handoff
         return QuestionResponse(
             **identity, status="answer",
-            text="资料记载：\n" + "\n".join(source.excerpt for source in sources),
+            text=decision.answer_text,
             sources=sources,
         )
