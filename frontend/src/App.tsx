@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { jsonRequest, messageFor, post, request, RequestError } from "./lib/api";
 import { startPlayback, type Playback } from "./lib/webrtc";
-import { recordingMessage, startRecording, type Recording } from "./lib/recording";
+import { recordingMessage } from "./lib/recording";
+import { createContinuousCapture, type ContinuousCapture, type CaptureStatus } from "./lib/continuousCapture";
 import { PRESET_QUESTIONS } from "./presetQuestions";
 
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
@@ -28,7 +29,7 @@ const conversationLabels: Record<ConversationTurn["status"], string> = {
   requesting: "等待麦克风授权", recording: "正在录音", transcribing: "正在识别",
   pending: "正在查询资料", completed: "已完成", cancelled: "已取消", error: "处理失败", no_text: "未识别到文字",
 };
-type VoiceTurn = TurnIdentity & { session: ActiveSession; capture?: Recording };
+type VoiceTurn = TurnIdentity & { session: ActiveSession };
 type Speech = {
   session: ActiveSession; visitorId: string; turnId?: string; kind: "answer" | "demo";
   phase: "preparing" | "sent" | "playing" | "ended"; acknowledged: boolean;
@@ -106,6 +107,9 @@ export default function App() {
   const generation = useRef(0);
   const busy = useRef(false);
   const voiceTurn = useRef<VoiceTurn | null>(null);
+  const microphone = useRef<ContinuousCapture | null>(null);
+  const [captureStatus, setCaptureStatus] = useState<CaptureStatus>("closed");
+  const [captureHint, setCaptureHint] = useState("麦克风已关闭。");
   const speechTimer = useRef<number>();
   const speech = useRef<Speech | null>(null);
   const questionTurn = useRef<TurnIdentity & { session: ActiveSession; spoken: boolean } | null>(null);
@@ -144,6 +148,27 @@ export default function App() {
       if (item.turnId) updateConversation({ visitorId: item.visitorId, turnId: item.turnId }, { speechStatus: text });
     }
   };
+
+  function stopMicrophone() {
+    const owner = microphone.current;
+    setCaptureStatus("closed");
+    setCaptureHint("麦克风已关闭，已提交的回答可继续播报。");
+    if (owner) void owner.stop().then(released => {
+      if (released && microphone.current === owner) microphone.current = null;
+    });
+  }
+
+  function requestMicrophone() {
+    if (microphone.current) return;
+    setCaptureStatus("requesting");
+    setCaptureHint("请允许麦克风访问。");
+    const owner = createContinuousCapture((status, hint) => queueMicrotask(() => {
+      if (microphone.current !== owner) return;
+      setCaptureStatus(status); setCaptureHint(hint);
+      if (owner.released) microphone.current = null;
+    }));
+    microphone.current = owner;
+  }
 
   function updateConversation(identity: Pick<TurnIdentity, "visitorId" | "turnId"> & Partial<TurnIdentity>, patch: Partial<ConversationTurn>, append = false) {
     setConversation((rows) => {
@@ -199,7 +224,8 @@ export default function App() {
     return barrier.promise;
   }
 
-  function detach(cancelBusiness = true): ActiveSession | null {
+  function detach(cancelBusiness = true, keepCapture = false): ActiveSession | null {
+    if (!keepCapture) stopMicrophone();
     if (cancelBusiness) {
       const visitor = active.current?.visitorId ?? visitorId.current!;
       void invalidateBusiness(visitor, turnSequence.current);
@@ -215,7 +241,6 @@ export default function App() {
     if (session) retired.current = session;
     transition.current = null;
     setTransitioning(false);
-    voiceTurn.current?.capture?.cancel();
     voiceTurn.current = null;
     session?.controller.abort();
     session?.events?.close();
@@ -277,6 +302,7 @@ export default function App() {
 
   useEffect(() => {
     const dispose = () => {
+      const capture = microphone.current; microphone.current = null; void capture?.stop();
       void fetch(`/guide/visitors/${encodeURIComponent(visitorId.current!)}/invalidate`, {
         ...post({ through_turn_seq: turnSequence.current, retire: true }), keepalive: true,
       }).catch(() => {}); // best effort only; no claim of an acknowledged retirement
@@ -287,8 +313,7 @@ export default function App() {
       transition.current = null;
       visitorReset.current = null;
       presetRequest.current = null;
-      voiceTurn.current?.capture?.cancel();
-      voiceTurn.current = null;
+        voiceTurn.current = null;
       session?.controller.abort();
       session?.events?.close();
       session?.playback?.close();
@@ -310,6 +335,7 @@ export default function App() {
       || (connection === "disconnecting" && intent !== "reset")
       || (modeRef.current === "human" && intent !== "resume" && intent !== "reset")) return;
     const token = {};
+    if (intent === "connect" || intent === "resume") requestMicrophone();
     transition.current = token;
     setTransitioning(true);
     const barrier = businessBarrier.current;
@@ -323,6 +349,7 @@ export default function App() {
     const released = await closeRetired();
     if (transition.current !== token || epoch !== generation.current) return;
     if (!released) {
+      stopMicrophone();
       transition.current = null;
       setTransitioning(false);
       setNotice("旧会话释放未确认，保持声画关闭；请重试或联系工作人员。");
@@ -391,6 +418,7 @@ export default function App() {
       await jsonRequest(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/start`, post({}, session.controller.signal));
       if (current(session)) {
         setConnection(video.current?.paused ? "ready" : "playing");
+        microphone.current?.listen();
         if (intent === "record") setRecordingHint("旧播报已隔离，新会话就绪。请再次点击“开始录音”，此时尚未采集。");
       }
     } catch (error) {
@@ -453,14 +481,14 @@ export default function App() {
     // One media replacement at a time; clicks while retiring/connecting replace only the queued selection.
     if (presetRequest.current) updateConversation(presetRequest.current, { status: "cancelled" });
     if (!presetRunner.current) {
-      detach();
+      detach(true, true);
       setConnection("idle");
     }
     const selection = { ...newTurn(), text };
     presetRequest.current = selection;
     updateConversation(selection, { question: text, input: "text", status: "pending" }, true);
     setQuestion(text);
-    setRecordingHint("未提交录音已丢弃；选择问题不会打开麦克风。");
+    setRecordingHint("未提交录音已丢弃；选择问题不改变麦克风状态。");
     if (presetRunner.current) return;
     const runner = {};
     presetRunner.current = runner;
@@ -530,7 +558,8 @@ export default function App() {
     }
   }
 
-  async function beginRecording() {
+  // Audio submission is retained for task 16; no MediaRecorder or UI capture entry.
+  async function submitRecordedAudio(audioResult: Promise<{ blob: Blob; filename: string }>) {
     const session = active.current;
     if (visitorReset.current || !session?.mediaSessionId || !current(session) || busy.current || speech.current
       || !["ready", "playing"].includes(connection)) return;
@@ -542,11 +571,9 @@ export default function App() {
     setRecordingState("requesting");
     setRecordingHint("请允许本轮麦克风访问；未开始前不会录音。");
     try {
-      turn.capture = startRecording(session.controller.signal,
-        () => { if (valid()) { setRecordingState("recording"); updateConversation(turn, { status: "recording" }); setRecordingHint("正在录音，最长30秒。说完请点击结束。"); } },
-        (limitReached) => { if (valid()) { setRecordingState("transcribing"); updateConversation(turn, { status: "transcribing" }); setRecordingHint(limitReached ? "已达30秒上限，麦克风已关闭，正在识别…" : "麦克风已关闭，正在识别…"); } },
-      );
-      const audio = await turn.capture.result;
+      setRecordingState("recording");
+      updateConversation(turn, { status: "recording" });
+      const audio = await audioResult;
       if (!valid()) return;
       setRecordingState("transcribing");
       updateConversation(turn, { status: "transcribing" });
@@ -575,7 +602,6 @@ export default function App() {
         updateConversation(turn, { status: "error", error: message });
       }
     } finally {
-      turn.capture?.cancel();
       if (valid()) {
         voiceTurn.current = null;
         if (!speech.current) busy.current = false;
@@ -670,7 +696,7 @@ export default function App() {
         {businessWarning && <p className="notice business-warning" role="alert">{businessWarning}</p>}
       </section>
       <section className="conversation-panel" aria-label="问题与回答">
-        <div className="section-heading"><span className="eyebrow">资料问答</span><h2>您想了解什么？</h2><p>选择一个问题，或录音提问，查看真实回答和资料来源。</p></div>
+        <div className="section-heading"><span className="eyebrow">资料问答</span><h2>您想了解什么？</h2><p>选择一个问题，查看真实回答和资料来源。</p></div>
         {mode === "human" && <aside className="handoff-panel" role="status">
           <h3>销售接管中</h3><p>{handoff.reason}</p>
           <p><strong>待接管问题：</strong>{handoff.question || "尚无文字问题，请直接向销售说明。"}</p>
@@ -680,21 +706,17 @@ export default function App() {
         <div className="preset-questions" aria-label="推荐问题">
           {PRESET_QUESTIONS.map((text) => <button key={text} className="preset-question" disabled={resettingVisitor || mode === "human" || (!connected && !presetPreparing) || (transitioning && !presetPreparing)} onClick={() => void selectPreset(text)}>{text}<span aria-hidden="true">↗</span></button>)}
         </div>
-        <p className="preset-hint" role="status">{presetPreparing ? "正在隔离上一轮声画，随后提交最后选择的问题…" : "可随时选择其他问题；未提交的录音会被丢弃，不会自动开麦。"}</p>
+        <p className="preset-hint" role="status">{presetPreparing ? "正在隔离上一轮声画，随后提交最后选择的问题…" : "可随时选择其他问题；未提交的录音会被丢弃，不改变麦克风状态。"}</p>
         <div className="recording-controls">
-          <button className={recordingState === "recording" ? "recording-stop" : "secondary"}
-            disabled={resettingVisitor || mode === "human" || !connected || transitioning || pending || ["requesting", "transcribing"].includes(recordingState)}
-            onClick={() => speechPending ? void prepareRecording() : recordingState === "recording" ? voiceTurn.current?.capture?.stop() : void beginRecording()}>
-            {speechPending ? "停止播报并准备录音" : recordingState === "recording" ? "结束录音并提问" : recordingState === "requesting" ? "等待麦克风授权…" : recordingState === "transcribing" ? "正在识别语音…" : "开始录音"}
-          </button>
-          <span>{speechPending ? "先停止播报，准备好后再次点击录音" : "点击才采集 · 最长30秒"}</span>
-          {recordingHint && <p role="status">{recordingHint}</p>}
+          <button className="recording-stop" disabled={captureStatus === "closed" || captureStatus === "error"}
+            onClick={stopMicrophone}>停止录音</button>
+          <p role="status" aria-label="收音状态">{captureHint}</p>
         </div>
         <p className="conversation-link"><a href="#conversation-history">查看本组对话记录 ↓</a></p>
         <aside className="demo-panel">
           <div className="demo-heading"><h3>固定文本播报</h3><span>非 LLM</span></div>
           <p>{DEMO_TEXT}</p><small>仅体验声音与口型，不作为您问题的答案。</small>
-          <button className="secondary" disabled={resettingVisitor || mode === "human" || !connected || speechPending || pending || recordingState !== "idle"} onClick={() => void playDemo()}>{speechPending && speech.current?.kind === "demo" ? "演示处理中…" : "播放固定演示"}</button>
+          <button className="secondary" disabled={resettingVisitor || mode === "human" || !connected || speechPending || pending} onClick={() => void playDemo()}>{speechPending && speech.current?.kind === "demo" ? "演示处理中…" : "播放固定演示"}</button>
           {demoStatus && <p className="demo-status" role="status">{demoStatus}</p>}
         </aside>
       </section>

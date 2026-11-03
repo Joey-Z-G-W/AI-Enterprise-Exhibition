@@ -7,7 +7,7 @@ const deferred = () => { let resolve, reject; const promise = new Promise((yes, 
 const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 let source = fs.readFileSync('frontend/src/App.tsx', 'utf8');
 source = source.slice(0, source.indexOf('  const connected =')) + `
-  return { connect, disconnect, takeOver, prepareRecording, beginRecording, playDemo, selectPreset, sendQuestion,
+  return { connect, disconnect, takeOver, prepareRecording, submitRecordedAudio, stopMicrophone, requestMicrophone, microphone, captureStatus, captureHint, playDemo, selectPreset, sendQuestion,
     active, retired, video, modeRef, voiceTurn, speech, questionTurn, busy, transition, resetVisitor, visitorReset, visitorId, resettingVisitor,
     mode, connection, notice, handoff, question, answer, recordingHint, setQuestion, pending, submittedQuestion, questionError, answerSpeechStatus, demoStatus, speechPending };
 }`;
@@ -16,7 +16,8 @@ const markupCompiled = ts.transpileModule(fs.readFileSync('frontend/src/App.tsx'
 
 function harness() {
   let cursor = 0, serial = 0, now = 0;
-  const hooks = [], requests = [], captures = [], playbacks = [];
+  const hooks = [], requests = [], captures = [], continuous = [], playbacks = [], effects = [];
+  const listeners = new Map();
   const overrides = new Map(), states = new Map();
   const response = (body, status = 200, headers) => new Response(JSON.stringify(body), { status, headers });
   const api = {
@@ -43,13 +44,13 @@ function harness() {
   const react = {
     useRef: (initial) => { const index = cursor++; return hooks[index] ??= { current: initial }; },
     useState: (initial) => { const index = cursor++; if (!(index in hooks)) hooks[index] = initial; return [hooks[index], (value) => { hooks[index] = typeof value === 'function' ? value(hooks[index]) : value; }]; },
-    useEffect: () => {},
+    useEffect: (effect, deps) => { const index=cursor++; if (!(index in hooks)) { hooks[index]=true; if(deps?.length===0) effects.push(effect()); } },
   };
   const exported = {};
   const sandbox = {
-    exports: exported, AbortController, Response, Blob, FormData, crypto: require('node:crypto').webcrypto,
+    exports: exported, queueMicrotask, fetch:(...args)=>api.request(...args), AbortController, Response, Blob, FormData, crypto: require('node:crypto').webcrypto,
     Date: { now: () => now },
-    window: { setTimeout: (callback, delay) => { if (delay === 300 || delay === 750) queueMicrotask(() => { now += delay; callback(); }); return 1; }, clearTimeout: () => {} },
+    window: { addEventListener:(name,fn)=>listeners.set(name,fn), removeEventListener:(name)=>listeners.delete(name), setTimeout: (callback, delay) => { if (delay === 300 || delay === 750) queueMicrotask(() => { now += delay; callback(); }); return 1; }, clearTimeout: () => {} },
     EventSource: class { handlers = {}; addEventListener(name, callback) { this.handlers[name] = callback; } emit(name) { this.handlers[name]?.(); } close() { this.closed = true; } },
     require: (name) => {
       if (name === 'react/jsx-runtime') return require(path.resolve('frontend/node_modules/react/jsx-runtime'));
@@ -60,24 +61,28 @@ function harness() {
       }
       if (name === 'react') return react;
       if (name === './lib/api') return api;
+      if (name === './lib/continuousCapture') return {createContinuousCapture(report) {
+        const owner={released:false,stops:0,listens:0,listen(){if(!this.released){this.listens++;report('listening','正在持续收音。');}},async stop(){this.stops++;this.released=true;report('closed','麦克风已关闭。');return true;}};
+        continuous.push(owner);return owner;
+      }};
       if (name === './lib/webrtc') return { startPlayback: async (id, video, signal) => {
         const playback = { id, closed: false, close() { this.closed = true; video.srcObject = null; } };
         playbacks.push(playback); signal.addEventListener('abort', () => playback.close()); return playback;
       } };
-      if (name === './lib/recording') return { recordingMessage: () => 'recording error', startRecording: (signal, started) => {
-        const result = deferred(); const capture = { result: result.promise, cancelled: false, cancel() { this.cancelled = true; /* Simulate a permission/capture promise that can settle after cancel. */ }, stop() {}, finish: result.resolve };
-        captures.push(capture); signal.addEventListener('abort', () => capture.cancel()); started(); return capture;
-      } };
+      if (name === './lib/recording') return {recordingMessage: () => 'recording error'};
       throw new Error(name);
     },
   };
   vm.runInNewContext(compiled, sandbox);
   const markupExports = {};
   vm.runInNewContext(markupCompiled, { ...sandbox, exports: markupExports });
-  const render = () => { cursor = 0; return exported.default(); };
+  const render = () => { cursor = 0; const app=exported.default();
+    app.beginRecording=()=>{const audio=deferred();const capture={cancelled:false,cancel(){this.cancelled=true;},stop(){},finish:audio.resolve};captures.push(capture);app.active.current.controller.signal.addEventListener('abort',()=>capture.cancel());return app.submitRecordedAudio(audio.promise);};
+    return app;
+  };
   const markup = () => { cursor = 0; return require(path.resolve('frontend/node_modules/react-dom/server')).renderToStaticMarkup(markupExports.default()); };
   const app = render(); app.video.current = { paused: false, srcObject: null };
-  return { render, markup, requests, overrides, states, captures, playbacks, response, created: () => serial };
+  return { render, markup, requests, overrides, states, captures, continuous, playbacks, dispose:()=>effects.forEach(fn=>fn?.()), listeners, response, created: () => serial };
 }
 
 // Execute actual App handlers with isolated API/media/hook doubles, never real devices.
