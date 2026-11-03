@@ -28,6 +28,7 @@ function harness() {
       const method = init.method || 'GET'; requests.push({ url, method, signal: init.signal, body: init.body, timeoutMs });
       const custom = overrides.get(`${method} ${url}`);
       if (custom) return custom(init);
+      if (url === '/guide/ui-config' && method === 'GET') return response({avatar_id:'companion',tts_voice:'zh-CN-XiaoxiaoNeural'});
       if (url.startsWith('/guide/visitors/') && url.endsWith('/invalidate')) { const b=JSON.parse(init.body); return response({visitor_id:decodeURIComponent(url.split('/')[3]),cancelled_through:b.through_turn_seq,retired:b.retire}); }
       if (url === '/opentalking/sessions' && method === 'POST') {
         const id = `sess_${++serial}`; states.set(id, 'ready'); return response({ session_id: id });

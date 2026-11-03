@@ -15,8 +15,10 @@ type BusinessResult = {
   text: string; error_code?: string | null;
   sources: { excerpt: string; source: { status: "known" | "unknown"; filename: string | null } }[];
 };
+type UIConfig = Readonly<{ avatar_id: string; tts_voice: string }>;
 type ActiveSession = {
   mediaSessionId: string | null; visitorId: string; controller: AbortController; playback?: Playback; events?: EventSource;
+  uiConfig?: UIConfig;
   initializationDeadline?: number; initializationComplete?: boolean; upload?: Promise<boolean>; uploadUnknown?: boolean; mediaReady?: boolean; creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
 };
 type TurnIdentity = { visitorId: string; turnId: string; turnSeq: number };
@@ -40,6 +42,14 @@ const labels: Record<Connection, string> = {
   playing: "画面播放中", disconnecting: "正在断开", error: "连接失败",
 };
 const answerLabels = { answer: "资料回答", clarify: "需要澄清", handoff: "请由销售接管", error: "服务暂不可用" };
+
+function isUIConfig(value: unknown): value is UIConfig {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const fields = Object.keys(value);
+  if (fields.length !== 2 || !fields.includes("avatar_id") || !fields.includes("tts_voice")) return false;
+  return Object.values(value).every((field) => typeof field === "string"
+    && Array.from(field).length >= 1 && Array.from(field).length <= 128 && !/\s/u.test(field));
+}
 
 function isBusinessResult(value: unknown): value is BusinessResult {
   if (!value || typeof value !== "object") return false;
@@ -303,6 +313,12 @@ export default function App() {
   async function closeRetired(): Promise<boolean> {
     const session = retired.current;
     if (!session) return true;
+    // No creation promise means POST has not started (configuration may still
+    // be pending). Its late result is identity-guarded and cannot create media.
+    if (!session.creation && !session.mediaSessionId) {
+      if (retired.current === session) retired.current = null;
+      return true;
+    }
     if (session.retirement) return session.retirement;
     session.retirement = (async () => {
       // HTTP abort is not a remote upload cancellation acknowledgement. Do not
@@ -431,10 +447,14 @@ export default function App() {
     setDemoStatus("");
     setQuestionError("");
     try {
+      const config = await jsonRequest<unknown>("/guide/ui-config", { signal: session.controller.signal }, 10000);
+      if (!current(session)) return;
+      if (!isUIConfig(config)) throw new RequestError("response");
+      session.uiConfig = Object.freeze({ avatar_id: config.avatar_id, tts_voice: config.tts_voice });
       // Let creation return its ID after a local cancel so the abandoned session can be deleted.
       session.creation = request("/opentalking/sessions", post({
-        avatar_id: "companion", model: "quicktalk", tts_provider: "edge", stt_provider: "sensevoice",
-        tts_voice: "zh-CN-XiaoxiaoNeural", agent_enabled: false, memory_enabled: false, knowledge_enabled: false,
+        avatar_id: session.uiConfig.avatar_id, model: "quicktalk", tts_provider: "edge", stt_provider: "sensevoice",
+        tts_voice: session.uiConfig.tts_voice, agent_enabled: false, memory_enabled: false, knowledge_enabled: false,
       }), 30000).then(async (response) => {
         let created: unknown;
         try { created = await response.json(); } catch { throw new RequestError("response"); }
@@ -490,8 +510,9 @@ export default function App() {
         microphone.current?.listen();
       }
     } catch (error) {
-      if (current(session)) await disconnect(session.creationRejected
-        ? "创建请求已被拒绝，未创建新会话。请检查服务后重试。" : messageFor(error));
+      if (current(session)) await disconnect(!session.creation
+        ? "人物与音色配置加载失败，未创建会话。请检查业务服务后重新连接。"
+        : session.creationRejected ? "创建请求已被拒绝，未创建新会话。请检查服务后重试。" : messageFor(error));
     } finally {
       if (transition.current === token) { transition.current = null; setTransitioning(false); segments.current?.pump(); }
     }
@@ -725,7 +746,8 @@ export default function App() {
     setSpeechPending(true);
     setSpeechStatus(item, kind === "demo" ? "正在合成固定演示语音" : "正在合成回答语音");
     try {
-      const audio = await request("/opentalking/tts/preview", post({ text, tts_provider: "edge", voice: "zh-CN-XiaoxiaoNeural" }, session.controller.signal), 45000);
+      if (!session.uiConfig) throw new RequestError("response");
+      const audio = await request("/opentalking/tts/preview", post({ text, tts_provider: "edge", voice: session.uiConfig.tts_voice }, session.controller.signal), 45000);
       if (!audio.ok || !audio.headers.get("content-type")?.includes("audio/wav")) throw new RequestError("response");
       const blob = await audio.blob();
       if (!currentSpeech(item)) return;
