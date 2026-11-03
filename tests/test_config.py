@@ -6,7 +6,7 @@ import traceback
 import pytest
 from pydantic import ValidationError
 
-from exhibition_guide.config import AppConfig, ConfigError, load_config
+from exhibition_guide.config import AppConfig, AvatarConfig, ConfigError, load_config
 
 
 def write_config(tmp_path, text):
@@ -22,6 +22,7 @@ def test_missing_file_and_public_example_are_unconfigured(tmp_path):
     assert not example.llm.enabled and not example.embedding.enabled
     assert example.llm.api_key.get_secret_value() == ""
     assert example.knowledge.kb_id == ""
+    assert example.avatar.tts_voice == "zh-CN-XiaoxiaoNeural"
 
 
 def test_independent_credentials_and_explicit_fields(tmp_path):
@@ -39,6 +40,7 @@ dimensions = 512
 kb_id = "kb_demo"
 [avatar]
 avatar_id = "custom_demo"
+tts_voice = "custom-voice"
 ''')
     config = load_config(path)
     assert config.llm.api_key.get_secret_value() == "fake-llm-secret"
@@ -47,6 +49,7 @@ avatar_id = "custom_demo"
     assert config.llm.timeout_seconds == 12.5
     assert config.knowledge.kb_id == "kb_demo"
     assert config.avatar.avatar_id == "custom_demo"
+    assert config.avatar.tts_voice == "custom-voice"
     for output in (str(config), repr(config), str(config.model_dump()), config.model_dump_json()):
         assert "fake-llm-secret" not in output
         assert "fake-embedding-secret" not in output
@@ -67,6 +70,8 @@ avatar_id = "custom_demo"
     '[embedding]\ndimensions = -1\napi_key = "fake-secret"',
     '[embedding]\ndimensions = "512"\napi_key = "fake-secret"',
     '[avatar]\navatar_id = " "\n[llm]\napi_key = "fake-secret"',
+    '[avatar]\ntts_voice = " "\n[llm]\napi_key = "fake-secret"',
+    '[avatar]\ntts_voice = "' + 'v' * 129 + '"\n[llm]\napi_key = "fake-secret"',
     '[knowledge]\nkb_id = "invalid id"\n[llm]\napi_key = "fake-secret"',
     '[llm]\nunknown = "fake-secret"',
     '[llm]\napi_key = "fake-secret"\nthis is invalid',
@@ -96,3 +101,16 @@ def test_invalid_utf8_is_safe(tmp_path):
     path.write_bytes(b'api_key="fake-secret"\xff')
     with pytest.raises(ConfigError, match="UTF-8 TOML"):
         load_config(path)
+
+
+@pytest.mark.parametrize("field", ["avatar_id", "tts_voice"])
+@pytest.mark.parametrize("value", ["", " ", " voice", "voice ", "two voices", "voice\n", "\t", "v" * 129, 123, None])
+def test_avatar_pair_rejects_invalid_values(field, value):
+    with pytest.raises(ValidationError):
+        AvatarConfig.model_validate({field: value})
+
+
+@pytest.mark.parametrize("length", [1, 128])
+def test_avatar_pair_accepts_length_boundaries(length):
+    pair = AvatarConfig(avatar_id="a" * length, tts_voice="v" * length)
+    assert len(pair.avatar_id) == len(pair.tts_voice) == length

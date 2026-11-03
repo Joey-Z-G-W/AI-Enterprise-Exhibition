@@ -22,3 +22,4 @@ kb_id = ""
 
 [avatar]
 avatar_id = "companion"
+tts_voice = "zh-CN-XiaoxiaoNeural"

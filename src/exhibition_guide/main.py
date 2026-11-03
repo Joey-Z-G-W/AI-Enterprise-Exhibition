@@ -5,6 +5,7 @@ from typing import Annotated
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from pydantic import BaseModel, ConfigDict, Field
 
 from exhibition_guide.answer import AnswerService, QuestionRequest, QuestionResponse, error_response
 from exhibition_guide.config import AppConfig, load_config
@@ -12,6 +13,14 @@ from exhibition_guide.evidence_model import ModelEvidenceEvaluator, ModelQuestio
 from exhibition_guide.context import ContextStore, Invalidation, Rewriter
 from exhibition_guide.knowledge import KnowledgeClient
 from exhibition_guide.llm import ModelClient
+
+
+class UIConfigResponse(BaseModel):
+    """Only the public pair needed to create and voice a media session."""
+
+    model_config = ConfigDict(strict=True, extra="forbid", frozen=True)
+    avatar_id: str = Field(min_length=1, max_length=128, pattern=r"^\S+$")
+    tts_voice: str = Field(min_length=1, max_length=128, pattern=r"^\S+$")
 
 
 def get_answer_service(request: Request) -> AnswerService | None:
@@ -53,6 +62,12 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
     @application.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @application.get("/ui-config", response_model=UIConfigResponse)
+    def ui_config() -> UIConfigResponse:
+        return UIConfigResponse(
+            avatar_id=config.avatar.avatar_id, tts_voice=config.avatar.tts_voice,
+        )
 
     @application.post("/questions", response_model=QuestionResponse)
     async def questions(

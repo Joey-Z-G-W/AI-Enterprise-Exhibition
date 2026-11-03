@@ -83,12 +83,13 @@ class KnowledgeConfig(_ConfigModel):
 
 class AvatarConfig(_ConfigModel):
     avatar_id: str = Field(default="companion", min_length=1, max_length=128)
+    tts_voice: str = Field(default="zh-CN-XiaoxiaoNeural", min_length=1, max_length=128)
 
-    @field_validator("avatar_id")
+    @field_validator("avatar_id", "tts_voice")
     @classmethod
     def valid_id(cls, value: str) -> str:
         if not value.strip() or any(char.isspace() for char in value):
-            raise ValueError("avatar ID must be nonblank without whitespace")
+            raise ValueError("avatar ID and TTS voice must be nonblank without whitespace")
         return value
 
 
