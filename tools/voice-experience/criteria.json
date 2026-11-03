@@ -1,0 +1,9 @@
+{
+  "vad": {
+    "positiveSpeechThreshold": 0.3,
+    "negativeSpeechThreshold": 0.25,
+    "redemptionMs": 1400,
+    "preSpeechPadMs": 800,
+    "minSpeechMs": 400
+  }
+}

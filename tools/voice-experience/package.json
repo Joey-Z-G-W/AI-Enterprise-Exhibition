@@ -1,0 +1,15 @@
+{
+  "name": "exhibition-voice-experience",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "prepare-assets": "node prepare-assets.mjs",
+    "test": "node --test --test-timeout=15000 core.test.mjs ice.test.mjs microphone-and-start.test.mjs owned-session.test.mjs config-assets.test.mjs",
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@ricky0123/vad-web": "0.0.31",
+    "onnxruntime-web": "1.22.0"
+  }
+}
