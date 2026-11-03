@@ -86,10 +86,10 @@ const watchdog=setTimeout(()=>{console.error('Voice segment App checks timed out
   owner.segment(new Float32Array([.1]));await flush();assert.match(h.markup(),/aria-label="语音识别资源状态"/);
   h.overrides.set('POST /guide/questions',init=>h.response({...JSON.parse(init.body),status:'answer',text:'预设仍正常回答',sources:[]}));
   h.overrides.set('POST /opentalking/tts/preview',()=>new Response(new Blob(['wav']),{headers:{'content-type':'audio/wav'}}));
-  h.overrides.set('POST /opentalking/sessions/sess_2/speak_flashtalk_audio',()=>h.response({session_id:'sess_2',status:'queued'}));
+  const uploadStarted=deferred();h.overrides.set('POST /opentalking/sessions/sess_2/speak_flashtalk_audio',()=>{uploadStarted.resolve();return h.response({session_id:'sess_2',status:'queued'});});
   if(action==='selectPreset')await h.render().selectPreset('锐伽提供哪些服务？');else await h.render()[action]();await flush();
   assert.match(h.markup(),/aria-label="语音识别资源状态"/);assert.match(h.markup(),/等待片段已放弃/);assert.match(h.markup(),/断开后重新连接/);assert.equal(stt(h).length,1);
-  if(action==='selectPreset'){assert.equal(owner.stops,0);assert.equal(h.continuous.length,1);assert.equal(questions(h).length,1);assert.equal(h.render().answer.text,'预设仍正常回答');assert.equal(h.requests.filter(r=>r.url.endsWith('/speak_flashtalk_audio')).length,1);}
+  if(action==='selectPreset'){await uploadStarted.promise;assert.equal(owner.stops,0);assert.equal(h.continuous.length,1);assert.equal(questions(h).length,1);assert.equal(h.render().answer.text,'预设仍正常回答');assert.equal(h.requests.filter(r=>r.url.endsWith('/speak_flashtalk_audio')).length,1);}
   if(h.render().active.current)await h.render().disconnect();await flush();assert.match(h.markup(),/aria-label="语音识别资源状态"/);
   await h.render().connect(action==='takeOver'?'resume':'connect');await flush();assert.doesNotMatch(h.markup(),/aria-label="语音识别资源状态"/);
   const sid=h.render().active.current.mediaSessionId;h.overrides.set('POST /opentalking/sessions/'+sid+'/transcribe',()=>h.response({session_id:sid,text:''}));

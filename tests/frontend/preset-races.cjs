@@ -25,15 +25,16 @@ const watchdog=setTimeout(()=>{console.error('Preset checks timed out');process.
   await h.render().selectPreset(Q[0]);await flush();late.resolve(h.response({...body,status:'answer',text:'late',sources:[]}));await old;
   assert.equal(h.render().conversation[0].status,'cancelled');assert.equal(h.render().conversation[0].result,undefined);assert.equal(h.requests.filter(r=>r.url==='/opentalking/tts/preview').length,0);checks++;
  }
- // Upload acknowledgement and old SSE can arrive after closed; neither can speak/update the new turn.
+ // Upload acknowledgement must settle before close/replacement; old SSE still cannot affect the new turn.
  {
-  const h=harness();await h.render().connect();const oldSession=h.render().active.current,upload=deferred();
+  const h=harness();await h.render().connect();const oldSession=h.render().active.current,upload=deferred(),started=deferred();
   h.overrides.set('POST /guide/questions',init=>h.response({...JSON.parse(init.body),status:'answer',text:'old answer',sources:[]}));
   h.overrides.set('POST /opentalking/tts/preview',()=>new Response(new Blob(['wav']),{headers:{'content-type':'audio/wav'}}));
-  h.overrides.set('POST /opentalking/sessions/sess_1/speak_flashtalk_audio',()=>upload.promise);
-  const old=h.render().sendQuestion(oldSession,'old');await flush();assert.equal(h.render().speech.current.phase,'sent');business(h);
-  await h.render().selectPreset(Q[1]);await flush();const last=h.render().conversation[1];
-  upload.resolve(h.response({session_id:'sess_1',status:'queued'}));oldSession.events.emit('speech.media_started');oldSession.events.emit('speech.ended');await old;
+  h.overrides.set('POST /opentalking/sessions/sess_1/speak_flashtalk_audio',()=>{started.resolve();return upload.promise;});
+  const old=h.render().sendQuestion(oldSession,'old');await started.promise;assert.equal(h.render().speech.current.phase,'sent');business(h);
+  const replacing=h.render().selectPreset(Q[1]);await flush();assert.equal(h.created(),1);
+  upload.resolve(h.response({session_id:'sess_1',status:'queued'}));await replacing;await flush();const last=h.render().conversation[1];
+  oldSession.events.emit('speech.media_started');oldSession.events.emit('speech.ended');await old;
   assert.equal(h.render().conversation[1].turnId,last.turnId);assert.equal(h.render().conversation[1].speechStatus,undefined);assert.equal(oldSession.controller.signal.aborted,true);assert.equal(h.created(),2);checks++;
  }
  // A stopped/discarded microphone result must never become STT or a second business question.

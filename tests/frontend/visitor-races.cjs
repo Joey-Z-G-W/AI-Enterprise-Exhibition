@@ -7,7 +7,7 @@ const deferred = () => { let resolve, reject; const promise = new Promise((yes, 
 const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 let source = fs.readFileSync('frontend/src/App.tsx', 'utf8');
 source = source.slice(0, source.indexOf('  const connected =')) + `
-  return { connect, disconnect, takeOver, prepareRecording, submitRecordedAudio, stopMicrophone, requestMicrophone, microphone, segments, businessBarrier, captureStatus, captureHint, playDemo, selectPreset, sendQuestion,
+  return { connect, disconnect, takeOver, bargeIn, bargeRecovery, submitRecordedAudio, stopMicrophone, requestMicrophone, microphone, segments, businessBarrier, captureStatus, captureHint, playDemo, selectPreset, sendQuestion,
     active, retired, video, modeRef, voiceTurn, speech, questionTurn, busy, transition, resetVisitor, visitorReset, visitorId, resettingVisitor,
     mode, connection, notice, handoff, question, answer, recordingHint, setQuestion, pending, submittedQuestion, questionError, answerSpeechStatus, demoStatus, speechPending };
 }`;
@@ -64,7 +64,7 @@ function harness() {
       if (name === './lib/api') return api;
       if(name === './lib/voiceSegments'){const module={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync('frontend/src/lib/voiceSegments.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{...sandbox,exports:module.exports});return module.exports;}
       if (name === './lib/continuousCapture') return {createContinuousCapture(report,callbacks={}) {
-        const owner={released:false,stops:0,listens:0,discards:0,discardSegment(){this.discards++;},segment(audio){if(!this.released)callbacks.onSegment?.(audio);},listen(){if(!this.released){this.listens++;report('listening','正在持续收音。');}},async stop(){this.stops++;this.released=true;report('closed','麦克风已关闭。');return true;}};
+        const owner={released:false,stops:0,listens:0,discards:0,discardSegment(){this.discards++;},realStart(){if(!this.released)return callbacks.onSpeechRealStart?.();},segment(audio){if(!this.released)callbacks.onSegment?.(audio);},listen(){if(!this.released){this.listens++;report('listening','正在持续收音。');}},async stop(){this.stops++;this.released=true;report('closed','麦克风已关闭。');return true;}};
         continuous.push(owner);return owner;
       }};
       if (name === './lib/webrtc') return { startPlayback: async (id, video, signal) => {
@@ -152,15 +152,17 @@ const watchdog=setTimeout(()=>{console.error('Race checks failed to settle');pro
   late.resolve(h.response({...body,status:'answer',text:'旧组回答',sources:[]}));await q;blank(h);assert.equal(previews(h).length,0);checks++;
  }
  // TTS/upload/SSE from old media cannot unlock or finish the new media's active speech.
- for(const stage of ['preview','upload'])for(const change of ['reset','record-rebuild']){
+ for(const stage of ['preview','upload'])for(const change of ['reset','barge-rebuild']){
   const h=harness();await h.render().connect();const old=h.render().active.current,visitor=old.visitorId;answerFixture(h);
   const late=deferred(),started=deferred();const endpoint=stage==='preview'?'/opentalking/tts/preview':'/opentalking/sessions/sess_1/speak_flashtalk_audio';
   h.overrides.set('POST '+endpoint,()=>{started.resolve();return late.promise;});
   const q=h.render().sendQuestion(old,'旧问');await started.promise;
-  if(change==='reset')await h.render().resetVisitor();else await h.render().prepareRecording();
-  const next=h.render().active.current;assert.equal(next.mediaSessionId,'sess_2');assert.equal(next.visitorId===visitor,change==='record-rebuild');
+  const replacing=change==='reset'?h.render().resetVisitor():h.continuous[0].realStart();await flush();
+  if(stage==='upload'){assert.equal(h.created(),1);late.resolve(h.response({session_id:'sess_1',status:'queued'}));}
+  await replacing;
+  const next=h.render().active.current;assert.equal(next.mediaSessionId,'sess_2');assert.equal(next.visitorId===visitor,change==='barge-rebuild');
   answerFixture(h);await h.render().playDemo();const liveSpeech=h.render().speech.current;assert.ok(liveSpeech);
-  late.resolve(stage==='preview'?new Response(new Blob(['wav']),{headers:{'content-type':'audio/wav'}}):h.response({session_id:'sess_1',status:'queued'}));await q;
+  if(stage==='preview')late.resolve(new Response(new Blob(['wav']),{headers:{'content-type':'audio/wav'}}));await q;
   old.events.emit('speech.media_started');old.events.emit('speech.ended');assert.equal(h.render().speech.current,liveSpeech);assert.equal(h.render().busy.current,true);
   assert.equal(h.requests.filter(r=>r.url==='/opentalking/sessions/sess_2/speak_flashtalk_audio').length,1);checks++;
  }

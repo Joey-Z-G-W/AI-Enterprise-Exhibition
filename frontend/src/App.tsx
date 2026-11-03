@@ -17,7 +17,7 @@ type BusinessResult = {
 };
 type ActiveSession = {
   mediaSessionId: string | null; visitorId: string; controller: AbortController; playback?: Playback; events?: EventSource;
-  mediaReady?: boolean; creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
+  initializationDeadline?: number; initializationComplete?: boolean; upload?: Promise<boolean>; uploadUnknown?: boolean; mediaReady?: boolean; creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
 };
 type TurnIdentity = { visitorId: string; turnId: string; turnSeq: number };
 type BusinessBarrier = { visitorId: string; through: number; status: "pending" | "unknown" | "confirmed"; promise: Promise<boolean> };
@@ -102,6 +102,7 @@ export default function App() {
   if (visitorId.current === null) visitorId.current = crypto.randomUUID();
   const active = useRef<ActiveSession | null>(null);
   const retired = useRef<ActiveSession | null>(null);
+  const bargeRecovery = useRef<object | null>(null);
   const modeRef = useRef<"assistant" | "human">("assistant");
   const transition = useRef<object | null>(null);
   const visitorReset = useRef<object | null>(null);
@@ -123,6 +124,7 @@ export default function App() {
   const [handoff, setHandoff] = useState({ question: "", reason: "" });
   const [notice, setNotice] = useState("");
   const [businessWarning, setBusinessWarning] = useState("");
+  const [mediaWarning, setMediaWarning] = useState("");
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [question, setQuestion] = useState("");
   const [submittedQuestion, setSubmittedQuestion] = useState("");
@@ -156,7 +158,7 @@ export default function App() {
     () => {
       const session = active.current, barrier = businessBarrier.current;
       return !!session?.mediaReady && current(session) && !transition.current && !visitorReset.current
-        && !presetRunner.current && !busy.current && !speech.current
+        && !bargeRecovery.current && !presetRunner.current && !busy.current && !speech.current
         && (barrier?.visitorId !== visitorId.current || barrier.status === "confirmed");
     },
     (samples, valid) => submitRecordedAudio(Promise.resolve({ blob: segmentWav(samples), filename: "speech.wav" }), valid),
@@ -164,10 +166,10 @@ export default function App() {
     setVoiceResourceUnknown,
   );
 
-  function discardVoice() {
+  function discardVoice(keepUtterance = false) {
     setRecordingHint("");
     segments.current?.invalidate();
-    microphone.current?.discardSegment();
+    if (!keepUtterance) microphone.current?.discardSegment();
     const turn = voiceTurn.current;
     if (turn) {
       updateConversation(turn, { status: "cancelled" });
@@ -200,6 +202,8 @@ export default function App() {
       if (owner.released) microphone.current = null;
     }), { onSegment: audio => {
       if (microphone.current === owner && visitorId.current === visitor && modeRef.current === "assistant") segments.current?.enqueue(audio);
+    }, onSpeechRealStart: () => {
+      if (microphone.current === owner && visitorId.current === visitor && modeRef.current === "assistant") return bargeIn();
     } });
     microphone.current = owner;
   }
@@ -260,9 +264,10 @@ export default function App() {
     return barrier.promise;
   }
 
-  function detach(cancelBusiness = true, keepCapture = false): ActiveSession | null {
+  function detach(cancelBusiness = true, keepCapture = false, keepUtterance = false): ActiveSession | null {
+    bargeRecovery.current = null;
     if (!keepCapture) stopMicrophone();
-    else discardVoice();
+    else discardVoice(keepUtterance);
     if (cancelBusiness) {
       const visitor = active.current?.visitorId ?? visitorId.current!;
       void invalidateBusiness(visitor, turnSequence.current);
@@ -300,13 +305,37 @@ export default function App() {
     if (!session) return true;
     if (session.retirement) return session.retirement;
     session.retirement = (async () => {
+      // HTTP abort is not a remote upload cancellation acknowledgement. Do not
+      // put final interrupt/close ahead of a potentially late audio enqueue.
+      if (session.uploadUnknown || (session.upload && !await session.upload)) return false;
+      if (retired.current !== session) return false;
       // A cancelled creation can still return a server ID; never create another meanwhile.
       if (!session.mediaSessionId) {
         try { session.mediaSessionId = await session.creation ?? null; }
         catch { if (!session.creationRejected) return false; }
+        if (retired.current !== session) return false;
+      }
+      // QuickTalk initialization is independent of close commands. A transient
+      // closed/404 before initialization completes cannot authorize replacement.
+      if (session.mediaSessionId && !session.creationRejected && !session.initializationComplete) {
+        const deadline = session.initializationDeadline!;
+        try {
+          while (!session.initializationComplete && Date.now() < deadline) {
+            const response = await request(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}`, {}, Math.min(3000, deadline - Date.now()));
+            if (retired.current !== session) return false;
+            if (response.ok) {
+              const state = await response.json();
+              if (retired.current !== session || state.session_id !== session.mediaSessionId) return false;
+              session.initializationComplete = ["worker_ready", "ready", "speaking", "error"].includes(state.state);
+            } else if (response.status !== 404) return false;
+            if (!session.initializationComplete) await new Promise(resolve => window.setTimeout(resolve, 750));
+            if (retired.current !== session) return false;
+          }
+        } catch { return false; }
+        if (!session.initializationComplete || retired.current !== session) return false;
       }
       const closed = session.creationRejected === true || (session.mediaSessionId ? await releaseSession(session.mediaSessionId) : false);
-      if (closed && retired.current === session) retired.current = null;
+      if (closed && retired.current === session) { retired.current = null; setMediaWarning(""); }
       return closed;
     })();
     try { return await session.retirement; }
@@ -339,6 +368,7 @@ export default function App() {
 
   useEffect(() => {
     const dispose = () => {
+      bargeRecovery.current = null;
       segments.current?.invalidate();
       const capture = microphone.current; microphone.current = null; void capture?.stop();
       void fetch(`/guide/visitors/${encodeURIComponent(visitorId.current!)}/invalidate`, {
@@ -358,17 +388,15 @@ export default function App() {
       window.clearTimeout(speechTimer.current);
       speech.current = null;
       questionTurn.current = null;
-      const id = retired.current?.mediaSessionId;
-      if (id) {
-        void fetch(`/opentalking/sessions/${encodeURIComponent(id)}/interrupt`, { method: "POST", keepalive: true }).catch(() => {});
-        void fetch(`/opentalking/sessions/${encodeURIComponent(id)}`, { method: "DELETE", keepalive: true }).catch(() => {});
-      }
+      // Best effort during page exit; retain the same upload/init/GET-close
+      // barriers instead of issuing an early close ahead of a pending upload.
+      void closeRetired();
     };
     window.addEventListener("pagehide", dispose);
     return () => { window.removeEventListener("pagehide", dispose); dispose(); };
   }, []);
 
-  async function connect(intent: "connect" | "resume" | "record" | "reset" | "preset" = "connect") {
+  async function connect(intent: "connect" | "resume" | "barge" | "reset" | "preset" = "connect") {
     if (active.current || transition.current || (visitorReset.current && intent !== "reset")
       || (connection === "disconnecting" && intent !== "reset")
       || (modeRef.current === "human" && intent !== "resume" && intent !== "reset")) return;
@@ -416,15 +444,17 @@ export default function App() {
         }
         if (!created || typeof created !== "object" || !("session_id" in created)
           || typeof created.session_id !== "string" || !created.session_id) throw new RequestError("response");
+        session.initializationDeadline = Date.now() + 180000;
         return created.session_id;
       });
       session.mediaSessionId = await session.creation;
       if (!current(session)) { await closeRetired(); return; }
-      const deadline = Date.now() + 180000;
+      const deadline = session.initializationDeadline!;
       while (true) {
         const status = await jsonRequest<{ state: string }>(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}`, { signal: session.controller.signal });
         if (!current(session)) return;
-        if (["worker_ready", "ready", "speaking"].includes(status.state)) break;
+        if (["worker_ready", "ready", "speaking"].includes(status.state)) { session.initializationComplete = true; break; }
+        if (status.state === "error") session.initializationComplete = true;
         if (["error", "closed"].includes(status.state)) throw new RequestError("response");
         if (Date.now() > deadline) throw new RequestError("timeout");
         await new Promise((resolve) => window.setTimeout(resolve, 750));
@@ -458,7 +488,6 @@ export default function App() {
         session.mediaReady = true;
         setConnection(video.current?.paused ? "ready" : "playing");
         microphone.current?.listen();
-        if (intent === "record") setRecordingHint("旧播报已隔离，新会话就绪。请再次点击“开始录音”，此时尚未采集。");
       }
     } catch (error) {
       if (current(session)) await disconnect(session.creationRejected
@@ -506,12 +535,22 @@ export default function App() {
     }
   }
 
-  async function prepareRecording() {
-    if (visitorReset.current || modeRef.current !== "assistant" || !active.current || !speech.current || transition.current) return;
-    detach();
+  async function bargeIn() {
+    // Repeated VAD edges share one recovery; never close its new initializing SID.
+    if (bargeRecovery.current) return;
+    const session = active.current;
+    if (!session?.mediaReady || !current(session) || transition.current || visitorReset.current
+      || (!busy.current && !speech.current && !voiceTurn.current)) return;
+    if (video.current) video.current.muted = true;
+    detach(true, true, true); // Keep the utterance that caused this interruption.
+    const token = {};
+    bargeRecovery.current = token;
     setConnection("idle");
-    setDemoStatus("旧播报已停止，正在准备新的录音会话。");
-    await connect("record");
+    setNotice("旧声画已关闭，请继续说；正在确认旧会话结束并恢复媒体。");
+    try { await connect("barge"); }
+    finally {
+      if (bargeRecovery.current === token) { bargeRecovery.current = null; segments.current?.pump(); }
+    }
   }
 
   async function selectPreset(text: string) {
@@ -555,6 +594,7 @@ export default function App() {
     const turn = { session, ...(identity ?? newTurn()), spoken: false };
     if (turn.visitorId !== visitorId.current) return;
     questionTurn.current = turn;
+    busy.current = true;
     const valid = () => current(session) && questionTurn.current === turn;
     updateConversation(turn, { question: text, input, status: "pending" }, true);
     setPending(true);
@@ -696,9 +736,23 @@ export default function App() {
       speechTimer.current = window.setTimeout(() => {
         if (currentSpeech(item)) void disconnect("播报等待超时，文字已保留，媒体已关闭，请重新连接。");
       }, 90000);
-      const result = await jsonRequest<{ session_id: string; status: string }>(`/opentalking/sessions/${encodeURIComponent(sessionId)}/speak_flashtalk_audio`, { method: "POST", body: form, signal: session.controller.signal }, 30000);
+      session.upload = (async () => {
+        try {
+          const result = await jsonRequest<{ session_id: string; status: string }>(
+            `/opentalking/sessions/${encodeURIComponent(sessionId)}/speak_flashtalk_audio`,
+            { method: "POST", body: form }, 30000,
+          );
+          if (result.session_id !== sessionId || result.status !== "queued") throw new RequestError("response");
+          return true;
+        } catch {
+          session.uploadUnknown = true;
+          setMediaWarning("旧音频上传结果未确认，媒体已隔离，不会创建新会话或重传；请联系现场工作人员。");
+          return false;
+        }
+      })();
+      const uploaded = await session.upload;
       if (!currentSpeech(item)) return;
-      if (result.session_id !== sessionId || result.status !== "queued") throw new RequestError("response");
+      if (!uploaded) throw new RequestError("response");
       item.acknowledged = true;
       if (item.phase === "sent") setSpeechStatus(item, "语音已排队，等待实际播放");
       finishSpeech(item);
@@ -745,6 +799,7 @@ export default function App() {
         </div>
         {notice && <p className="notice" role="alert">{notice}</p>}
         {businessWarning && <p className="notice business-warning" role="alert">{businessWarning}</p>}
+        {mediaWarning && <p className="notice" role="alert" aria-label="媒体上传隔离">{mediaWarning}</p>}
       </section>
       <section className="conversation-panel" aria-label="问题与回答">
         <div className="section-heading"><span className="eyebrow">资料问答</span><h2>您想了解什么？</h2><p>选择一个问题，查看真实回答和资料来源。</p></div>
