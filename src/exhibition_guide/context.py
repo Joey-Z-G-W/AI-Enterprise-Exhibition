@@ -129,9 +129,9 @@ class ContextStore:
                 else:
                     # Only rewriting owns this timeout. The answer service retains
                     # retrieval/model stage errors under the same absolute deadline.
-                    async with asyncio.timeout_at(deadline):
+                    async with asyncio.timeout_at(deadline) as rewrite_timer:
                         raw = await rewriter(query, history)
-                    if asyncio.get_running_loop().time() >= deadline:
+                    if rewrite_timer.expired() or asyncio.get_running_loop().time() >= deadline:
                         raise TimeoutError
                     rewritten = RewriteDecision.model_validate_json(raw) if isinstance(raw, str) else RewriteDecision.model_validate(raw)
                     if not rewritten.question.strip():

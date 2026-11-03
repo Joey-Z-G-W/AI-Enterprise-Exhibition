@@ -90,7 +90,7 @@ class AnswerService:
         own_deadline = asyncio.get_running_loop().time() + self.timeout
         deadline = min(deadline, own_deadline) if deadline is not None else own_deadline
         try:
-            async with asyncio.timeout_at(deadline):
+            async with asyncio.timeout_at(deadline) as retrieval_timer:
                 retrieval = await self.knowledge.query(self.kb_id, request.question.strip())
         except TimeoutError:
             return error_response(request, "retrieval_timeout")
@@ -98,7 +98,7 @@ class AnswerService:
             return error_response(request, "retrieval_failed")
         if asyncio.current_task().cancelling():
             raise asyncio.CancelledError
-        if asyncio.get_running_loop().time() >= deadline:
+        if retrieval_timer.expired() or asyncio.get_running_loop().time() >= deadline:
             return error_response(request, "retrieval_timeout")
         if isinstance(retrieval, KnowledgeError):
             return error_response(request, f"retrieval_{retrieval.code}")
@@ -112,7 +112,7 @@ class AnswerService:
             return error_response(request, "retrieval_invalid_response")
         snippets = tuple(item.model_copy(deep=True) for item in retrieval.snippets)
         try:
-            async with asyncio.timeout_at(deadline):
+            async with asyncio.timeout_at(deadline) as model_timer:
                 raw_decision = await self.evaluator(
                     request.question.strip(), tuple(item.text for item in snippets),
                 )
@@ -130,7 +130,7 @@ class AnswerService:
             return error_response(request, "model_failed")
         if asyncio.current_task().cancelling():
             raise asyncio.CancelledError
-        if asyncio.get_running_loop().time() >= deadline:
+        if model_timer.expired() or asyncio.get_running_loop().time() >= deadline:
             return error_response(request, "model_timeout")
         try:
             decision = (
