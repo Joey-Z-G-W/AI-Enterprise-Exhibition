@@ -7,7 +7,7 @@ const deferred = () => { let resolve, reject; const promise = new Promise((yes, 
 const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 let source = fs.readFileSync('frontend/src/App.tsx', 'utf8');
 source = source.slice(0, source.indexOf('  const connected =')) + `
-  return { connect, disconnect, takeOver, prepareRecording, submitRecordedAudio, stopMicrophone, requestMicrophone, microphone, captureStatus, captureHint, playDemo, selectPreset, sendQuestion,
+  return { connect, disconnect, takeOver, prepareRecording, submitRecordedAudio, stopMicrophone, requestMicrophone, microphone, segments, businessBarrier, captureStatus, captureHint, playDemo, selectPreset, sendQuestion,
     active, retired, video, modeRef, voiceTurn, speech, questionTurn, busy, transition, resetVisitor, visitorReset, visitorId, resettingVisitor,
     mode, connection, notice, handoff, question, answer, recordingHint, setQuestion, pending, submittedQuestion, questionError, answerSpeechStatus, demoStatus, speechPending };
 }`;
@@ -17,15 +17,15 @@ const markupCompiled = ts.transpileModule(fs.readFileSync('frontend/src/App.tsx'
 function harness() {
   let cursor = 0, serial = 0, now = 0;
   const hooks = [], requests = [], captures = [], continuous = [], playbacks = [], effects = [];
-  const listeners = new Map();
+  const listeners = new Map(), timers = new Map(); let timerSerial=0;
   const overrides = new Map(), states = new Map();
   const response = (body, status = 200, headers) => new Response(JSON.stringify(body), { status, headers });
   const api = {
     post: (body, signal) => ({ method: 'POST', body: JSON.stringify(body), signal }),
     RequestError: class extends Error { constructor(kind) { super(kind); this.kind = kind; } },
     messageFor: () => 'request failed',
-    request: async (url, init = {}) => {
-      const method = init.method || 'GET'; requests.push({ url, method, signal: init.signal, body: init.body });
+    request: async (url, init = {}, timeoutMs) => {
+      const method = init.method || 'GET'; requests.push({ url, method, signal: init.signal, body: init.body, timeoutMs });
       const custom = overrides.get(`${method} ${url}`);
       if (custom) return custom(init);
       if (url.startsWith('/guide/visitors/') && url.endsWith('/invalidate')) { const b=JSON.parse(init.body); return response({visitor_id:decodeURIComponent(url.split('/')[3]),cancelled_through:b.through_turn_seq,retired:b.retire}); }
@@ -50,6 +50,7 @@ function harness() {
   const sandbox = {
     exports: exported, queueMicrotask, fetch:(...args)=>api.request(...args), AbortController, Response, Blob, FormData, crypto: require('node:crypto').webcrypto,
     Date: { now: () => now },
+    setTimeout:(fn,ms)=>{const id=++timerSerial;timers.set(id,{fn,at:now+ms});return id;},clearTimeout:id=>timers.delete(id),
     window: { addEventListener:(name,fn)=>listeners.set(name,fn), removeEventListener:(name)=>listeners.delete(name), setTimeout: (callback, delay) => { if (delay === 300 || delay === 750) queueMicrotask(() => { now += delay; callback(); }); return 1; }, clearTimeout: () => {} },
     EventSource: class { handlers = {}; addEventListener(name, callback) { this.handlers[name] = callback; } emit(name) { this.handlers[name]?.(); } close() { this.closed = true; } },
     require: (name) => {
@@ -61,8 +62,9 @@ function harness() {
       }
       if (name === 'react') return react;
       if (name === './lib/api') return api;
-      if (name === './lib/continuousCapture') return {createContinuousCapture(report) {
-        const owner={released:false,stops:0,listens:0,listen(){if(!this.released){this.listens++;report('listening','正在持续收音。');}},async stop(){this.stops++;this.released=true;report('closed','麦克风已关闭。');return true;}};
+      if(name === './lib/voiceSegments'){const module={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync('frontend/src/lib/voiceSegments.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{...sandbox,exports:module.exports});return module.exports;}
+      if (name === './lib/continuousCapture') return {createContinuousCapture(report,callbacks={}) {
+        const owner={released:false,stops:0,listens:0,discards:0,discardSegment(){this.discards++;},segment(audio){if(!this.released)callbacks.onSegment?.(audio);},listen(){if(!this.released){this.listens++;report('listening','正在持续收音。');}},async stop(){this.stops++;this.released=true;report('closed','麦克风已关闭。');return true;}};
         continuous.push(owner);return owner;
       }};
       if (name === './lib/webrtc') return { startPlayback: async (id, video, signal) => {
@@ -82,7 +84,7 @@ function harness() {
   };
   const markup = () => { cursor = 0; return require(path.resolve('frontend/node_modules/react-dom/server')).renderToStaticMarkup(markupExports.default()); };
   const app = render(); app.video.current = { paused: false, srcObject: null };
-  return { render, markup, requests, overrides, states, captures, continuous, playbacks, dispose:()=>effects.forEach(fn=>fn?.()), listeners, response, created: () => serial };
+  return { render, markup, api, requests, overrides, states, captures, continuous, playbacks, advance:async(ms)=>{now+=ms;for(const [id,t] of [...timers])if(t.at<=now){timers.delete(id);t.fn();}await flush();}, dispose:()=>effects.forEach(fn=>fn?.()), listeners, response, created: () => serial };
 }
 
 // Execute actual App handlers with isolated API/media/hook doubles, never real devices.

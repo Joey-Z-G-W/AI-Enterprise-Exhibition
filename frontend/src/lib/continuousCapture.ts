@@ -1,7 +1,8 @@
 import { MicVAD, Message } from "@ricky0123/vad-web";
 
 export type CaptureStatus = "requesting" | "waiting" | "preparing" | "listening" | "closed" | "error";
-export type ContinuousCapture = { listen: () => void; stop: () => Promise<boolean>; readonly released: boolean };
+export type ContinuousCapture = { listen: () => void; stop: () => Promise<boolean>; discardSegment: () => void; readonly released: boolean };
+type SegmentCallbacks = { onSegment?: (audio: Float32Array) => void; onSpeechRealStart?: () => void };
 type Report = (status: CaptureStatus, message: string) => void;
 
 // vad-web 0.0.31 destroy() throws before model.release() when start() has not
@@ -11,8 +12,9 @@ type PartialVAD = {
   _stream: MediaStream | null; _audioContext: AudioContext | null;
   _vadNode: AudioWorkletNode | null; _mediaStreamAudioSourceNode: MediaStreamAudioSourceNode | null;
 };
-export function createContinuousCapture(report: Report): ContinuousCapture {
+export function createContinuousCapture(report: Report, callbacks: SegmentCallbacks = {}): ContinuousCapture {
   let stopped = false, ready = false, starting = false, released = false;
+  let utterance = false, discarded = false;
   let stream: MediaStream | undefined, context: AudioContext | undefined, instance: MicVAD | undefined;
   let setupTimer: ReturnType<typeof setTimeout>, speechTimer: ReturnType<typeof setTimeout>;
   let closeContext: Promise<void> | undefined, releaseTask: Promise<boolean> | undefined;
@@ -87,10 +89,14 @@ export function createContinuousCapture(report: Report): ContinuousCapture {
         getStream: async () => { if (stopped || !stream) throw Error("capture stopped"); return stream; },
         pauseStream: async () => { stopTracks(); },
         resumeStream: async () => { throw Error("capture cannot reopen itself"); },
-        onSpeechStart: () => { if (stopped) return; clearTimeout(speechTimer); speechTimer = setTimeout(() => fail("连续说话已达30秒，麦克风已关闭。"), 30000); },
-        onSpeechEnd: () => { clearTimeout(speechTimer); },
-        onVADMisfire: () => { clearTimeout(speechTimer); },
-        // Task 15 owns capture only. No segment, STT, question or interruption submission.
+        onSpeechStart: () => { if (stopped || utterance) return; utterance = true; discarded = false; clearTimeout(speechTimer); speechTimer = setTimeout(() => fail("连续说话已达30秒，麦克风已关闭。"), 30000); },
+        onSpeechRealStart: () => { if (!stopped && utterance && !discarded) callbacks.onSpeechRealStart?.(); },
+        onSpeechEnd: audio => {
+          clearTimeout(speechTimer);
+          const accepted = !stopped && utterance && !discarded; utterance = false; discarded = false;
+          if (accepted) callbacks.onSegment?.(audio);
+        },
+        onVADMisfire: () => { clearTimeout(speechTimer); utterance = false; discarded = false; },
       }).then(vad => { instance = vad; return vad; }));
       const vad = await created; if (stopped) return;
       await track(vad.start()); if (stopped) return;
@@ -117,5 +123,5 @@ export function createContinuousCapture(report: Report): ContinuousCapture {
       void beginListening();
     }, () => { fail("未获得可用麦克风，请检查权限或选择预设问题。"); }));
   } catch { fail("当前浏览器无法开启麦克风，请选择预设问题。"); }
-  return { listen() { ready = true; void beginListening(); }, stop, get released() { return released; } };
+  return { listen() { ready = true; void beginListening(); }, stop, discardSegment() { if (utterance) discarded = true; }, get released() { return released; } };
 }

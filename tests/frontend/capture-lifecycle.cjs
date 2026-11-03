@@ -5,20 +5,22 @@ const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.Comm
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b});return {promise,resolve,reject};};
 const flush=async()=>{for(let i=0;i<40;i++)await Promise.resolve();};
 function fixture(options={}){
+ let callbacks;const segments=[];
  const reports=[],contexts=[],instances=[],timers=new Map();let timerId=0,gumCalls=0,vadCalls=0,settings;
  const gum=deferred(),created=deferred(),worklet=deferred(),resume=deferred();
  const track={kind:'audio',readyState:'live',stops:0,onended:null,stop(){this.stops++;this.readyState='ended';},getSettings(){return {echoCancellation:true};}};
  const stream={getTracks:()=>[track],getAudioTracks:()=>[track]};
  class Context{state='running';closes=0;constructor(){contexts.push(this);}async resume(){if(options.resumePending)await resume.promise;}async close(){this.closes++;this.state='closed';}}
  function vad(config){
+  callbacks=config;
   const instance={model:{releases:0,async release(){this.releases++;}},_stream:null,_audioContext:null,_vadNode:null,_mediaStreamAudioSourceNode:null,listening:false,starts:0,destroys:0,
    async start(){this.starts++;this._stream=await config.getStream();this._audioContext=config.audioContext;if(options.workletPending)await worklet.promise;this._vadNode={port:{messages:[],postMessage(m){this.messages.push(m);}},disconnects:0,disconnect(){this.disconnects++;}};this._mediaStreamAudioSourceNode={disconnects:0,disconnect(){this.disconnects++;}};this.listening=true;},
    async destroy(){this.destroys++;if(!this._stream||!this._audioContext||!this._vadNode||!this._mediaStreamAudioSourceNode)throw Error('actual library incomplete destroy path');if(options.destroyFailure)throw Error('unrelated destroy failure');this._vadNode.port.postMessage('SPEECH_STOP');this.listening=false;await config.pauseStream(this._stream);this._mediaStreamAudioSourceNode.disconnect();await this.model.release();}
   };instances.push(instance);return instance;
  }
  const exported={};vm.runInNewContext(code,{exports:exported,queueMicrotask,WeakSet,Promise,AudioContext:Context,navigator:{mediaDevices:{getUserMedia(config){gumCalls++;settings=config;return gum.promise;}}},setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),require(name){if(name!=='@ricky0123/vad-web')throw Error(name);return {Message:{SpeechStop:'SPEECH_STOP'},MicVAD:{new(config){vadCalls++;const instance=vad(config);return options.newPending?created.promise.then(()=>instance):Promise.resolve(instance);}}};}});
- const owner=exported.createContinuousCapture((state,message)=>reports.push({state,message}));
- return {owner,reports,contexts,instances,track,stream,gum,created,worklet,resume,timers,gumCount:()=>gumCalls,vadCount:()=>vadCalls,settings:()=>settings};
+ const owner=exported.createContinuousCapture((state,message)=>reports.push({state,message}),{onSegment:audio=>segments.push(audio)});
+ return {owner,reports,contexts,instances,track,stream,segments,callbacks:()=>callbacks,gum,created,worklet,resume,timers,gumCount:()=>gumCalls,vadCount:()=>vadCalls,settings:()=>settings};
 }
 test('one permission request; ready gates VAD; repeated listen and stop never duplicate resources',async()=>{
  const h=fixture();h.gum.resolve(h.stream);await flush();assert.equal(h.gumCount(),1);assert.equal(h.vadCount(),0);assert.equal(h.reports.at(-1).state,'waiting');assert.equal(h.settings().audio.echoCancellation.exact,true);
@@ -48,4 +50,15 @@ test('device track ended stops the whole owner; listen cannot auto-reacquire',as
 });
 test('unrelated normal destroy failure is reported, never claimed released or retried',async()=>{
  const h=fixture({destroyFailure:true});h.gum.resolve(h.stream);h.owner.listen();await flush();assert.equal(await h.owner.stop(),false);assert.equal(await h.owner.stop(),false);assert.equal(h.owner.released,false);assert.equal(h.instances[0].destroys,1);assert.equal(h.instances[0].model.releases,0);assert.match(h.reports.at(-1).message,/释放未确认/);
+});
+
+test('complete VAD segment preserves leading samples, emits once; preset discard and misfire do not stop capture',async()=>{
+ const h=fixture();h.gum.resolve(h.stream);h.owner.listen();await flush();const c=h.callbacks(),audio=new Float32Array([.15,-.25,.4]);
+ c.onSpeechStart();c.onSpeechEnd(audio);c.onSpeechEnd(audio);assert.equal(h.segments.length,1);assert.equal(h.segments[0],audio);
+ c.onSpeechStart();h.owner.discardSegment();c.onSpeechEnd(audio);assert.equal(h.segments.length,1);assert.equal(h.track.readyState,'live');
+ c.onSpeechStart();c.onVADMisfire();c.onSpeechEnd(audio);assert.equal(h.segments.length,1);
+ c.onSpeechStart();c.onSpeechEnd(audio);assert.equal(h.segments.length,2);await h.owner.stop();c.onSpeechStart();c.onSpeechEnd(audio);assert.equal(h.segments.length,2);
+});
+test('30 second speech timer closes capture and cannot submit a partial or late segment',async()=>{
+ const h=fixture();h.gum.resolve(h.stream);h.owner.listen();await flush();const c=h.callbacks();c.onSpeechStart();[...h.timers.values()].find(t=>t.ms===30000).fn();await flush();c.onSpeechEnd(new Float32Array(16));assert.equal(h.segments.length,0);assert.equal(h.owner.released,true);assert.match(h.reports.at(-1).message,/30秒/);
 });

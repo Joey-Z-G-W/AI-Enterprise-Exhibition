@@ -3,6 +3,7 @@ import { jsonRequest, messageFor, post, request, RequestError } from "./lib/api"
 import { startPlayback, type Playback } from "./lib/webrtc";
 import { recordingMessage } from "./lib/recording";
 import { createContinuousCapture, type ContinuousCapture, type CaptureStatus } from "./lib/continuousCapture";
+import { createVoiceSegments, segmentWav, VOICE_RESOURCE_UNKNOWN, type VoiceSegments } from "./lib/voiceSegments";
 import { PRESET_QUESTIONS } from "./presetQuestions";
 
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
@@ -16,7 +17,7 @@ type BusinessResult = {
 };
 type ActiveSession = {
   mediaSessionId: string | null; visitorId: string; controller: AbortController; playback?: Playback; events?: EventSource;
-  creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
+  mediaReady?: boolean; creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
 };
 type TurnIdentity = { visitorId: string; turnId: string; turnSeq: number };
 type BusinessBarrier = { visitorId: string; through: number; status: "pending" | "unknown" | "confirmed"; promise: Promise<boolean> };
@@ -108,6 +109,8 @@ export default function App() {
   const busy = useRef(false);
   const voiceTurn = useRef<VoiceTurn | null>(null);
   const microphone = useRef<ContinuousCapture | null>(null);
+  const segments = useRef<VoiceSegments | null>(null);
+  const [voiceResourceUnknown, setVoiceResourceUnknown] = useState(false);
   const [captureStatus, setCaptureStatus] = useState<CaptureStatus>("closed");
   const [captureHint, setCaptureHint] = useState("麦克风已关闭。");
   const speechTimer = useRef<number>();
@@ -149,7 +152,33 @@ export default function App() {
     }
   };
 
+  if (!segments.current) segments.current = createVoiceSegments(
+    () => {
+      const session = active.current, barrier = businessBarrier.current;
+      return !!session?.mediaReady && current(session) && !transition.current && !visitorReset.current
+        && !presetRunner.current && !busy.current && !speech.current
+        && (barrier?.visitorId !== visitorId.current || barrier.status === "confirmed");
+    },
+    (samples, valid) => submitRecordedAudio(Promise.resolve({ blob: segmentWav(samples), filename: "speech.wav" }), valid),
+    setRecordingHint,
+    setVoiceResourceUnknown,
+  );
+
+  function discardVoice() {
+    setRecordingHint("");
+    segments.current?.invalidate();
+    microphone.current?.discardSegment();
+    const turn = voiceTurn.current;
+    if (turn) {
+      updateConversation(turn, { status: "cancelled" });
+      voiceTurn.current = null;
+      if (!speech.current) busy.current = false;
+      setRecordingState("idle");
+    }
+  }
+
   function stopMicrophone() {
+    discardVoice();
     const owner = microphone.current;
     setCaptureStatus("closed");
     setCaptureHint("麦克风已关闭，已提交的回答可继续播报。");
@@ -159,14 +188,19 @@ export default function App() {
   }
 
   function requestMicrophone() {
+    segments.current?.recover();
     if (microphone.current) return;
     setCaptureStatus("requesting");
     setCaptureHint("请允许麦克风访问。");
+    const visitor = visitorId.current;
     const owner = createContinuousCapture((status, hint) => queueMicrotask(() => {
       if (microphone.current !== owner) return;
       setCaptureStatus(status); setCaptureHint(hint);
+      if (status === "closed" || status === "error") discardVoice();
       if (owner.released) microphone.current = null;
-    }));
+    }), { onSegment: audio => {
+      if (microphone.current === owner && visitorId.current === visitor && modeRef.current === "assistant") segments.current?.enqueue(audio);
+    } });
     microphone.current = owner;
   }
 
@@ -194,6 +228,7 @@ export default function App() {
     speech.current = null;
     setSpeechPending(false);
     busy.current = false;
+    segments.current?.pump();
   }
 
   function newTurn(): TurnIdentity {
@@ -218,6 +253,7 @@ export default function App() {
       barrier.status = confirmed ? "confirmed" : "unknown";
       if (businessBarrier.current === barrier && visitorId.current === visitor) {
         setBusinessWarning(confirmed ? "" : CANCELLATION_UNKNOWN);
+        segments.current?.pump();
       }
       return confirmed;
     });
@@ -226,6 +262,7 @@ export default function App() {
 
   function detach(cancelBusiness = true, keepCapture = false): ActiveSession | null {
     if (!keepCapture) stopMicrophone();
+    else discardVoice();
     if (cancelBusiness) {
       const visitor = active.current?.visitorId ?? visitorId.current!;
       void invalidateBusiness(visitor, turnSequence.current);
@@ -302,6 +339,7 @@ export default function App() {
 
   useEffect(() => {
     const dispose = () => {
+      segments.current?.invalidate();
       const capture = microphone.current; microphone.current = null; void capture?.stop();
       void fetch(`/guide/visitors/${encodeURIComponent(visitorId.current!)}/invalidate`, {
         ...post({ through_turn_seq: turnSequence.current, retire: true }), keepalive: true,
@@ -417,6 +455,7 @@ export default function App() {
       if (!current(session)) { session.playback.close(); return; }
       await jsonRequest(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/start`, post({}, session.controller.signal));
       if (current(session)) {
+        session.mediaReady = true;
         setConnection(video.current?.paused ? "ready" : "playing");
         microphone.current?.listen();
         if (intent === "record") setRecordingHint("旧播报已隔离，新会话就绪。请再次点击“开始录音”，此时尚未采集。");
@@ -425,7 +464,7 @@ export default function App() {
       if (current(session)) await disconnect(session.creationRejected
         ? "创建请求已被拒绝，未创建新会话。请检查服务后重试。" : messageFor(error));
     } finally {
-      if (transition.current === token) { transition.current = null; setTransitioning(false); }
+      if (transition.current === token) { transition.current = null; setTransitioning(false); segments.current?.pump(); }
     }
   }
 
@@ -478,6 +517,7 @@ export default function App() {
   async function selectPreset(text: string) {
     if (!PRESET_QUESTIONS.some((question) => question === text) || visitorReset.current || modeRef.current !== "assistant"
       || (!presetRunner.current && (!active.current?.mediaSessionId || transition.current || !["ready", "playing"].includes(connection)))) return;
+    discardVoice();
     // One media replacement at a time; clicks while retiring/connecting replace only the queued selection.
     if (presetRequest.current) updateConversation(presetRequest.current, { status: "cancelled" });
     if (!presetRunner.current) {
@@ -506,11 +546,11 @@ export default function App() {
       busy.current = true;
       void sendQuestion(session, selected.text, selected, "text");
     } finally {
-      if (presetRunner.current === runner) { presetRunner.current = null; setPresetPreparing(false); }
+      if (presetRunner.current === runner) { presetRunner.current = null; setPresetPreparing(false); segments.current?.pump(); }
     }
   }
 
-  async function sendQuestion(session: ActiveSession, text: string, identity?: TurnIdentity, input: "text" | "voice" = identity ? "voice" : "text") {
+  async function sendQuestion(session: ActiveSession, text: string, identity?: TurnIdentity, input: "text" | "voice" = identity ? "voice" : "text", maySubmit?: () => boolean) {
     if (!current(session)) return;
     const turn = { session, ...(identity ?? newTurn()), spoken: false };
     if (turn.visitorId !== visitorId.current) return;
@@ -536,6 +576,12 @@ export default function App() {
           return;
         }
       } while (businessBarrier.current !== barrier && businessBarrier.current?.visitorId === turn.visitorId);
+      // Stopping capture may discard recognized speech until this exact submission
+      // boundary. Once POST starts, its answer has an independent lifecycle.
+      if (maySubmit && !maySubmit()) {
+        updateConversation(turn, { status: "cancelled" });
+        return;
+      }
       const response = await request("/guide/questions", post({ visitor_id: turn.visitorId, turn_id: turn.turnId, turn_seq: turn.turnSeq, question: text }, session.controller.signal), 30000);
       let body: unknown;
       try { body = await response.json(); } catch { throw new RequestError("response"); }
@@ -554,22 +600,23 @@ export default function App() {
         updateConversation(turn, { status: "error", error: messageFor(error) });
       }
     } finally {
-      if (valid()) { if (!speech.current) busy.current = false; setPending(false); }
+      if (valid()) { if (!speech.current) busy.current = false; setPending(false); segments.current?.pump(); }
     }
   }
 
-  // Audio submission is retained for task 16; no MediaRecorder or UI capture entry.
-  async function submitRecordedAudio(audioResult: Promise<{ blob: Blob; filename: string }>) {
+  // The optional segment guard belongs to capture, separately from the submitted answer.
+  async function submitRecordedAudio(audioResult: Promise<{ blob: Blob; filename: string }>, segmentValid?: () => boolean): Promise<"unknown" | void> {
     const session = active.current;
     if (visitorReset.current || !session?.mediaSessionId || !current(session) || busy.current || speech.current
-      || !["ready", "playing"].includes(connection)) return;
+      || !session.mediaReady) return;
     const turn: VoiceTurn = { session, ...newTurn() };
     voiceTurn.current = turn;
-    const valid = () => current(session) && turn.visitorId === visitorId.current && voiceTurn.current === turn;
+    const valid = () => current(session) && turn.visitorId === visitorId.current && voiceTurn.current === turn && (!segmentValid || segmentValid());
+    let submitted = false;
     updateConversation(turn, { input: "voice", status: "requesting" }, true);
     busy.current = true;
     setRecordingState("requesting");
-    setRecordingHint("请允许本轮麦克风访问；未开始前不会录音。");
+    setRecordingHint("正在准备完整语音片段…");
     try {
       setRecordingState("recording");
       updateConversation(turn, { status: "recording" });
@@ -577,23 +624,26 @@ export default function App() {
       if (!valid()) return;
       setRecordingState("transcribing");
       updateConversation(turn, { status: "transcribing" });
-      setRecordingHint("麦克风已关闭，正在识别…");
+      setRecordingHint("正在识别这段语音，麦克风继续监听。");
       const form = new FormData();
       form.set("file", audio.blob, audio.filename);
       form.set("stt_provider", "sensevoice");
       const transcript = await jsonRequest<{ session_id: string; text: string }>(
         `/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/transcribe`,
-        { method: "POST", body: form, signal: session.controller.signal }, 45000,
+        { method: "POST", body: form, signal: segmentValid ? undefined : session.controller.signal }, 45000,
       );
-      if (!valid()) return;
       if (transcript.session_id !== session.mediaSessionId || typeof transcript.text !== "string") throw new RequestError("response");
+      if (!valid()) return;
       const text = transcript.text.trim();
       if (!text) { setRecordingHint("没有识别到文字，请靠近麦克风重新录音。"); updateConversation(turn, { status: "no_text" }); return; }
       if (text.length > 2000) { setRecordingHint("识别内容过长，请缩短问题后重新录音。"); updateConversation(turn, { status: "error", error: "识别内容超过2000字，未提交问题。" }); return; }
       setQuestion(text);
       setRecordingState("idle");
-      setRecordingHint("语音已识别并提交，麦克风已关闭。");
-      await sendQuestion(session, text, turn);
+      setRecordingHint("语音已识别并提交。");
+      submitted = true;
+      voiceTurn.current = null;
+      const answerWork = sendQuestion(session, text, turn, "voice", segmentValid);
+      if (!segmentValid) await answerWork;
     } catch (error) {
       if (valid()) {
         const message = error instanceof RequestError && error.kind === "timeout"
@@ -601,10 +651,11 @@ export default function App() {
         setRecordingHint(message);
         updateConversation(turn, { status: "error", error: message });
       }
+      if (segmentValid) return "unknown";
     } finally {
       if (valid()) {
         voiceTurn.current = null;
-        if (!speech.current) busy.current = false;
+        if (!submitted && !speech.current) busy.current = false;
         setRecordingState("idle");
       }
     }
@@ -711,7 +762,9 @@ export default function App() {
           <button className="recording-stop" disabled={captureStatus === "closed" || captureStatus === "error"}
             onClick={stopMicrophone}>停止录音</button>
           <p role="status" aria-label="收音状态">{captureHint}</p>
+          {recordingHint && <p role="status" aria-label="语音识别状态">{recordingHint}</p>}
         </div>
+        {voiceResourceUnknown && <p className="notice" role="alert" aria-label="语音识别资源状态">{VOICE_RESOURCE_UNKNOWN}</p>}
         <p className="conversation-link"><a href="#conversation-history">查看本组对话记录 ↓</a></p>
         <aside className="demo-panel">
           <div className="demo-heading"><h3>固定文本播报</h3><span>非 LLM</span></div>
