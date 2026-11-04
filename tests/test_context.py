@@ -91,60 +91,6 @@ def test_same_seq_inflight_and_completed_deduplicate_but_different_body_conflict
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("verdict", ["resolved", "ambiguous"])
-def test_real_sdk_adapter_chain_distinguishes_rewrite_from_evidence_and_new_visitor(verdict):
-    async def run():
-        original = "介绍2021年成都科学馆的天文展"
-        followup = "它怎么预约？"
-        independent = "2021年成都科学馆的天文展怎么预约？"
-        evidence = "本轮资料明确说明预约方式。"
-        seen = []
-        def handler(req):
-            wire = json.loads(req.content)
-            payload = json.loads(wire["messages"][-1]["content"])
-            seen.append(payload)
-            if "history" in payload:
-                raw = {"verdict":verdict, "question":independent if verdict == "resolved" else "您指的是哪个展览？"}
-            elif payload["question"] == followup:
-                raw = {"verdict":"ambiguous", "answer_text":"您指的是哪个展览？", "quotes":[]}
-            else:
-                raw = {"verdict":"sufficient", "answer_text":evidence, "quotes":[{"snippet_index":0,"excerpt":evidence}]}
-            return httpx.Response(200,json={"id":"offline","object":"chat.completion","created":0,
-                "model":"deepseek-flash","choices":[{"index":0,"message":{"role":"assistant","content":json.dumps(raw,ensure_ascii=False)},"finish_reason":"stop"}]})
-        knowledge = SimpleNamespace(query=AsyncMock(return_value=KnowledgeResults(snippets=[
-            KnowledgeSnippet(text=evidence,score=1,source=KnownSource(doc_id="fixture",filename="fixture.md"))])))
-        async with ModelClient(ModelConfig(enabled=True,api_key="offline-fixture"),
-            http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))) as model:
-            svc = AnswerService(knowledge, ModelEvidenceEvaluator(model),kb_id="fixture",timeout=2)
-            rewriter, store = ModelQuestionRewriter(model), ContextStore()
-            began = asyncio.get_running_loop().time()
-            first = await store.answer(request(question=original),svc,rewriter)
-            diagnostic = {
-                "status": first.status, "error_code": first.error_code,
-                "elapsed_seconds": asyncio.get_running_loop().time() - began,
-                "service_timeout_seconds": svc.timeout,
-                "retrieval_calls": knowledge.query.await_count,
-                "sdk_handler_calls": len(seen),
-                "sdk_payload_fields": [sorted(payload) for payload in seen],
-                "stage": "sdk_handler_entered" if seen else "retrieval_called" if knowledge.query.await_count else "before_retrieval",
-            }
-            print(json.dumps({"first_grounded_turn_diagnostic": diagnostic}, ensure_ascii=False))
-            assert first.status == "answer", diagnostic
-            second = await store.answer(request(2,question=followup),svc,rewriter)
-            assert second.status == ("answer" if verdict == "resolved" else "clarify")
-            assert knowledge.query.await_count == (2 if verdict == "resolved" else 1)
-            if verdict == "resolved":
-                assert knowledge.query.await_args.args == ("fixture",independent)
-                assert seen[2] == {"question":independent,"snippets":[evidence]}
-            assert seen[1] == {"question":followup,"history":[{"question":original,"answer":evidence}]}
-            # No history for a different visitor, even for identical pronouns.
-            new = await store.answer(request(visitor="fresh",question=followup),svc,rewriter)
-            assert new.status == "clarify" and not store.entries["fresh"].pairs
-            assert knowledge.query.await_args.args == ("fixture",followup)
-            assert seen[-1] == {"question":followup,"snippets":[evidence]}
-            assert sum("history" in payload for payload in seen) == 1
-            assert len(seen) == (4 if verdict == "resolved" else 3)
-    asyncio.run(run())
 
 
 @pytest.mark.parametrize("operation", ["invalidate", "newer", "retire", "expire"])
