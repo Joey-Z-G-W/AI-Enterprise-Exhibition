@@ -49,6 +49,28 @@ class EvidenceDecision(_StrictModel):
 EvidenceEvaluator = Callable[[str, tuple[str, ...]], Awaitable[object]]
 
 
+_SOCIAL_REPLIES = {
+    **dict.fromkeys(
+        ("你好", "您好", "你好呀", "你好啊", "嗨", "哈喽", "hello", "hi", "早上好", "下午好", "晚上好", "早安"),
+        "您好，欢迎来到展厅！您想先了解什么？",
+    ),
+    **dict.fromkeys(("谢谢", "谢谢你", "谢谢您", "感谢", "感谢你", "多谢"),
+        "不客气！还想了解什么，您可以继续问我。"),
+    **dict.fromkeys(("再见", "拜拜", "回头见", "bye", "goodbye"),
+        "再见，祝您参观愉快！"),
+    **dict.fromkeys(("你好吗", "您好吗", "最近好吗"),
+        "我在这里，随时可以帮您介绍展厅资料。您想先了解什么？"),
+    **dict.fromkeys(("你是谁", "您是谁", "你叫什么", "你叫什么名字"),
+        "我是展厅的AI导览助手，可以帮您了解展厅资料；不确定的信息我会说明。"),
+}
+
+
+def social_reply(question: str) -> str | None:
+    """Only complete social utterances; never strip a business clause or match a substring."""
+    normalized = question.strip().strip("。！？!?.,，；;").strip().casefold()
+    return _SOCIAL_REPLIES.get(normalized)
+
+
 class AnswerSource(BaseModel):
     snippet_index: int
     excerpt: str
@@ -89,6 +111,14 @@ class AnswerService:
     async def answer(self, request: QuestionRequest, *, deadline: float | None = None) -> QuestionResponse:
         own_deadline = asyncio.get_running_loop().time() + self.timeout
         deadline = min(deadline, own_deadline) if deadline is not None else own_deadline
+        identity = {"visitor_id": request.visitor_id, "turn_id": request.turn_id, "turn_seq": request.turn_seq}
+        social = social_reply(request.question)
+        if social is not None:
+            if asyncio.current_task().cancelling():
+                raise asyncio.CancelledError
+            if asyncio.get_running_loop().time() >= deadline:
+                return error_response(request, "retrieval_timeout")
+            return QuestionResponse(**identity, status="answer", text=social)
         try:
             async with asyncio.timeout_at(deadline) as retrieval_timer:
                 retrieval = await self.knowledge.query(self.kb_id, request.question.strip())
@@ -102,12 +132,11 @@ class AnswerService:
             return error_response(request, "retrieval_timeout")
         if isinstance(retrieval, KnowledgeError):
             return error_response(request, f"retrieval_{retrieval.code}")
-        identity = {"visitor_id": request.visitor_id, "turn_id": request.turn_id, "turn_seq": request.turn_seq}
-        handoff = QuestionResponse(
-            **identity, status="handoff", text="现有资料不足以可靠回答，请由现场销售为您确认。",
+        unknown = QuestionResponse(
+            **identity, status="answer", text="这个问题我还不知道，现有资料不足以可靠回答。您可以继续问我其他问题。",
         )
         if isinstance(retrieval, KnowledgeEmpty):
-            return handoff
+            return unknown
         if not isinstance(retrieval, KnowledgeResults):
             return error_response(request, "retrieval_invalid_response")
         snippets = tuple(item.model_copy(deep=True) for item in retrieval.snippets)
@@ -159,10 +188,10 @@ class AnswerService:
             return QuestionResponse(**identity, status="clarify", text=decision.answer_text, sources=sources)
         if decision.verdict == "conflicting":
             return QuestionResponse(
-                **identity, status="handoff", text="现有资料存在冲突，请由现场销售核实后为您确认。", sources=sources,
+                **identity, status="answer", text="现有资料存在冲突，我目前无法确认正确答案。您可以继续问我其他问题。",
             )
         if decision.verdict == "insufficient":
-            return handoff
+            return unknown
         return QuestionResponse(
             **identity, status="answer",
             text=decision.answer_text,

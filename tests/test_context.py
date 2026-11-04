@@ -117,7 +117,19 @@ def test_real_sdk_adapter_chain_distinguishes_rewrite_from_evidence_and_new_visi
             http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))) as model:
             svc = AnswerService(knowledge, ModelEvidenceEvaluator(model),kb_id="fixture",timeout=2)
             rewriter, store = ModelQuestionRewriter(model), ContextStore()
-            assert (await store.answer(request(question=original),svc,rewriter)).status == "answer"
+            began = asyncio.get_running_loop().time()
+            first = await store.answer(request(question=original),svc,rewriter)
+            diagnostic = {
+                "status": first.status, "error_code": first.error_code,
+                "elapsed_seconds": asyncio.get_running_loop().time() - began,
+                "service_timeout_seconds": svc.timeout,
+                "retrieval_calls": knowledge.query.await_count,
+                "sdk_handler_calls": len(seen),
+                "sdk_payload_fields": [sorted(payload) for payload in seen],
+                "stage": "sdk_handler_entered" if seen else "retrieval_called" if knowledge.query.await_count else "before_retrieval",
+            }
+            print(json.dumps({"first_grounded_turn_diagnostic": diagnostic}, ensure_ascii=False))
+            assert first.status == "answer", diagnostic
             second = await store.answer(request(2,question=followup),svc,rewriter)
             assert second.status == ("answer" if verdict == "resolved" else "clarify")
             assert knowledge.query.await_count == (2 if verdict == "resolved" else 1)

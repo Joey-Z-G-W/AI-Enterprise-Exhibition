@@ -4,7 +4,7 @@ const base=fs.readFileSync('tests/frontend/visitor-races.cjs','utf8').split('// 
  .replace('demoStatus, speechPending };','demoStatus, speechPending, conversation, turnSequence };');
 const checks=String.raw`
 const watchdog=setTimeout(()=>{console.error('Continuous answer chain timed out');process.exitCode=1;},10000);
-const calls=(h,suffix)=>h.requests.filter(r=>r.url.endsWith(suffix));
+const calls=(h,suffix)=>h.workRequests.filter(r=>r.url.endsWith(suffix));
 function round(h,sid,text,answer,status='answer',questionGate){
  const r={sid,text,answer,status,stt:deferred(),question:deferred(),preview:deferred(),upload:deferred(),ack:deferred()};
  h.overrides.set('POST /opentalking/sessions/'+sid+'/transcribe',init=>{r.file=init.body.get('file');r.stt.resolve();return h.response({session_id:sid,text});});
@@ -27,7 +27,7 @@ async function finish(h,r,order='ack-first'){
  let checks=0;
  // Three full normal cycles. Identical text in rounds2/3 is not a duplicate turn.
  {
-  const h=harness();await h.render().connect();const owner=h.continuous[0],visitor=h.render().visitorId.current,ids=[],seq=[];
+  const h=harness();await h.render().connect();await finishWelcome(h);const owner=h.continuous[0],visitor=h.render().visitorId.current,ids=[],seq=[];
   for(let i=0;i<3;i++){
    const r=round(h,'sess_1',i?'相同问题':'第一问',i?'相同回答':'第一答');
    await owner.realStart();owner.segment(new Float32Array([-.25,.5]));await r.upload.promise;
@@ -46,7 +46,7 @@ async function finish(h,r,order='ack-first'){
  // The waiting-slot boundary is exercised directly; not a simulated physical VAD timeline.
  // Only the vendor's normal single-ended publication contract is assumed.
  for(const order of ['ack-first','ended-first']){
-  const h=harness();await h.render().connect();const owner=h.continuous[0],r=round(h,'sess_1','第一段','第一答');owner.segment(new Float32Array([.1]));await r.upload.promise;
+  const h=harness();await h.render().connect();await finishWelcome(h);const owner=h.continuous[0],r=round(h,'sess_1','第一段','第一答');owner.segment(new Float32Array([.1]));await r.upload.promise;
   const next=round(h,'sess_1','等待段','等待答');owner.segment(new Float32Array([.2]));assert.equal(calls(h,'/transcribe').length,1);
   const session=h.render().active.current;
   if(order==='ack-first'){
@@ -59,18 +59,18 @@ async function finish(h,r,order='ack-first'){
  }
  // Capture stop is independent after the business POST. A preset then works without recapture.
  {
-  const h=harness();await h.render().connect();const owner=h.continuous[0],visitor=h.render().visitorId.current,gate=deferred();
+  const h=harness();await h.render().connect();await finishWelcome(h);const owner=h.continuous[0],visitor=h.render().visitorId.current,gate=deferred();
   const r=round(h,'sess_1','已提交的问题','停止后回答','answer',gate);owner.segment(new Float32Array([.1]));await r.question.promise;
   h.render().stopMicrophone();assert.equal(owner.released,true);assert.equal(h.render().active.current.controller.signal.aborted,false);
   gate.resolve(h.response({...r.body,status:'answer',text:r.answer,sources:[]}));await r.upload.promise;assert.equal(r.previewBody.text,r.answer);await finish(h,r);
-  const preset=round(h,'sess_2','unused','预设回答');await h.render().selectPreset('锐伽提供哪些服务？');await preset.upload.promise;await finish(h,preset);
+  const preset=round(h,'sess_1','unused','预设回答');await h.render().selectPreset('锐伽提供哪些服务？');await preset.upload.promise;await finish(h,preset);assert.equal(h.created(),1);
   assert.equal(preset.body.visitor_id,visitor);assert.notEqual(preset.body.turn_id,r.body.turn_id);assert.equal(preset.body.turn_seq,2);
   assert.equal(calls(h,'/transcribe').length,1);assert.equal(calls(h,'/questions').length,2);assert.equal(calls(h,'/speak_flashtalk_audio').length,2);
   assert.equal(h.continuous.length,1);assert.equal(owner.released,true);assert.equal(h.render().microphone.current,null);checks++;
  }
  // Integrate the accepted17 recovery path with a complete new segment and answer.
  {
-  const h=harness();await h.render().connect();const owner=h.continuous[0],visitor=h.render().visitorId.current,old=h.render().active.current,gate=deferred();
+  const h=harness();await h.render().connect();await finishWelcome(h);const owner=h.continuous[0],visitor=h.render().visitorId.current,old=h.render().active.current,gate=deferred();
   const prior=round(h,'sess_1','old','旧答','answer',gate),work=h.render().sendQuestion(old,'旧问题');await prior.question.promise;
   const next=round(h,'sess_2','插话完整问题','新回答');const recovery=owner.realStart();owner.segment(new Float32Array([-.5,.1]));await recovery;await next.upload.promise;
   assert.equal(new DataView(await next.file.arrayBuffer()).getInt16(44,true),-16384);assert.equal(next.body.visitor_id,visitor);assert.equal(h.continuous.length,1);assert.equal(owner.stops,0);assert.equal(h.created(),2);
@@ -80,7 +80,7 @@ async function finish(h,r,order='ack-first'){
  // Whole-answer failures retain available text, never retry, and still permit manual takeover.
  // STT unknown/45s isolation is reused from the existing voice-segments App suite.
  for(const stage of ['business-error','business-identity','preview','upload']){
-  const h=harness();await h.render().connect();const session=h.render().active.current;
+  const h=harness();await h.render().connect();await finishWelcome(h);const session=h.render().active.current;
   const r=round(h,'sess_1','问题','保留的回答');
   if(stage==='business-error')h.overrides.set('POST /guide/questions',init=>h.response({...JSON.parse(init.body),status:'error',text:'业务失败',sources:[]},503));
   if(stage==='business-identity')h.overrides.set('POST /guide/questions',init=>h.response({...JSON.parse(init.body),turn_id:'wrong',status:'answer',text:'拒绝错配',sources:[]}));
@@ -95,11 +95,11 @@ async function finish(h,r,order='ack-first'){
   await h.render().takeOver();assert.equal(h.render().mode,'human');assert.equal(h.continuous[0].released,true);assert.equal(h.created(),1);checks++;
  }
  for(const text of ['', '长'.repeat(1001)]){
-  const h=harness();await h.render().connect();round(h,'sess_1','问题',text);await h.render().sendQuestion(h.render().active.current,'问题');
+  const h=harness();await h.render().connect();await finishWelcome(h);round(h,'sess_1','问题',text);await h.render().sendQuestion(h.render().active.current,'问题');
   assert.equal(h.render().answer.text,text);assert.equal(h.render().conversation[0].result.text,text);assert.equal(calls(h,'/tts/preview').length,0);assert.equal(calls(h,'/speak_flashtalk_audio').length,0);assert.ok(h.render().answerSpeechStatus);assert.equal(h.render().busy.current,false);checks++;
  }
  {
-  const h=harness();await h.render().connect();const r=round(h,'sess_1','不完整问题','请说明哪个案例','clarify');const work=h.render().sendQuestion(h.render().active.current,'不完整问题');await r.upload.promise;
+  const h=harness();await h.render().connect();await finishWelcome(h);const r=round(h,'sess_1','不完整问题','请说明哪个案例','clarify');const work=h.render().sendQuestion(h.render().active.current,'不完整问题');await r.upload.promise;
   assert.equal(h.render().answer.status,'clarify');assert.equal(r.previewBody.text,h.render().answer.text);await finish(h,r,'ended-first');await work;assert.equal(calls(h,'/speak_flashtalk_audio').length,1);assert.equal(h.render().busy.current,false);checks++;
  }
  console.log(JSON.stringify({status:'passed',checks,scope:'isolated actual App chain; normal serial single-ended SSE contract only; no physical media claims'}));

@@ -19,6 +19,9 @@ function harness() {
   const hooks = [], requests = [], captures = [], continuous = [], playbacks = [], effects = [];
   const listeners = new Map(), timers = new Map(); let timerSerial=0;
   const overrides = new Map(), states = new Map();
+  // Welcome is real App work. Keep its complete trace separately from later business assertions.
+  const welcomeRequests = new Set(), welcomeUploads = new Map(), welcomeTransport = {};
+  const welcomeEntered = id => { if (!welcomeUploads.has(id)) welcomeUploads.set(id,deferred()); return welcomeUploads.get(id); };
   const response = (body, status = 200, headers) => new Response(JSON.stringify(body), { status, headers });
   const api = {
     post: (body, signal) => ({ method: 'POST', body: JSON.stringify(body), signal }),
@@ -26,6 +29,15 @@ function harness() {
     messageFor: () => 'request failed',
     request: async (url, init = {}, timeoutMs) => {
       const method = init.method || 'GET'; requests.push({ url, method, signal: init.signal, body: init.body, timeoutMs });
+      const recorded=requests.at(-1);
+      if(url==='/opentalking/tts/preview' && JSON.parse(init.body).text==='您好，欢迎来到锐伽展厅！您可以直接向我提问，也可以选择下方的问题。我会根据现有资料为您介绍。') {
+        welcomeRequests.add(recorded);
+        return welcomeTransport.preview ? welcomeTransport.preview(init) : new Response(new Blob(['welcome']),{headers:{'content-type':'audio/wav'}});
+      }
+      if(url.endsWith('/speak_flashtalk_audio') && init.body.get('file').name==='welcome.wav') {
+        welcomeRequests.add(recorded);const id=url.split('/')[3];welcomeEntered(id).resolve(recorded);
+        return welcomeTransport.upload ? welcomeTransport.upload(init,id) : response({session_id:id,status:'queued'});
+      }
       const custom = overrides.get(`${method} ${url}`);
       if (custom) return custom(init);
       if (url === '/guide/ui-config' && method === 'GET') return response({avatar_id:'companion',tts_voice:'zh-CN-XiaoxiaoNeural'});
@@ -85,12 +97,38 @@ function harness() {
   };
   const markup = () => { cursor = 0; return require(path.resolve('frontend/node_modules/react-dom/server')).renderToStaticMarkup(markupExports.default()); };
   const app = render(); app.video.current = { paused: false, srcObject: null };
-  return { render, markup, api, requests, overrides, states, captures, continuous, playbacks, advance:async(ms)=>{now+=ms;for(const [id,t] of [...timers])if(t.at<=now){timers.delete(id);t.fn();}await flush();}, dispose:()=>effects.forEach(fn=>fn?.()), listeners, response, created: () => serial };
+  return { render, markup, api, requests, welcomeRequests, welcomeTransport, welcomeEntered,
+    get workRequests(){return requests.filter(r=>!welcomeRequests.has(r));},
+    overrides, states, captures, continuous, playbacks, advance:async(ms)=>{now+=ms;for(const [id,t] of [...timers])if(t.at<=now){timers.delete(id);t.fn();}await flush();}, dispose:()=>effects.forEach(fn=>fn?.()), listeners, response, created: () => serial };
+}
+
+async function finishWelcome(h) {
+  const item=h.render().speech.current;
+  if(!item || item.kind!=='welcome') return; // Failed/cancelled connection or internal rebuild has none.
+  const session=item.session;
+  const upload=await h.welcomeEntered(session.mediaSessionId).promise;
+  assert.equal(upload.timeoutMs,30000);assert.equal(upload.signal,undefined);
+  await session.upload;
+  assert.equal(item.acknowledged,true);assert.equal(h.render().busy.current,true);
+  session.events.emit('speech.media_started');session.events.emit('speech.ended');
+  assert.equal(h.render().speech.current,null);assert.equal(h.render().busy.current,false);
+  assert.equal([...h.welcomeRequests].filter(r=>r.url===upload.url).length,1);
+}
+
+async function startBusyDemo(h) {
+  // Safety tests requiring media retirement start a real pending speech instead of assuming idle replacement.
+  const id=h.render().active.current.mediaSessionId;
+  const keys=['POST /opentalking/tts/preview','POST /opentalking/sessions/'+id+'/speak_flashtalk_audio'];
+  const previous=keys.map(k=>h.overrides.get(k));
+  h.overrides.set(keys[0],()=>new Response(new Blob(['demo']),{headers:{'content-type':'audio/wav'}}));
+  h.overrides.set(keys[1],()=>h.response({session_id:id,status:'queued'}));
+  await h.render().playDemo();assert.equal(h.render().speech.current.kind,'demo');assert.equal(h.render().busy.current,true);
+  keys.forEach((k,i)=>previous[i]?h.overrides.set(k,previous[i]):h.overrides.delete(k));
 }
 
 // Execute actual App handlers with isolated API/media/hook doubles, never real devices.
-const questionCalls=h=>h.requests.filter(r=>r.url==='/guide/questions');
-const previews=h=>h.requests.filter(r=>r.url==='/opentalking/tts/preview');
+const questionCalls=h=>h.workRequests.filter(r=>r.url==='/guide/questions');
+const previews=h=>h.workRequests.filter(r=>r.url==='/opentalking/tts/preview');
 function errorAnswer(h) {
   h.overrides.set('POST /guide/questions',init=>{
     const body=JSON.parse(init.body);
@@ -109,17 +147,17 @@ const watchdog=setTimeout(()=>{console.error('Race checks failed to settle');pro
  let checks=0;
  // V1 survives disconnect/reconnect and human takeover/resume; turns change, no auto resend.
  {
-  const h=harness();const visitor=h.render().visitorId.current;await h.render().connect();errorAnswer(h);
+  const h=harness();const visitor=h.render().visitorId.current;await h.render().connect();await finishWelcome(h);errorAnswer(h);
   await h.render().sendQuestion(h.render().active.current,'第一问');const first=JSON.parse(questionCalls(h)[0].body);
   assert.equal(first.visitor_id,visitor);assert.notEqual(first.visitor_id,'sess_1');
-  await h.render().disconnect();await h.render().connect();assert.equal(h.render().active.current.mediaSessionId,'sess_2');
+  await h.render().disconnect();await h.render().connect();await finishWelcome(h);assert.equal(h.render().active.current.mediaSessionId,'sess_2');
   assert.equal(h.render().visitorId.current,visitor);await h.render().sendQuestion(h.render().active.current,'第二问');
   const second=JSON.parse(questionCalls(h)[1].body);assert.equal(second.visitor_id,visitor);assert.notEqual(second.turn_id,first.turn_id);
-  await h.render().takeOver();await h.render().connect('resume');assert.equal(h.render().visitorId.current,visitor);assert.equal(questionCalls(h).length,2);checks++;
+  await h.render().takeOver();await h.render().connect('resume');await finishWelcome(h);assert.equal(h.render().visitorId.current,visitor);assert.equal(questionCalls(h).length,2);checks++;
  }
  // Recording allocates a business turn before permission/STT, then preserves it through questions.
  {
-  const h=harness();await h.render().connect();errorAnswer(h);
+  const h=harness();await h.render().connect();await finishWelcome(h);errorAnswer(h);
   h.overrides.set('POST /opentalking/sessions/sess_1/transcribe',()=>h.response({session_id:'sess_1',text:'录音问题'}));
   const recording=h.render().beginRecording();await flush();const identity=h.render().voiceTurn.current;
   h.captures[0].finish({blob:new Blob(['voice']),filename:'question.webm'});await recording;
@@ -127,49 +165,49 @@ const watchdog=setTimeout(()=>{console.error('Race checks failed to settle');pro
  }
  // Reset atomically changes V, clears text, and duplicates cannot allocate V3/create M3.
  {
-  const h=harness();await h.render().connect();const old=h.render().visitorId.current;h.render().setQuestion('旧组问题');
+  const h=harness();await h.render().connect();await finishWelcome(h);const old=h.render().visitorId.current;h.render().setQuestion('旧组问题');
   const closed=deferred();h.overrides.set('GET /opentalking/sessions/sess_1',()=>closed.promise);
   const reset=h.render().resetVisitor();const next=h.render().visitorId.current;assert.notEqual(next,old);blank(h);
   const duplicate=h.render().resetVisitor();assert.equal(h.render().visitorId.current,next);assert.equal(h.created(),1);
-  closed.resolve(h.response({session_id:'sess_1',state:'closed'}));await Promise.all([reset,duplicate]);
+  closed.resolve(h.response({session_id:'sess_1',state:'closed'}));await Promise.all([reset,duplicate]);await finishWelcome(h);
   assert.equal(h.created(),2);assert.equal(h.render().active.current.visitorId,next);blank(h);checks++;
  }
  // Stubborn delayed permission/capture and already sent STT cannot submit for V2.
  for(const stage of ['capture','stt']){
-  const h=harness();await h.render().connect();const late=deferred(),started=deferred();
+  const h=harness();await h.render().connect();await finishWelcome(h);const late=deferred(),started=deferred();
   h.overrides.set('POST /opentalking/sessions/sess_1/transcribe',()=>{started.resolve();return late.promise;});
   const recording=h.render().beginRecording();await flush();
   if(stage==='stt'){h.captures[0].finish({blob:new Blob(['voice']),filename:'q.webm'});await started.promise;}
-  await h.render().resetVisitor();assert.equal(h.captures[0].cancelled,true);
+  await h.render().resetVisitor();await finishWelcome(h);assert.equal(h.captures[0].cancelled,true);
   if(stage==='capture')h.captures[0].finish({blob:new Blob(['late']),filename:'q.webm'});
   else late.resolve(h.response({session_id:'sess_1',text:'旧组转写'}));
   await recording;blank(h);assert.equal(questionCalls(h).length,0);checks++;
  }
  // Late questions cannot repaint V2 or call TTS.
  {
-  const h=harness();await h.render().connect();const late=deferred();let body;
+  const h=harness();await h.render().connect();await finishWelcome(h);const late=deferred();let body;
   h.overrides.set('POST /guide/questions',init=>{body=JSON.parse(init.body);return late.promise;});
-  const q=h.render().sendQuestion(h.render().active.current,'旧组问题');await flush();await h.render().resetVisitor();
+  const q=h.render().sendQuestion(h.render().active.current,'旧组问题');await flush();await h.render().resetVisitor();await finishWelcome(h);
   late.resolve(h.response({...body,status:'answer',text:'旧组回答',sources:[]}));await q;blank(h);assert.equal(previews(h).length,0);checks++;
  }
  // TTS/upload/SSE from old media cannot unlock or finish the new media's active speech.
  for(const stage of ['preview','upload'])for(const change of ['reset','barge-rebuild']){
-  const h=harness();await h.render().connect();const old=h.render().active.current,visitor=old.visitorId;answerFixture(h);
+  const h=harness();await h.render().connect();await finishWelcome(h);const old=h.render().active.current,visitor=old.visitorId;answerFixture(h);
   const late=deferred(),started=deferred();const endpoint=stage==='preview'?'/opentalking/tts/preview':'/opentalking/sessions/sess_1/speak_flashtalk_audio';
   h.overrides.set('POST '+endpoint,()=>{started.resolve();return late.promise;});
   const q=h.render().sendQuestion(old,'旧问');await started.promise;
   const replacing=change==='reset'?h.render().resetVisitor():h.continuous[0].realStart();await flush();
   if(stage==='upload'){assert.equal(h.created(),1);late.resolve(h.response({session_id:'sess_1',status:'queued'}));}
-  await replacing;
+  await replacing;await finishWelcome(h);
   const next=h.render().active.current;assert.equal(next.mediaSessionId,'sess_2');assert.equal(next.visitorId===visitor,change==='barge-rebuild');
   answerFixture(h);await h.render().playDemo();const liveSpeech=h.render().speech.current;assert.ok(liveSpeech);
   if(stage==='preview')late.resolve(new Response(new Blob(['wav']),{headers:{'content-type':'audio/wav'}}));await q;
   old.events.emit('speech.media_started');old.events.emit('speech.ended');assert.equal(h.render().speech.current,liveSpeech);assert.equal(h.render().busy.current,true);
-  assert.equal(h.requests.filter(r=>r.url==='/opentalking/sessions/sess_2/speak_flashtalk_audio').length,1);checks++;
+  assert.equal(h.workRequests.filter(r=>r.url==='/opentalking/sessions/sess_2/speak_flashtalk_audio').length,1);checks++;
  }
  // Bad business identity envelopes, including media SID in visitor field, are rejected.
  for(const fault of ['visitor','turn','missing-visitor','missing-turn','media-as-visitor','legacy-field']){
-  const h=harness();await h.render().connect();h.overrides.set('POST /guide/questions',init=>{
+  const h=harness();await h.render().connect();await finishWelcome(h);h.overrides.set('POST /guide/questions',init=>{
    const body=JSON.parse(init.body),result={visitor_id:body.visitor_id,turn_id:body.turn_id,turn_seq:body.turn_seq,status:'answer',text:'wrong',sources:[]};
    if(fault==='visitor')result.visitor_id='other';if(fault==='turn')result.turn_id='other';if(fault==='missing-visitor')delete result.visitor_id;
    if(fault==='missing-turn')delete result.turn_id;if(fault==='media-as-visitor')result.visitor_id='sess_1';if(fault==='legacy-field'){result.session_id='sess_1';delete result.visitor_id;}
@@ -178,23 +216,23 @@ const watchdog=setTimeout(()=>{console.error('Race checks failed to settle');pro
  }
  // Upstream STT still validates media SID, not business visitor ID.
  {
-  const h=harness();await h.render().connect();h.overrides.set('POST /opentalking/sessions/sess_1/transcribe',()=>h.response({session_id:h.render().visitorId.current,text:'bad-media'}));
+  const h=harness();await h.render().connect();await finishWelcome(h);h.overrides.set('POST /opentalking/sessions/sess_1/transcribe',()=>h.response({session_id:h.render().visitorId.current,text:'bad-media'}));
   const recording=h.render().beginRecording();await flush();h.captures[0].finish({blob:new Blob(['v']),filename:'q.webm'});await recording;
   assert.equal(questionCalls(h).length,0);assert.match(h.render().recordingHint,/error/);checks++;
  }
  // A trusted precreation422 allows explicit retry without changing V2; unknown5xx cannot.
  for(const status of [422,500]){
-  const h=harness();await h.render().connect();const v1=h.render().visitorId.current;
+  const h=harness();await h.render().connect();await finishWelcome(h);const v1=h.render().visitorId.current;
   h.overrides.set('POST /opentalking/sessions',()=>h.response(status===422?{detail:[{loc:['body','avatar_id'],type:'missing',msg:'required'}]}:{error:'unknown'},status));
-  await h.render().resetVisitor();const v2=h.render().visitorId.current;assert.notEqual(v2,v1);blank(h);assert.equal(h.render().active.current,null);
-  h.overrides.delete('POST /opentalking/sessions');await h.render().connect();assert.equal(h.render().visitorId.current,v2);
+  await h.render().resetVisitor();await finishWelcome(h);const v2=h.render().visitorId.current;assert.notEqual(v2,v1);blank(h);assert.equal(h.render().active.current,null);
+  h.overrides.delete('POST /opentalking/sessions');await h.render().connect();await finishWelcome(h);assert.equal(h.render().visitorId.current,v2);
   if(status===422){assert.equal(h.created(),2);assert.equal(h.render().active.current.visitorId,v2);}else{assert.equal(h.created(),1);assert.equal(h.render().active.current,null);}
   checks++;
  }
  // A creation response lost entirely remains isolated across group reset/retry.
  {
-  const h=harness();h.overrides.set('POST /opentalking/sessions',()=>Promise.reject(Error('lost')));await h.render().connect();
-  await h.render().resetVisitor();const v=h.render().visitorId.current;h.overrides.delete('POST /opentalking/sessions');await h.render().connect();
+  const h=harness();h.overrides.set('POST /opentalking/sessions',()=>Promise.reject(Error('lost')));await h.render().connect();await finishWelcome(h);
+  await h.render().resetVisitor();await finishWelcome(h);const v=h.render().visitorId.current;h.overrides.delete('POST /opentalking/sessions');await h.render().connect();await finishWelcome(h);
   assert.equal(h.created(),0);assert.equal(h.render().active.current,null);assert.equal(h.render().visitorId.current,v);checks++;
  }
  console.log(JSON.stringify({status:'passed',checks,groups:5,scope:'Actual App handlers via isolated React/API/media doubles; no real services, microphone, history or GPU.'}));

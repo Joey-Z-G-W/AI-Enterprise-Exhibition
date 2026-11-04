@@ -105,17 +105,18 @@ def test_unknown_source_remains_unknown_and_does_not_block_valid_excerpt(client)
     assert body["sources"][0]["source"] == {"status": "unknown", "doc_id": "", "filename": None}
 
 
-def test_empty_retrieval_hands_off_without_model_call(client):
+def test_empty_retrieval_answers_uncertainty_without_model_call(client):
     _, evaluator = configure(KnowledgeEmpty())
     body = client.post("/questions", json=REQUEST).json()
-    assert body["status"] == "handoff"
+    assert body["status"] == "answer"
+    assert "不知道" in body["text"]
     assert body["sources"] == []
     evaluator.assert_not_awaited()
 
 
 @pytest.mark.parametrize("verdict,text,status", [
-    ("insufficient", "B产品的外壳为蓝色。", "handoff"),
-    ("conflicting", "A产品电池容量为50 kWh。另一份资料说A产品电池容量为70 kWh。", "handoff"),
+    ("insufficient", "B产品的外壳为蓝色。", "answer"),
+    ("conflicting", "A产品电池容量为50 kWh。另一份资料说A产品电池容量为70 kWh。", "answer"),
     ("ambiguous", "A产品和B产品均有电池。", "clarify"),
 ])
 def test_score_one_is_not_sufficient_and_semantic_decision_is_injected(client, verdict, text, status):

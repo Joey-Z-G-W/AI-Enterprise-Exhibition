@@ -8,7 +8,7 @@ import time
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from exhibition_guide.answer import AnswerService, QuestionRequest, QuestionResponse, error_response
+from exhibition_guide.answer import AnswerService, QuestionRequest, QuestionResponse, error_response, social_reply
 from exhibition_guide.evidence_model import RewriteDecision
 from exhibition_guide.llm import ModelError
 
@@ -123,7 +123,9 @@ class ContextStore:
         stage = "rewrite"
         try:
             result = None
-            if history:
+            # A complete social utterance is not an elliptical business question.
+            # Keep it inside the normal turn/watermark/deadline lifecycle.
+            if history and social_reply(query) is None:
                 if rewriter is None:
                     result = error_response(request, "rewrite_not_configured")
                 else:

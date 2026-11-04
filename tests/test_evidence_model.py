@@ -107,7 +107,7 @@ def test_invalid_json_or_any_verdict_forged_quote_fails_without_second_call(raw)
     model.complete.assert_awaited_once()
 
 
-@pytest.mark.parametrize("verdict,status", [("insufficient", "handoff"), ("conflicting", "handoff"), ("ambiguous", "clarify")])
+@pytest.mark.parametrize("verdict,status", [("insufficient", "answer"), ("conflicting", "answer"), ("ambiguous", "clarify")])
 def test_semantic_decisions_are_explicit_not_inferred_from_score(verdict, status):
     clarification = "您指的是哪个公司或项目？"
     service, _, model, _ = setup_service(decision(verdict=verdict, answer_text=clarification, quotes=[]))

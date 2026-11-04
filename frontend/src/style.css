@@ -110,4 +110,7 @@ footer { max-width: 1396px; margin: 22px auto; padding: 0 42px; display: flex; j
 .preset-question:focus-visible { outline: 2px solid #376747; outline-offset: 3px; }
 .preset-question span { flex-shrink: 0; }
 .preset-hint { font-size: 12px; color: #737d76; line-height: 1.7; }
+.welcome-message { margin: 0 24px 20px; font-size: 13px; line-height: 1.8; color: #476451; }
+.welcome-message p { margin: 0 0 6px; }
+.welcome-message small { color: #788b7e; }
 @media (max-width: 480px) { .preset-questions { grid-template-columns: 1fr; } .preset-question { min-height: 48px; } }
