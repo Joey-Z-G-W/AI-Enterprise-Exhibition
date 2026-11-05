@@ -2,7 +2,7 @@ import { MicVAD, Message } from "@ricky0123/vad-web";
 
 export type CaptureStatus = "requesting" | "waiting" | "preparing" | "listening" | "closed" | "error";
 export type ContinuousCapture = { listen: () => void; stop: () => Promise<boolean>; discardSegment: () => void; readonly released: boolean };
-type SegmentCallbacks = { onSegment?: (audio: Float32Array) => void; onSpeechRealStart?: () => void };
+type SegmentCallbacks = { onSegment?: (audio: Float32Array) => void; onSpeechStart?: () => void; onSpeechRealStart?: () => void; onVADMisfire?: () => void };
 type Report = (status: CaptureStatus, message: string) => void;
 
 // vad-web 0.0.31 destroy() throws before model.release() when start() has not
@@ -89,14 +89,14 @@ export function createContinuousCapture(report: Report, callbacks: SegmentCallba
         getStream: async () => { if (stopped || !stream) throw Error("capture stopped"); return stream; },
         pauseStream: async () => { stopTracks(); },
         resumeStream: async () => { throw Error("capture cannot reopen itself"); },
-        onSpeechStart: () => { if (stopped || utterance) return; utterance = true; discarded = false; clearTimeout(speechTimer); speechTimer = setTimeout(() => fail("连续说话已达30秒，麦克风已关闭。"), 30000); },
+        onSpeechStart: () => { if (stopped || utterance) return; utterance = true; discarded = false; callbacks.onSpeechStart?.(); clearTimeout(speechTimer); speechTimer = setTimeout(() => fail("连续说话已达30秒，麦克风已关闭。"), 30000); },
         onSpeechRealStart: () => { if (!stopped && utterance && !discarded) callbacks.onSpeechRealStart?.(); },
         onSpeechEnd: audio => {
           clearTimeout(speechTimer);
           const accepted = !stopped && utterance && !discarded; utterance = false; discarded = false;
           if (accepted) callbacks.onSegment?.(audio);
         },
-        onVADMisfire: () => { clearTimeout(speechTimer); utterance = false; discarded = false; },
+        onVADMisfire: () => { clearTimeout(speechTimer); utterance = false; discarded = false; if (!stopped) callbacks.onVADMisfire?.(); },
       }).then(vad => { instance = vad; return vad; }));
       const vad = await created; if (stopped) return;
       await track(vad.start()); if (stopped) return;

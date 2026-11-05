@@ -8,7 +8,7 @@ const { pathToFileURL } = require('node:url');
 const { createRequire } = require('node:module');
 const requireFrontend = createRequire(path.resolve('frontend/package.json'));
 const { chromium } = requireFrontend('playwright-core');
-const task = path.resolve('docs/problem/20261104-1b5ff5a-导览播报-文字出现后出声延迟且回答冗长');
+const task = path.resolve(process.env.SPEECH_TEST_TASK_DIR || 'docs/problem/20261104-1b5ff5a-导览播报-文字出现后出声延迟且回答冗长');
 const red = process.argv.includes('--red');
 const runId = (red ? 'red-' : 'green-') + Date.now();
 const evidence = path.join(task, 'evidence', 'browser-' + runId);
@@ -340,7 +340,8 @@ async function suite() {
     assert.equal(workTTS(f).length, 0); assert.equal(workUploads(f).length, 0);
   });
 }
-(async () => {
+module.exports = { Fixture, platformFixture };
+if (require.main === module) (async () => {
   await fs.mkdir(evidence, { recursive: true }); await fs.mkdir(temp, { recursive: true });
   const { createServer } = await import(pathToFileURL(path.resolve('frontend/node_modules/vite/dist/node/index.js')).href);
   const react = (await import(pathToFileURL(path.resolve('frontend/node_modules/@vitejs/plugin-react/dist/index.js')).href)).default;

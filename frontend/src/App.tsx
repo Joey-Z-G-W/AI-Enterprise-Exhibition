@@ -3,7 +3,7 @@ import { jsonRequest, messageFor, post, request, RequestError } from "./lib/api"
 import { startPlayback, type Playback } from "./lib/webrtc";
 import { recordingMessage } from "./lib/recording";
 import { createContinuousCapture, type ContinuousCapture, type CaptureStatus } from "./lib/continuousCapture";
-import { createVoiceSegments, segmentWav, VOICE_RESOURCE_UNKNOWN, type VoiceSegments } from "./lib/voiceSegments";
+import { createVoiceSegments, segmentWav, VOICE_RESOURCE_UNKNOWN, type VoiceSegments, type VoiceCandidate } from "./lib/voiceSegments";
 import { PRESET_QUESTIONS } from "./presetQuestions";
 
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
@@ -33,7 +33,18 @@ const conversationLabels: Record<ConversationTurn["status"], string> = {
   requesting: "等待麦克风授权", recording: "正在录音", transcribing: "正在识别",
   pending: "正在查询资料", completed: "已完成", cancelled: "已取消", error: "处理失败", no_text: "未识别到文字",
 };
-type VoiceTurn = TurnIdentity & { session: ActiveSession };
+type VoiceTurn = { visitorId: string; session: ActiveSession };
+type Duck = { session: ActiveSession; element: HTMLVideoElement; original: number; value: number; candidates: Set<VoiceCandidate> };
+const STOP_PHRASES = new Set(["停", "停止", "停下", "停一下", "先停一下", "暂停", "暂停一下", "先暂停", "别说了", "先别说了", "不要说了", "不要继续说了", "停止讲解", "暂停讲解", "安静一下"]);
+const ACKNOWLEDGEMENTS = new Set(["好", "好的", "好啊", "好吧", "行", "可以", "是", "是的", "对", "对的", "对呀", "对啊", "知道了", "明白了", "了解了", "收到", "没错"]);
+
+function speechIntent(text: string, duringResponse: boolean): "ignore" | "stop" | "question" {
+  const whole = text.replace(/^[\s。！？!?.,，；;、:：]+|[\s。！？!?.,，；;、:：]+$/gu, "");
+  if (STOP_PHRASES.has(whole)) return "stop";
+  if (!whole || /^[嗯呃额唔啊哦噢\s。！？!?.,，；;、:：]+$/u.test(whole)) return "ignore";
+  if (duringResponse && ACKNOWLEDGEMENTS.has(whole)) return "ignore";
+  return "question";
+}
 type Timing = { trace: string; turnSeq: number; kind: "answer" | "demo" | "welcome"; started: number; finished?: boolean; rendered?: boolean };
 type PreparedAudio = { blob: Blob } | { error: unknown };
 type Speech = {
@@ -152,6 +163,9 @@ export default function App() {
   const generation = useRef(0);
   const busy = useRef(false);
   const voiceTurn = useRef<VoiceTurn | null>(null);
+  const voiceSubmission = useRef<object | null>(null);
+  const utteranceCandidate = useRef<(VoiceCandidate & { realSpeech: boolean }) | null>(null);
+  const duck = useRef<Duck | null>(null);
   const microphone = useRef<ContinuousCapture | null>(null);
   const segments = useRef<VoiceSegments | null>(null);
   const [voiceResourceUnknown, setVoiceResourceUnknown] = useState(false);
@@ -203,23 +217,65 @@ export default function App() {
     () => {
       const session = active.current, barrier = businessBarrier.current;
       return !!session?.mediaReady && current(session) && !transition.current && !visitorReset.current
-        && !bargeRecovery.current && !presetRunner.current && !busy.current && !speech.current
+        && !bargeRecovery.current && !presetRunner.current
         && (barrier?.visitorId !== visitorId.current || barrier.status === "confirmed");
     },
-    (samples, valid) => submitRecordedAudio(Promise.resolve({ blob: segmentWav(samples), filename: "speech.wav" }), valid),
+    (samples, valid, candidate) => submitRecordedAudio(samples, valid, candidate),
     setRecordingHint,
     setVoiceResourceUnknown,
   );
 
+  function restoreDuck() {
+    const state = duck.current;
+    duck.current = null;
+    if (state && active.current === state.session && video.current === state.element
+      && state.element.volume === state.value) state.element.volume = state.original;
+  }
+
+  function newVoiceCandidate(): VoiceCandidate & { realSpeech: boolean } {
+    let released = false;
+    const candidate: VoiceCandidate & { realSpeech: boolean } = {
+      duringResponse: busy.current || speech.current !== null,
+      realSpeech: false,
+      releaseDuck: () => {
+        if (released) return;
+        released = true;
+        const state = duck.current;
+        if (state?.candidates.delete(candidate) && state.candidates.size === 0) restoreDuck();
+      },
+    };
+    return candidate;
+  }
+
+  function duckCandidate(candidate: VoiceCandidate) {
+    const session = active.current, element = video.current;
+    if (!session || !current(session) || !element) return;
+    let state = duck.current;
+    if (!state || state.session !== session || state.element !== element) {
+      restoreDuck();
+      state = { session, element, original: element.volume, value: Math.min(element.volume, 0.2), candidates: new Set() };
+      duck.current = state;
+    } else if (element.volume !== state.value) {
+      // A new onset may duck again, but remember the user's latest volume setting.
+      state.original = element.volume; state.value = Math.min(element.volume, 0.2);
+    }
+    state.candidates.add(candidate);
+    element.volume = state.value;
+  }
+
   function discardVoice(keepUtterance = false) {
+    voiceSubmission.current = null;
     setRecordingHint("");
     segments.current?.invalidate();
+    if (!keepUtterance) {
+      utteranceCandidate.current?.releaseDuck();
+      utteranceCandidate.current = null;
+    }
+    restoreDuck();
     if (!keepUtterance) microphone.current?.discardSegment();
     const turn = voiceTurn.current;
     if (turn) {
-      updateConversation(turn, { status: "cancelled" });
       voiceTurn.current = null;
-      if (!speech.current) busy.current = false;
       setRecordingState("idle");
     }
   }
@@ -245,10 +301,24 @@ export default function App() {
       setCaptureStatus(status); setCaptureHint(hint);
       if (status === "closed" || status === "error") discardVoice();
       if (owner.released) microphone.current = null;
-    }), { onSegment: audio => {
-      if (microphone.current === owner && visitorId.current === visitor && modeRef.current === "assistant") segments.current?.enqueue(audio);
+    }), { onSpeechStart: () => {
+      if (microphone.current !== owner || visitorId.current !== visitor || modeRef.current !== "assistant") return;
+      utteranceCandidate.current?.releaseDuck();
+      utteranceCandidate.current = newVoiceCandidate();
+    }, onSegment: audio => {
+      if (microphone.current !== owner || visitorId.current !== visitor || modeRef.current !== "assistant") return;
+      const candidate = utteranceCandidate.current ?? newVoiceCandidate();
+      utteranceCandidate.current = null;
+      segments.current?.enqueue(audio, candidate);
     }, onSpeechRealStart: () => {
-      if (microphone.current === owner && visitorId.current === visitor && modeRef.current === "assistant") return bargeIn();
+      if (microphone.current === owner && visitorId.current === visitor && modeRef.current === "assistant"
+        && utteranceCandidate.current) {
+        utteranceCandidate.current.realSpeech = true;
+        duckCandidate(utteranceCandidate.current);
+      }
+    }, onVADMisfire: () => {
+      if (microphone.current !== owner || visitorId.current !== visitor) return;
+      utteranceCandidate.current?.releaseDuck(); utteranceCandidate.current = null;
     } });
     microphone.current = owner;
   }
@@ -450,7 +520,10 @@ export default function App() {
   useEffect(() => {
     const dispose = () => {
       bargeRecovery.current = null;
+      voiceSubmission.current = null;
       segments.current?.invalidate();
+      utteranceCandidate.current?.releaseDuck(); utteranceCandidate.current = null;
+      restoreDuck();
       const capture = microphone.current; microphone.current = null; void capture?.stop();
       void fetch(`/guide/visitors/${encodeURIComponent(visitorId.current!)}/invalidate`, {
         ...post({ through_turn_seq: turnSequence.current, retire: true }), keepalive: true,
@@ -578,6 +651,7 @@ export default function App() {
       await jsonRequest(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/start`, post({}, session.controller.signal));
       if (current(session)) {
         session.mediaReady = true;
+        if (utteranceCandidate.current?.realSpeech) duckCandidate(utteranceCandidate.current);
         setConnection(video.current?.paused ? "ready" : "playing");
         microphone.current?.listen();
         if (["connect", "resume", "reset"].includes(intent)) welcomeSession = session;
@@ -635,19 +709,27 @@ export default function App() {
     }
   }
 
-  async function bargeIn() {
-    // Repeated VAD edges share one recovery; never close its new initializing SID.
+  async function bargeIn(text: string | null, owner: ContinuousCapture | null) {
+    // Only a confirmed transcript gets here. Repeated onsets never retire media.
     if (bargeRecovery.current) return;
     const session = active.current;
     if (!session?.mediaReady || !current(session) || transition.current || visitorReset.current
       || (!busy.current && !speech.current && !voiceTurn.current)) return;
     if (video.current) video.current.muted = true;
-    detach(true, true, true); // Keep the utterance that caused this interruption.
+    detach(true, true, true); // Preserve another utterance already in progress during STT.
     const token = {};
     bargeRecovery.current = token;
+    voiceSubmission.current = token;
     setConnection("idle");
-    setNotice("旧声画已关闭，请继续说；正在确认旧会话结束并恢复媒体。");
-    try { await connect("barge"); }
+    setNotice(text === null ? "已收到停止指令，正在停止旧播报。" : "已确认新问题，正在结束旧播报并恢复媒体。");
+    try {
+      await connect("barge");
+      const next = active.current;
+      const maySubmit = () => voiceSubmission.current === token && microphone.current === owner;
+      if (!maySubmit() || bargeRecovery.current !== token || !next?.mediaReady || !current(next)) return;
+      if (text !== null) void sendQuestion(next, text, undefined, "voice", maySubmit);
+      else { voiceSubmission.current = null; setNotice("播报已停止，您可以继续提问。"); }
+    }
     finally {
       if (bargeRecovery.current === token) { bargeRecovery.current = null; segments.current?.pump(); }
     }
@@ -762,58 +844,62 @@ export default function App() {
     }
   }
 
-  // The optional segment guard belongs to capture, separately from the submitted answer.
-  async function submitRecordedAudio(audioResult: Promise<{ blob: Blob; filename: string }>, segmentValid?: () => boolean): Promise<"unknown" | void> {
+  // Candidate recognition is independent of the old answer; it must not cancel it.
+  async function submitRecordedAudio(samples: Float32Array, segmentValid: () => boolean, candidate: VoiceCandidate): Promise<"unknown" | void> {
     const session = active.current;
-    if (visitorReset.current || !session?.mediaSessionId || !current(session) || busy.current || speech.current
+    if (visitorReset.current || !session?.mediaSessionId || !current(session)
       || !session.mediaReady) return;
-    const turn: VoiceTurn = { session, ...newTurn() };
+    const owner = microphone.current;
+    const turn: VoiceTurn = { session, visitorId: visitorId.current! };
     voiceTurn.current = turn;
-    const valid = () => current(session) && turn.visitorId === visitorId.current && voiceTurn.current === turn && (!segmentValid || segmentValid());
-    let submitted = false;
-    updateConversation(turn, { input: "voice", status: "requesting" }, true);
-    busy.current = true;
-    setRecordingState("requesting");
-    setRecordingHint("正在准备完整语音片段…");
+    const valid = () => current(session) && turn.visitorId === visitorId.current && voiceTurn.current === turn
+      && microphone.current === owner && segmentValid();
+    setRecordingState("transcribing");
+    setRecordingHint("正在确认这段语音，原回答继续保留。");
     try {
-      setRecordingState("recording");
-      updateConversation(turn, { status: "recording" });
-      const audio = await audioResult;
       if (!valid()) return;
-      setRecordingState("transcribing");
-      updateConversation(turn, { status: "transcribing" });
-      setRecordingHint("正在识别这段语音，麦克风继续监听。");
       const form = new FormData();
-      form.set("file", audio.blob, audio.filename);
+      form.set("file", segmentWav(samples), "speech.wav");
       form.set("stt_provider", "sensevoice");
       const transcript = await jsonRequest<{ session_id: string; text: string }>(
         `/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/transcribe`,
-        { method: "POST", body: form, signal: segmentValid ? undefined : session.controller.signal }, 45000,
+        { method: "POST", body: form }, 45000,
       );
       if (transcript.session_id !== session.mediaSessionId || typeof transcript.text !== "string") throw new RequestError("response");
       if (!valid()) return;
       const text = transcript.text.trim();
-      if (!text) { setRecordingHint("没有识别到文字，请靠近麦克风重新录音。"); updateConversation(turn, { status: "no_text" }); return; }
-      if (text.length > 2000) { setRecordingHint("识别内容过长，请缩短问题后重新录音。"); updateConversation(turn, { status: "error", error: "识别内容超过2000字，未提交问题。" }); return; }
-      setQuestion(text);
-      setRecordingState("idle");
-      setRecordingHint("语音已识别并提交。");
-      submitted = true;
+      if (text.length > 2000) { setRecordingHint("识别内容过长，原回答继续；请缩短问题后重说。"); return; }
+      const intent = speechIntent(text, candidate.duringResponse);
+      if (intent === "ignore") { setRecordingHint("未确认新的问题，继续原回答与监听。"); return; }
+      candidate.releaseDuck();
+      const interrupting = busy.current || speech.current !== null;
       voiceTurn.current = null;
-      const answerWork = sendQuestion(session, text, turn, "voice", segmentValid);
-      if (!segmentValid) await answerWork;
+      setRecordingState("idle");
+      if (intent === "stop") {
+        setRecordingHint("已收到停止指令，未提交问答。");
+        if (interrupting) await bargeIn(null, owner);
+        return;
+      }
+      setQuestion(text);
+      setRecordingHint("已确认新的问题。");
+      if (interrupting) await bargeIn(text, owner);
+      else {
+        const token = {};
+        voiceSubmission.current = token;
+        void sendQuestion(session, text, undefined, "voice", () => voiceSubmission.current === token
+          && microphone.current === owner && segmentValid());
+      }
     } catch (error) {
       if (valid()) {
         const message = error instanceof RequestError && error.kind === "timeout"
           ? "语音识别超时，请重试或选择预设问题。" : recordingMessage(error);
         setRecordingHint(message);
-        updateConversation(turn, { status: "error", error: message });
       }
-      if (segmentValid) return "unknown";
+      return "unknown";
     } finally {
+      candidate.releaseDuck();
       if (valid()) {
         voiceTurn.current = null;
-        if (!submitted && !speech.current) busy.current = false;
         setRecordingState("idle");
       }
     }

@@ -16,18 +16,20 @@ export function segmentWav(samples: Float32Array): Blob {
   return new Blob([bytes], { type: "audio/wav" });
 }
 
-type Waiting = { samples: Float32Array; epoch: number; expires: number };
+export type VoiceCandidate = { duringResponse: boolean; releaseDuck: () => void };
+type Waiting = { samples: Float32Array; epoch: number; expires: number; candidate: VoiceCandidate };
 export type VoiceSegments = ReturnType<typeof createVoiceSegments>;
 export function createVoiceSegments(
   ready: () => boolean,
-  run: (samples: Float32Array, valid: () => boolean) => Promise<"unknown" | void>,
+  run: (samples: Float32Array, valid: () => boolean, candidate: VoiceCandidate) => Promise<"unknown" | void>,
   report: (text: string) => void,
   resourceUnknownChanged: (unknown: boolean) => void = () => {},
 ) {
   let epoch = 0, running = false, blocked = false, waiting: Waiting | undefined;
+  let runningCandidate: VoiceCandidate | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  function clearWaiting() { waiting = undefined; clearTimeout(timer); }
-  function invalidate() { epoch++; clearWaiting(); }
+  function clearWaiting() { waiting?.candidate.releaseDuck(); waiting = undefined; clearTimeout(timer); }
+  function invalidate() { epoch++; clearWaiting(); runningCandidate?.releaseDuck(); }
   function quarantine() {
     blocked = true; clearWaiting();
     // This is a shared resource failure, not an old visitor's transcript.
@@ -39,20 +41,20 @@ export function createVoiceSegments(
     if (!waiting) return;
     if (Date.now() >= waiting.expires) { clearWaiting(); report("等待识别超过15秒，此段未提交，请稍后重说。"); return; }
     if (running || blocked || !ready()) return;
-    const item = waiting; clearWaiting(); running = true;
+    const item = waiting; waiting = undefined; clearTimeout(timer); running = true; runningCandidate = item.candidate;
     const valid = () => item.epoch === epoch;
-    void run(item.samples, valid).then(result => {
+    void run(item.samples, valid, item.candidate).then(result => {
       if (result === "unknown") quarantine();
-    }, quarantine).finally(() => { running = false; pump(); });
+    }, quarantine).finally(() => { item.candidate.releaseDuck(); runningCandidate = undefined; running = false; pump(); });
   }
   return {
-    enqueue(samples: Float32Array) {
-      if (!samples.length) return;
-      if (samples.length > MAX_SEGMENT_SAMPLES || samples.some(n => !Number.isFinite(n))) { report("这段语音超过30秒或音频无效，未提交，请缩短后重说。"); return; }
-      if (blocked) { report(VOICE_RESOURCE_UNKNOWN); return; }
+    enqueue(samples: Float32Array, candidate: VoiceCandidate) {
+      if (!samples.length) { candidate.releaseDuck(); return; }
+      if (samples.length > MAX_SEGMENT_SAMPLES || samples.some(n => !Number.isFinite(n))) { candidate.releaseDuck(); report("这段语音超过30秒或音频无效，未提交，请缩短后重说。"); return; }
+      if (blocked) { candidate.releaseDuck(); report(VOICE_RESOURCE_UNKNOWN); return; }
       if (waiting && Date.now() >= waiting.expires) pump();
-      if (waiting) { report("上一段仍在等待处理，此段未识别，请稍后重说。"); return; }
-      waiting = { samples: samples.slice(), epoch, expires: Date.now() + 15000 };
+      if (waiting) { candidate.releaseDuck(); report("上一段仍在等待处理，此段未识别，请稍后重说。"); return; }
+      waiting = { samples: samples.slice(), epoch, expires: Date.now() + 15000, candidate };
       timer = setTimeout(pump, 15000);
       report("语音片段已保留，等待识别…"); pump();
     },
