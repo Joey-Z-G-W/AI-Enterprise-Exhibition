@@ -18,8 +18,7 @@ from exhibition_guide.answer import QuestionResponse
 from exhibition_guide.config import MediaConfig
 
 
-_MIMES = {"image": {"image/png", "image/jpeg", "image/webp", "image/gif"},
-          "video": {"video/mp4", "video/webm"}}
+_MIMES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 _CHUNK = 1024 * 1024
 
 
@@ -35,7 +34,7 @@ def _relative(value: str) -> PurePosixPath:
 class _Asset(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid", frozen=True)
     id: str = Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$")
-    kind: Literal["image", "video"]
+    kind: Literal["image"]
     relative_path: str
     sha256: str = Field(pattern=r"^[0-9a-fA-F]{64}$")
     mime: str
@@ -50,7 +49,7 @@ class _Asset(BaseModel):
         if self.reviewed is not True:
             raise ValueError("asset is not reviewed")
         _relative(self.relative_path)
-        if self.mime not in _MIMES[self.kind]:
+        if self.mime not in _MIMES:
             raise ValueError("unsupported media type")
         if self.source_filename != self.source_filename.strip() or any(c in self.source_filename for c in "/\\:"):
             raise ValueError("invalid source filename")
@@ -72,7 +71,7 @@ class Sentence(BaseModel):
 
 class PublicAsset(BaseModel):
     id: str
-    kind: Literal["image", "video"]
+    kind: Literal["image"]
     url: str
     mime: str
     alt: str
@@ -218,39 +217,14 @@ class MediaCatalog:
         except (OSError, ValueError, RuntimeError):
             raise HTTPException(404, "media unavailable") from None
         size = os.fstat(stream.fileno()).st_size
-        start, end, status = 0, size - 1, 200
-        headers = {"Accept-Ranges": "bytes", "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"}
-        # Range applies to GET. A HEAD response describes the full representation.
-        range_header = request.headers.get("range") if request.method == "GET" else None
-        if range_header:
-            match = re.fullmatch(r"bytes=(\d*)-(\d*)", range_header)
-            try:
-                if match is None or not any(match.groups()) or size == 0:
-                    raise ValueError
-                if match[1]:
-                    start = int(match[1])
-                    end = min(int(match[2]), size - 1) if match[2] else size - 1
-                else:
-                    length = int(match[2])
-                    if length <= 0:
-                        raise ValueError
-                    start = max(0, size - length)
-                if start > end or start >= size:
-                    raise ValueError
-                status = 206
-                headers["Content-Range"] = f"bytes {start}-{end}/{size}"
-            except ValueError:
-                stream.close()
-                return Response(status_code=416, headers={**headers, "Content-Range": f"bytes */{size}"})
-        headers["Content-Length"] = str(max(0, end - start + 1))
+        headers = {"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store", "Content-Length": str(size)}
         if request.method == "HEAD":
             stream.close()
-            return Response(status_code=status, media_type=asset.mime, headers=headers)
+            return Response(media_type=asset.mime, headers=headers)
 
         def chunks():
             try:
-                stream.seek(start)
-                remaining = end - start + 1
+                remaining = size
                 while remaining > 0:
                     chunk = stream.read(min(_CHUNK, remaining))
                     if not chunk:
@@ -260,5 +234,5 @@ class MediaCatalog:
             finally:
                 stream.close()
 
-        return StreamingResponse(chunks(), status_code=status, media_type=asset.mime, headers=headers,
+        return StreamingResponse(chunks(), media_type=asset.mime, headers=headers,
                                  background=BackgroundTask(stream.close))

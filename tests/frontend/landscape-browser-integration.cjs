@@ -25,7 +25,6 @@ class LandscapeFixture extends Fixture {
     if (req.url.startsWith('/guide/media/')) {
       this.media.push(req.url);
       if (req.url.endsWith('slow')) { this.heldMedia.push(res); return true; }
-      if (req.url.endsWith('movie')) { res.writeHead(200, { 'content-type': 'video/webm' }); res.end(this.movie); return true; }
       res.writeHead(req.url.endsWith('missing') ? 404 : 200, { 'content-type': 'image/png' }); res.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5X8AAAAASUVORK5CYII=', 'base64')); return true;
     }
     if (req.url === '/guide/questions') {
@@ -108,18 +107,22 @@ async function sentence(index, asset) {
   await sentence(start, 'one'); const imageHandle = await page.locator('.material-player img').elementHandle();
   await sentence(start + 1, 'one'); assert.equal(await imageHandle.evaluate(el => el.isConnected), true, 'same asset keeps element');
   await sentence(start + 2, null); await sentence(start + 3, null); await sentence(start + 4, 'five'); results.push('same image retained; null and 404 black; audio continues');
-  fixture.movie = Buffer.from(await page.evaluate(async () => {
-    const canvas = document.createElement('canvas'); canvas.width = 80; canvas.height = 60; const paint = canvas.getContext('2d'), stream = canvas.captureStream(20);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }), chunks = [];
-    recorder.ondataavailable = e => chunks.push(e.data); const stopped = new Promise(r => recorder.onstop = r); recorder.start();
-    const timer = setInterval(() => { paint.fillStyle = 'blue'; paint.fillRect(0, 0, 80, 60); }, 30);
-    await new Promise(r => setTimeout(r, 500)); recorder.stop(); await stopped; clearInterval(timer); stream.getTracks().forEach(t => t.stop()); return Array.from(new Uint8Array(await new Blob(chunks).arrayBuffer()));
-  }));
-  const movie = plan(['movie', 'movie', null, null, null]); movie.assets[0].kind = 'video'; movie.assets[0].mime = 'video/webm';
-  start = await question(movie); await sentence(start, 'movie'); const movieHandle = await page.locator('.material-player video').elementHandle();
-  assert.equal(await movieHandle.evaluate(v => v.muted), true); const movieTime = await movieHandle.evaluate(v => v.currentTime);
-  await sentence(start + 1, 'movie'); assert.equal(await movieHandle.evaluate(v => v.isConnected), true); assert.ok(await movieHandle.evaluate((v, time) => v.currentTime >= time, movieTime));
-  for (let i = 2; i < 5; i++) await sentence(start + i, null); results.push('real WebM video defaults muted and consecutive same ID never restarts');
+  for (const rejected of [{ kind: 'video', mime: 'video/mp4' }, { kind: 'image', mime: 'video/webm' }]) {
+    const unsupported = plan(['unsupported', null, null, null, null]); Object.assign(unsupported.assets[0], rejected);
+    const closed = fixture.closed.length; start = await question(unsupported);
+    await sleep(200);
+    assert.equal(fixture.media.includes('/guide/media/unsupported'), false, 'unsupported material must never be requested');
+    assert.equal(await page.locator('.material-player video, .material-player img').count(), 0);
+    for (let i = 0; i < 2; i++) {
+      await until(() => work().length > start + i, 'legacy speech survives unsupported material');
+      fixture.emit(fixture.sid(1), 'speech.media_started'); fixture.emit(fixture.sid(1), 'speech.ended');
+    }
+    await page.getByRole('button', { name: '对话记录', exact: true }).click();
+    await page.getByText('回答播报结束', { exact: true }).last().waitFor();
+    await page.getByRole('button', { name: '关闭记录', exact: true }).click();
+    assert.equal(fixture.closed.length, closed); assert.equal(fixture.serial, 1);
+    results.push('unsupported material ' + rejected.kind + '/' + rejected.mime + ': no fetch or display, legacy speech continues');
+  }
   start = await question(plan(['slow', null, null, null, null])); await until(() => fixture.heldMedia.length > 0, 'slow preload requested');
   fixture.emit(fixture.sid(1), 'speech.media_started'); await page.evaluate(() => window.receiverAudio(.8)); fixture.emit(fixture.sid(1), 'speech.ended'); await sleep(100);
   await page.locator('.preset-question').nth(1).click();

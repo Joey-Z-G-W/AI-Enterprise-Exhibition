@@ -154,20 +154,27 @@ def test_disabled_media_never_reads_files_and_preserves_exact_json(monkeypatch):
         assert client.get("/media/unknown").status_code == 404
 
 
-def test_video_get_head_and_byte_ranges(catalog):
-    config = configured(catalog, kind="video", mime="video/mp4")
+@pytest.mark.parametrize("mime", ["video/mp4", "video/webm"])
+def test_video_catalog_entries_are_rejected(catalog, mime):
+    with TestClient(create_app(configured(catalog, kind="video", mime=mime), service=CompletedAnswer())) as client:
+        assert "presentation" not in ask(client).json()
+        assert client.get("/media/robot").status_code == 404
+        assert client.head("/media/robot").status_code == 404
+
+
+def test_image_get_and_head_ignore_video_range_requests(catalog):
+    config = configured(catalog)
     with TestClient(create_app(config)) as client:
         full = client.get("/media/robot")
         assert full.status_code == 200 and full.content == catalog[2]
         head = client.head("/media/robot")
         assert head.status_code == 200 and head.content == b""
         assert head.headers["content-length"] == str(len(catalog[2]))
-        for header, expected in [("bytes=2-5", catalog[2][2:6]), ("bytes=3-", catalog[2][3:]), ("bytes=-4", catalog[2][-4:])]:
+        for header in ["bytes=2-5", "bytes=3-", "bytes=-4"]:
             response = client.get("/media/robot", headers={"Range": header})
-            assert response.status_code == 206 and response.content == expected
-            assert response.headers["content-range"].endswith("/" + str(len(catalog[2])))
-        assert client.get("/media/robot", headers={"Range": "bytes=9999-"}).status_code == 416
-        assert client.get("/media/robot", headers={"Range": "bytes=0-1,3-4"}).status_code == 416
+            assert response.status_code == 200 and response.content == catalog[2]
+            assert "content-range" not in response.headers
+        assert "accept-ranges" not in full.headers
 
 
 def test_media_enabled_keeps_existing_error_status_and_json(catalog):

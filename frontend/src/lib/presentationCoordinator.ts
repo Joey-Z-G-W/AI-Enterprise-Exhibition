@@ -1,4 +1,4 @@
-export type MaterialAsset = { id: string; kind: "image" | "video"; url: string; mime: string; alt: string };
+export type MaterialAsset = { id: string; kind: "image"; url: string; mime: string; alt: string };
 export type Presentation = { sentences: { id: string; text: string; asset_id: string | null }[]; assets: MaterialAsset[] };
 export type PresentationIdentity = { visitorId: string; turnId: string; sessionId: string; generation: number };
 export type MaterialCommands = { prepare: (assets: MaterialAsset[]) => void; show: (id: string | null) => void; clear: () => void };
@@ -11,9 +11,9 @@ export function readPresentation(value: unknown, text: string): Presentation | u
   const assets = new Set<string>(), sentences = new Set<string>();
   for (const a of p.assets) {
     if (!a || typeof a !== "object" || typeof a.id !== "string" || !idPattern.test(a.id) || assets.has(a.id)
-      || !["image", "video"].includes(a.kind) || typeof a.url !== "string" || a.url !== `/guide/media/${a.id}`
+      || a.kind !== "image" || typeof a.url !== "string" || a.url !== `/guide/media/${a.id}`
       || typeof a.alt !== "string" || a.alt.length > 500 || typeof a.mime !== "string"
-      || !(a.kind === "image" ? ["image/png", "image/jpeg", "image/webp", "image/gif"] : ["video/mp4", "video/webm"]).includes(a.mime)) return;
+      || !["image/png", "image/jpeg", "image/webp", "image/gif"].includes(a.mime)) return;
     assets.add(a.id);
   }
   for (const s of p.sentences) {

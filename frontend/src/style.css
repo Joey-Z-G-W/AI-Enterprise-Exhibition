@@ -124,7 +124,7 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #08
 .avatar-player video { width: 100%; height: 100%; object-fit: contain; }
 .material-player, .material-surface { background: #000; }
 .material-surface { width: 100%; height: 100%; }
-.material-surface img, .material-surface video { display: block; width: 100%; height: 100%; object-fit: contain; }
+.material-surface img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .control-bar { position: relative; height: 270px; padding: 20px 28px; background: #f4f5ef; border-top: 1px solid #ced7cd; }
 .control-heading { display: flex; align-items: center; gap: 22px; }
 .control-heading .button-row { margin-left: auto; flex-wrap: nowrap; gap: 10px; }

@@ -180,19 +180,11 @@ async function audioQuestion(text) {
       try { timings.push(JSON.parse(message.text().slice(13))); } catch (error) { diagnostics.push('Invalid public timing: ' + error.message); }
     }
   });
-  const movie = Buffer.from(await page.evaluate(async () => {
-    const canvas = document.createElement('canvas'); canvas.width = 80; canvas.height = 60; const paint = canvas.getContext('2d'), stream = canvas.captureStream(20);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }), chunks = []; recorder.ondataavailable = event => chunks.push(event.data);
-    const stopped = new Promise(resolve => recorder.onstop = resolve); recorder.start();
-    const timer = setInterval(() => { paint.fillStyle = '#346'; paint.fillRect(0, 0, 80, 60); }, 40);
-    await new Promise(resolve => setTimeout(resolve, 1200)); recorder.stop(); await stopped; clearInterval(timer); stream.getTracks().forEach(track => track.stop());
-    return Array.from(new Uint8Array(await new Blob(chunks).arrayBuffer()));
-  }));
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5X8AAAAASUVORK5CYII=', 'base64');
   const image = process.env.REAL_TEST_IMAGE ? await fs.readFile(path.resolve(process.env.REAL_TEST_IMAGE)) : png;
   const imagePath = process.env.REAL_TEST_IMAGE ? 'reviewed.jpg' : 'reviewed.png';
   const records = [];
-  for (const [id, kind, relative, mime, bytes, keyword] of [['robot', 'image', imagePath, imagePath.endsWith('.jpg') ? 'image/jpeg' : 'image/png', image, '机器人'], ['broken', 'image', 'broken.png', 'image/png', png, '失效素材'], ['movie', 'video', 'movie.webm', 'video/webm', movie, '展厅视频']]) {
+  for (const [id, kind, relative, mime, bytes, keyword] of [['robot', 'image', imagePath, imagePath.endsWith('.jpg') ? 'image/jpeg' : 'image/png', image, '机器人'], ['broken', 'image', 'broken.png', 'image/png', png, '失效素材'], ['hall', 'image', 'hall.png', 'image/png', png, '展厅图片']]) {
     await fs.writeFile(path.join(mediaRoot, relative), bytes);
     records.push({ id, kind, relative_path: relative, mime, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), source_filename: 'opening.md', source_url: 'https://fixture.example/reviewed', alt: keyword, keywords: [keyword], reviewed: true });
   }
@@ -224,19 +216,19 @@ async function audioQuestion(text) {
   fixture.emit(sid(), 'speech.media_started'); fixture.emit(sid(), 'speech.ended');
   await page.getByText('欢迎语播报结束，您可以继续提问', { exact: true }).waitFor();
   await page.getByRole('button', { name: '关闭记录', exact: true }).click();
-  // Round 1: preset -> real answer -> image, empty sentence, real silent video.
-  await plan('机器人介绍。随后说明。展厅视频演示。', '锐伽提供哪些服务？', false);
+  // Round 1: preset -> real answer -> image, empty sentence, second reviewed image.
+  await plan('机器人介绍。随后说明。展厅图片说明。', '锐伽提供哪些服务？', false);
   await page.locator('.preset-question').first().click();
-  const first = await questionReady(0); assert.deepEqual(first.response.presentation.sentences.map(s => s.asset_id), ['robot', null, 'movie']);
+  const first = await questionReady(0); assert.deepEqual(first.response.presentation.sentences.map(s => s.asset_id), ['robot', null, 'hall']);
   await until(() => work().length === 1, 'first real sentence upload');
   await signalStarted(0);
   assert.equal(await page.locator('.material-player img, .material-player video').count(), 0, 'SSE alone cannot paint');
-  await playSentence(0, 'robot'); await playSentence(1, null); await playSentence(2, 'movie', { waitEnd: false });
-  assert.equal(await page.locator('.material-player video').evaluate(v => v.muted), true);
-  assert.equal(await page.locator('.material-player video').evaluate(v => v.readyState >= 2), true);
-  await page.screenshot({ path: path.join(evidence, 'real-video.png') });
+  await playSentence(0, 'robot'); await playSentence(1, null); await playSentence(2, 'hall', { waitEnd: false });
+  assert.ok(await page.locator('.material-player img').evaluate(img => img.complete && img.naturalWidth > 0));
+  assert.equal(await page.locator('.material-player video').count(), 0);
+  await page.screenshot({ path: path.join(evidence, 'second-image.png') });
   await finishSentence(2);
-  results.push({ name: 'preset + verified-source image/null/video, receiver PCM gating', status: 'PASS' });
+  results.push({ name: 'preset + verified-source image/null/second image, receiver PCM gating', status: 'PASS' });
   // Round 2: free voice, physical WAV -> real VAD -> STT -> real context rewrite/answer.
   await plan('失效素材介绍。机器人恢复说明。', '请说明失效素材和机器人', true); failNextAsset = true;
   const before = work().length; await audioQuestion('请说明失效素材和机器人');
