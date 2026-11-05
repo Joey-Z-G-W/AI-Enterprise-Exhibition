@@ -5,8 +5,9 @@
  * Changes: bounded negotiation, cancellation, media progress and explicit audio notice.
  */
 import { jsonRequest, post, RequestError } from "./api";
+import { createReceiverClock, type ReceiverClock } from "./receiverClock";
 
-export type Playback = { close: () => void };
+export type Playback = { close: () => void; receiver?: ReceiverClock };
 
 function waitUntil(check: () => boolean, signal: AbortSignal, milliseconds: number): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -41,6 +42,7 @@ export async function startPlayback(
   const stream = new MediaStream();
   let pc: RTCPeerConnection | undefined;
   let closed = false;
+  let receiver: ReceiverClock | undefined;
   let cancellation = new RequestError("cancelled");
   let negotiationTimer: number | undefined;
   let progressTimer: number | undefined;
@@ -57,6 +59,7 @@ export async function startPlayback(
     window.clearInterval(progressTimer);
     if (frameCallback !== undefined) video.cancelVideoFrameCallback(frameCallback);
     lifetime.abort();
+    receiver?.close();
     if (pc) {
       pc.ontrack = null;
       pc.onconnectionstatechange = null;
@@ -145,6 +148,7 @@ export async function startPlayback(
     ));
     if (closed) throw cancellation;
     window.clearTimeout(negotiationTimer);
+    try { receiver = createReceiverClock(stream, video); } catch { /* No confirmed receiver clock: presentation stays black. */ }
     // Idle avatars still deliver frames; silence is not a failure. Prefer presented
     // video frames, then decoded frame count, then ready video playback time.
     let previousProgress = video.getVideoPlaybackQuality?.().totalVideoFrames ?? video.currentTime;
@@ -176,7 +180,7 @@ export async function startPlayback(
       if (performance.now() - lastProgress >= (seenFrame ? 10000 : 15000)) fail();
     }, 500);
     void play();
-    return { close };
+    return { close, receiver };
   } catch (error) {
     close();
     throw error;

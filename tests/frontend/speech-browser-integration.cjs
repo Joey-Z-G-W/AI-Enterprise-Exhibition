@@ -121,6 +121,7 @@ async function scenario(name, fn, options = {}) {
   page.on('console', m => { if (m.text().startsWith('guide_timing ')) timing.push(JSON.parse(m.text().slice(13))); });
   page.on('pageerror', e => diagnostics.push({ scenario: name, error: e.message }));
   await page.goto(origin); await page.getByRole('button', { name: '连接数字人', exact: true }).click();
+  await page.getByRole('button', { name: '对话记录', exact: true }).click();
   await until(() => owner.serial === 1 && owner.tts.some(x => x.welcome), 'welcome TTS');
   const sid = owner.sid(1);
   await until(() => owner.sse.has(sid), 'SSE subscription');

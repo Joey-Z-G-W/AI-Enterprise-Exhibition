@@ -93,11 +93,18 @@ class AvatarConfig(_ConfigModel):
         return value
 
 
+class MediaConfig(_ConfigModel):
+    enabled: bool = False
+    root: str = "media"
+    manifest: str = "manifest.json"
+
+
 class AppConfig(_ConfigModel):
     llm: ModelConfig = Field(default_factory=ModelConfig)
     embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
     knowledge: KnowledgeConfig = Field(default_factory=KnowledgeConfig)
     avatar: AvatarConfig = Field(default_factory=AvatarConfig)
+    media: MediaConfig = Field(default_factory=MediaConfig)
 
 
 def load_config(path: str | Path = Path("config/local.toml")) -> AppConfig:

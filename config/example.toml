@@ -23,3 +23,9 @@ kb_id = ""
 [avatar]
 avatar_id = "companion"
 tts_voice = "zh-CN-XiaoxiaoNeural"
+
+[media]
+enabled = false
+# Reviewed local assets; manifest is a JSON file relative to root.
+root = "media"
+manifest = "manifest.json"

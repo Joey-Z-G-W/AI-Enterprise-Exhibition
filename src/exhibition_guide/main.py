@@ -13,6 +13,8 @@ from exhibition_guide.evidence_model import ModelEvidenceEvaluator, ModelQuestio
 from exhibition_guide.context import ContextStore, Invalidation, Rewriter
 from exhibition_guide.knowledge import KnowledgeClient
 from exhibition_guide.llm import ModelClient
+from exhibition_guide.media import MediaCatalog, PresentedQuestionResponse
+from starlette.concurrency import run_in_threadpool
 
 
 class UIConfigResponse(BaseModel):
@@ -30,6 +32,7 @@ def get_answer_service(request: Request) -> AnswerService | None:
 def create_app(config: AppConfig | None = None, *, service: AnswerService | None = None, rewriter: Rewriter | None = None) -> FastAPI:
     """No filesystem configuration access; callers explicitly supply enabled config."""
     config = config if config is not None else AppConfig()
+    media = MediaCatalog(config.media)
 
     @asynccontextmanager
     async def lifespan(application: FastAPI):
@@ -69,7 +72,12 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
             avatar_id=config.avatar.avatar_id, tts_voice=config.avatar.tts_voice,
         )
 
-    @application.post("/questions", response_model=QuestionResponse)
+    @application.get("/media/{asset_id}")
+    @application.head("/media/{asset_id}", include_in_schema=False)
+    def media_file(asset_id: str, request: Request) -> Response:
+        return media.response(asset_id, request)
+
+    @application.post("/questions", response_model=PresentedQuestionResponse, response_model_exclude_unset=True)
     async def questions(
         request: QuestionRequest, response: Response,
         answer_service: Annotated[AnswerService | None, Depends(get_answer_service)],
@@ -85,7 +93,13 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
                 else 409 if result.error_code in {"turn_stale", "turn_conflict", "turn_cancelled", "visitor_retired"}
                 else 504 if result.error_code and result.error_code.endswith("_timeout") else 502
             )
-        return result
+        presentation = await run_in_threadpool(media.presentation, result)
+        # Explicitly serialize legacy defaults (sources/error_code) while keeping
+        # the new field absent unless a reviewed asset was actually selected.
+        payload = result.model_dump()
+        if presentation is not None:
+            payload["presentation"] = presentation
+        return PresentedQuestionResponse.model_validate(payload)
 
     @application.post("/visitors/{visitor_id}/invalidate")
     async def invalidate(visitor_id: str, body: Invalidation) -> dict:

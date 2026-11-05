@@ -117,6 +117,7 @@ async function scenario(name, test, { idle = false } = {}) {
   try {
   await page.goto(origin);
   await page.getByRole('button', { name: '连接数字人', exact: true }).click();
+  await page.getByRole('button', { name: '对话记录', exact: true }).click();
   await page.getByRole('status', { name: '收音状态' }).filter({ hasText: '正在持续收音。' }).waitFor({ timeout: 30000 });
   await until(() => owner.uploads.length === 1, 'welcome submitted');
   owner.emit(owner.sid(1), 'speech.media_started');

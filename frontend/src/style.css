@@ -114,3 +114,30 @@ footer { max-width: 1396px; margin: 22px auto; padding: 0 42px; display: flex; j
 .welcome-message p { margin: 0 0 6px; }
 .welcome-message small { color: #788b7e; }
 @media (max-width: 480px) { .preset-questions { grid-template-columns: 1fr; } .preset-question { min-height: 48px; } }
+
+/* One 1920×1080 canvas, including the permanently visible control bar. */
+html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #080c0b; }
+.landscape-frame { position: fixed; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center; overflow: hidden; background: #eef1e9; }
+.presentation-stage { display: grid; grid-template-columns: 1fr 2fr; width: 1920px; height: 810px; background: #000; }
+.avatar-player, .material-player { width: 100%; height: 810px; min-width: 0; overflow: hidden; }
+.avatar-player .video-stage { height: 100%; min-height: 0; background: #10241f; }
+.avatar-player video { width: 100%; height: 100%; object-fit: contain; }
+.material-player, .material-surface { background: #000; }
+.material-surface { width: 100%; height: 100%; }
+.material-surface img, .material-surface video { display: block; width: 100%; height: 100%; object-fit: contain; }
+.control-bar { position: relative; height: 270px; padding: 20px 28px; background: #f4f5ef; border-top: 1px solid #ced7cd; }
+.control-heading { display: flex; align-items: center; gap: 22px; }
+.control-heading .button-row { margin-left: auto; flex-wrap: nowrap; gap: 10px; }
+.control-heading button { font-size: 16px; padding: 12px 18px; white-space: nowrap; }
+.control-heading .recording-stop { margin: 0; }
+.control-bar .preset-questions { display: flex; flex-wrap: nowrap; gap: 14px; margin: 20px 0 12px; }
+.control-bar .preset-question { flex: 1; min-height: 62px; padding: 12px 20px; font-size: 20px; }
+.control-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; max-height: 96px; overflow-y: auto; }
+.control-status p, .control-status small { margin: 0; font-size: 15px; line-height: 1.5; }
+.control-status .notice { padding: 4px 10px; }
+.control-bar .handoff-panel { position: absolute; left: 640px; bottom: 280px; width: 650px; background: #f4f5ef; border: 1px solid #b7c8b6; z-index: 5; }
+.landscape-frame .conversation-history { display: none; position: absolute; top: 30px; left: 660px; width: 1230px; height: 750px; max-width: none; margin: 0; padding: 24px; background: #fff; border: 1px solid #ced7cd; border-radius: 12px; z-index: 4; box-shadow: 0 10px 50px #0008; }
+.landscape-frame .conversation-history.is-open { display: flex; flex-direction: column; }
+.landscape-frame .conversation-history-heading { flex-shrink: 0; }
+.landscape-frame .conversation-log { flex: 1; max-height: none; min-height: 0; overflow-y: auto; }
+.history-close { order: 3; margin-left: auto; }

@@ -5,6 +5,10 @@ import { recordingMessage } from "./lib/recording";
 import { createContinuousCapture, type ContinuousCapture, type CaptureStatus } from "./lib/continuousCapture";
 import { createVoiceSegments, segmentWav, VOICE_RESOURCE_UNKNOWN, type VoiceSegments, type VoiceCandidate } from "./lib/voiceSegments";
 import { PRESET_QUESTIONS } from "./presetQuestions";
+import { AvatarPlayer } from "./components/AvatarPlayer";
+import { MaterialPlayer } from "./components/MaterialPlayer";
+import { createPresentationCoordinator, readPresentation, type Presentation, type MaterialCommands } from "./lib/presentationCoordinator";
+import { wavDuration } from "./lib/receiverClock";
 
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
 const WELCOME_TEXT = "您好，欢迎来到锐伽展厅！您可以直接向我提问，也可以选择下方的问题。我会根据现有资料为您介绍。";
@@ -14,6 +18,7 @@ type BusinessResult = {
   visitor_id: string; turn_id: string; turn_seq: number;
   status: "answer" | "clarify" | "handoff" | "error";
   text: string; error_code?: string | null;
+  presentation?: unknown;
   sources: { excerpt: string; source: { status: "known" | "unknown"; filename: string | null } }[];
 };
 type UIConfig = Readonly<{ avatar_id: string; tts_voice: string }>;
@@ -52,6 +57,7 @@ type Speech = {
   phase: "preparing" | "sent" | "playing" | "ended"; acknowledged: boolean;
   texts: string[]; index: number; future?: Promise<PreparedAudio>; timing: Timing;
   controller: AbortController; draining?: boolean; prepared?: Blob; mediaStarted: boolean;
+  presentation?: Presentation; presentationToken?: number; receiverEnded?: boolean;
 };
 
 function recordTiming(timing: Timing, stage: string, segment = -1) {
@@ -151,6 +157,14 @@ async function releaseSession(id: string): Promise<boolean> {
 
 export default function App() {
   const video = useRef<HTMLVideoElement>(null);
+  const material = useRef<MaterialCommands>(null);
+  const coordinator = useRef(createPresentationCoordinator(() => material.current));
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [frameScale, setFrameScale] = useState(() => Math.min(innerWidth / 1920, innerHeight / 1080));
+  useEffect(() => {
+    const resize = () => setFrameScale(Math.min(innerWidth / 1920, innerHeight / 1080));
+    window.addEventListener("resize", resize); return () => window.removeEventListener("resize", resize);
+  }, []);
   const visitorId = useRef<string | null>(null);
   const turnSequence = useRef(0);
   const businessBarrier = useRef<BusinessBarrier | null>(null);
@@ -362,8 +376,10 @@ export default function App() {
 
   function finishSpeech(item: Speech) {
     if (!currentSpeech(item) || item.phase !== "ended" || !item.acknowledged) return;
-    window.clearTimeout(speechTimer.current);
     if (!item.draining && !item.mediaStarted) {
+      window.clearTimeout(speechTimer.current);
+      item.session.playback?.receiver?.cancel();
+      if (item.presentationToken !== undefined) coordinator.current.end(item.presentationToken);
       endTiming(item.timing, "failed", item.index);
       item.controller.abort();
       item.future = undefined;
@@ -374,6 +390,8 @@ export default function App() {
       segments.current?.pump();
       return;
     }
+    if (item.presentation && !item.receiverEnded) return;
+    window.clearTimeout(speechTimer.current);
     recordTiming(item.timing, "segment_complete", item.index);
     if (!item.draining && item.index + 1 < item.texts.length) {
       const prepared = item.future;
@@ -386,6 +404,7 @@ export default function App() {
       return;
     }
     if (!item.draining) item.timing.finished = true;
+    if (item.presentationToken !== undefined) coordinator.current.end(item.presentationToken);
     setSpeechStatus(item, item.draining ? "当前段已结束，旧回答后续不再播报。" : item.kind === "welcome" ? "欢迎语播报结束，您可以继续提问" : item.kind === "demo" ? "固定文本播报结束" : "回答播报结束");
     item.controller.abort();
     speech.current = null;
@@ -439,6 +458,7 @@ export default function App() {
   }
 
   function detach(cancelBusiness = true, keepCapture = false, keepUtterance = false): ActiveSession | null {
+    coordinator.current.clear();
     bargeRecovery.current = null;
     if (!keepCapture) stopMicrophone();
     else discardVoice(keepUtterance);
@@ -675,6 +695,8 @@ export default function App() {
       session.events.addEventListener("speech.media_started", () => {
         const item = speech.current;
         if (item && item.session === session && currentSpeech(item) && ["sent", "playing"].includes(item.phase)) {
+          if (item.mediaStarted) return;
+          if (item.presentation) session.playback?.receiver?.signalStart();
           recordTiming(item.timing, "media_started", item.index);
           item.phase = "playing";
           item.mediaStarted = true;
@@ -686,6 +708,7 @@ export default function App() {
         const item = speech.current;
         if (!item || item.session !== session || !currentSpeech(item) || !["sent", "playing"].includes(item.phase)) return;
         recordTiming(item.timing, "ended_signal", item.index);
+        if (item.presentation) session.playback?.receiver?.signalEnd();
         item.phase = "ended";
         // Keep the operation locked until its HTTP acknowledgement has also settled.
         finishSpeech(item);
@@ -796,6 +819,7 @@ export default function App() {
 
   function switchQuestion(session: ActiveSession, text: string, input: "text" | "voice", maySubmit?: () => boolean) {
     if (!current(session) || !session.mediaReady || transition.current || bargeRecovery.current) return;
+    coordinator.current.clear();
     if (session.uploadUnknown) {
       setMediaWarning("旧音频上传结果未确认，新的语音不会提交；请联系现场工作人员。");
       return;
@@ -882,7 +906,7 @@ export default function App() {
         setAnswer(body);
         updateConversation(turn, { result: body, status: body.status === "error" ? "error" : "completed" });
         setPending(false);
-        if (body.status === "answer" || body.status === "clarify" || body.status === "handoff") await speakText(session, body.text, "answer", turn.turnId);
+        if (body.status === "answer" || body.status === "clarify" || body.status === "handoff") await speakText(session, body.text, "answer", turn.turnId, readPresentation(body.presentation, body.text));
         else endTiming(turn.timing, "failed");
       }
     } catch (error) {
@@ -964,7 +988,7 @@ export default function App() {
     await speakText(session, DEMO_TEXT, "demo");
   }
 
-  async function speakText(session: ActiveSession, text: string, kind: Speech["kind"], turnId?: string) {
+  async function speakText(session: ActiveSession, text: string, kind: Speech["kind"], turnId?: string, presentation?: Presentation) {
     const sessionId = session.mediaSessionId;
     if (!sessionId || !current(session) || (kind !== "answer" && (speech.current || pendingSpeech.current))) return;
     if (kind === "answer") {
@@ -975,7 +999,8 @@ export default function App() {
     const timing = kind === "answer" ? questionTurn.current!.timing
       : { trace: crypto.randomUUID(), turnSeq: 0, kind, started: performance.now() };
     const item: Speech = { session, visitorId: session.visitorId, turnId, kind, phase: "preparing", acknowledged: false,
-      texts: kind === "answer" ? answerSegments(text) : [text], index: 0, timing, controller: new AbortController(), mediaStarted: false };
+      texts: presentation ? presentation.sentences.map(s => s.text) : kind === "answer" ? answerSegments(text) : [text], index: 0, timing, controller: new AbortController(), mediaStarted: false, presentation };
+    if (presentation && turnId) item.presentationToken = coordinator.current.begin({ visitorId: session.visitorId, turnId, sessionId, generation: generation.current }, presentation);
     if (!text.trim() || Array.from(text).length > 1000) {
       endTiming(timing, "failed");
       setSpeechStatus(item, !text.trim() ? "回答没有可播报文字，仅保留文字显示。" : "回答超过 1000 字，无法自动播报；完整文字已保留。");
@@ -1023,12 +1048,55 @@ export default function App() {
   async function playSpeechSegment(item: Speech, prepared?: Promise<PreparedAudio>) {
     const { session, kind } = item;
     const sessionId = session.mediaSessionId;
-    const index = item.index;
+    let index = item.index;
     try {
       if (!sessionId || !currentSpeech(item) || item.draining) return;
-      const audio = await (prepared ?? prepareSpeechAudio(item, index));
+      let audio = await (prepared ?? prepareSpeechAudio(item, index));
       if (!currentSpeech(item) || item.draining || item.index !== index) return;
       if ("error" in audio) throw audio.error;
+      if (item.presentation) {
+        const receiver = session.playback?.receiver;
+        let duration = 0, ready = false;
+        try { duration = await wavDuration(audio.blob); ready = !!receiver && await receiver.waitForQuiet(item.controller.signal); }
+        catch { /* Presentation observation is optional; no upload has happened yet. */ }
+        if (!currentSpeech(item) || item.draining || item.index !== index) return;
+        if (!ready) {
+          // Only unsent audio is regrouped. An already uploaded segment still
+          // needs its existing ACK + receiver drain barrier before arriving here.
+          if (item.presentationToken !== undefined) coordinator.current.end(item.presentationToken);
+          item.presentation = undefined; item.presentationToken = undefined;
+          receiver?.cancel();
+          const preparedText = item.texts[index];
+          item.texts = answerSegments(item.texts.slice(index).join(""));
+          item.index = index = 0; item.future = undefined;
+          if (item.texts[0] !== preparedText) {
+            audio = await prepareSpeechAudio(item, index);
+            if (!currentSpeech(item) || item.draining) return;
+            if ("error" in audio) throw audio.error;
+          }
+        } else {
+        item.receiverEnded = false;
+        receiver!.arm(duration, () => {
+          if (!currentSpeech(item) || item.draining || item.index !== index) return;
+          recordTiming(item.timing, "receiver_audio_started", index);
+          if (item.presentationToken !== undefined) coordinator.current.cue(item.presentationToken, index);
+        }, () => {
+          if (!currentSpeech(item) || item.index !== index) return;
+          recordTiming(item.timing, "receiver_audio_drained", index);
+          item.receiverEnded = true; finishSpeech(item);
+        }, mayUseServerCompletion => {
+          if (!currentSpeech(item) || item.index !== index) return;
+          if (item.presentationToken !== undefined) coordinator.current.end(item.presentationToken);
+          item.presentationToken = undefined;
+          if (!mayUseServerCompletion) return;
+          // Optional visual observation failed. Retain ACK/media_started/ended
+          // checks and queued WAVs; never report this as receiver_audio_drained.
+          recordTiming(item.timing, "receiver_unobservable_server_fallback", index);
+          item.presentation = undefined;
+          finishSpeech(item);
+        });
+        }
+      }
       const form = new FormData();
       form.set("file", audio.blob, kind === "welcome" ? "welcome.wav" : kind === "demo" ? "fixed-demo.wav" : "answer.wav");
       item.phase = "sent";
@@ -1081,66 +1149,52 @@ export default function App() {
   }
 
   const connected = connection === "ready" || connection === "playing";
-  return <main>
-    <header className="topbar">
-      <a className="brand" href="/" aria-label="展厅导览首页"><span className="brand-mark">展</span><span>展厅 · AI 导览<small>现场体验 / 单组访客</small></span></a>
-      <span className="mode-note">实时数字人 <span>·</span> 展厅导览问答</span>
-    </header>
-    <div className="workspace">
-      <section className="stage-panel" aria-label="数字人">
-        <div className="stage-heading"><span className="eyebrow">现场导览</span><span className={`status-pill ${connected ? "online" : ""}`} role="status"><i />{mode === "human" ? "销售接管中" : labels[connection]}</span></div>
-        <div className="video-stage">
-          <video ref={video} playsInline autoPlay aria-label="数字人实时画面" onPlaying={() => {
-            if (active.current && !active.current.controller.signal.aborted) setConnection((value) => value === "ready" ? "playing" : value);
-          }} />
-          {!connected && <div className="stage-placeholder"><div className="orbit"><span>AI</span></div><h1>{mode === "human" ? "请与现场销售交流" : "欢迎来到展厅"}</h1><p>{mode === "human" ? "麦克风与数字人声画已关闭" : connection === "connecting" ? "正在准备形象与音视频连接…" : "连接数字人，开始现场体验"}</p></div>}
-          {soundBlocked && <button className="sound-button" onClick={() => void enableSound()}>开启声音</button>}
-          {connected && <span className="sound-caption">{soundBlocked ? "当前静音 · 请开启声音" : "声音已启用"}</span>}
+  return <main className="landscape-frame" style={{ transform: `translate(-50%, -50%) scale(${frameScale})` }}>
+    <div className="presentation-stage">
+      <AvatarPlayer ref={video} onPlaying={() => {
+        if (active.current && !active.current.controller.signal.aborted) setConnection(value => value === "ready" ? "playing" : value);
+      }}>
+        {!connected && <div className="stage-placeholder"><div className="orbit"><span>AI</span></div><h1>{mode === "human" ? "请与现场销售交流" : "欢迎来到展厅"}</h1><p>{mode === "human" ? "麦克风与数字人声画已关闭" : connection === "connecting" ? "正在准备形象与音视频连接…" : "连接数字人，开始现场体验"}</p></div>}
+        {soundBlocked && <button className="sound-button" onClick={() => void enableSound()}>开启声音</button>}
+        {connected && <span className="sound-caption">{soundBlocked ? "当前静音 · 请开启声音" : "声音已启用"}</span>}
+      </AvatarPlayer>
+      <MaterialPlayer ref={material} />
+    </div>
+    <section className="control-bar" aria-label="导览控制">
+      <div className="control-heading">
+        <a className="brand" href="/" aria-label="展厅导览首页"><span className="brand-mark">展</span><span>展厅 · AI 导览</span></a>
+        <span className={`status-pill ${connected ? "online" : ""}`} role="status"><i />{mode === "human" ? "销售接管中" : labels[connection]}</span>
+        <div className="button-row">
+          <button className="primary" disabled={resettingVisitor || mode === "human" || transitioning || !["idle", "error"].includes(connection)} onClick={() => void connect()}>连接数字人</button>
+          <button className="secondary" disabled={!active.current || connection === "disconnecting"} onClick={() => void disconnect()}>断开</button>
+          <button className="takeover-button" disabled={mode === "human"} onClick={() => void takeOver()}>销售接管</button>
+          <button className="secondary" disabled={resettingVisitor} onClick={() => void resetVisitor()}>{resettingVisitor ? "正在准备新访客…" : "新一组访客"}</button>
+          <button className="recording-stop" disabled={captureStatus === "closed" || captureStatus === "error"} onClick={stopMicrophone}>停止录音</button>
+          <button className="secondary" disabled={resettingVisitor || mode === "human" || !connected || speechPending || pending} onClick={() => void playDemo()}>{speechPending && speech.current?.kind === "demo" ? "演示处理中…" : "播放固定演示"}</button>
+          <button className="secondary" aria-expanded={historyOpen} aria-controls="conversation-history" onClick={() => setHistoryOpen(!historyOpen)}>对话记录</button>
         </div>
-        <div className="stage-controls">
-          <div><strong>展厅讲解员</strong><span>固定形象 · 实时音视频</span></div>
-          <div className="button-row">
-            <button className="primary" disabled={resettingVisitor || mode === "human" || transitioning || !["idle", "error"].includes(connection)} onClick={() => void connect()}>连接数字人</button>
-            <button className="secondary" disabled={!active.current || connection === "disconnecting"} onClick={() => void disconnect()}>断开</button>
-            <button className="takeover-button" disabled={mode === "human"} onClick={() => void takeOver()}>销售接管</button>
-            <button className="secondary" disabled={resettingVisitor} onClick={() => void resetVisitor()}>{resettingVisitor ? "正在准备新访客…" : "新一组访客"}</button>
-          </div>
-        </div>
-        {welcomeStatus && <div className="welcome-message"><p>{WELCOME_TEXT}</p><small role="status">{welcomeStatus}</small></div>}
+      </div>
+      <div className="preset-questions" aria-label="推荐问题">
+        {PRESET_QUESTIONS.map(text => <button type="button" key={text} className="preset-question" disabled={resettingVisitor || mode === "human" || !connected || transitioning} onClick={() => void selectPreset(text)}>{text}</button>)}
+      </div>
+      <div className="control-status">
+        <p className="preset-hint" role="status">{presetPreparing ? "正在准备新回答，当前段结束后会接着播报，人物保持连接…" : "点击问题或直接说话，开始了解展厅。"}</p>
+        <p role="status" aria-label="收音状态">{captureHint}</p>
+        {recordingHint && <p role="status" aria-label="语音识别状态">{recordingHint}</p>}
+        {welcomeStatus && <small role="status">{welcomeStatus}</small>}
+        {demoStatus && <small role="status">{demoStatus}</small>}
         {notice && <p className="notice" role="alert">{notice}</p>}
         {businessWarning && <p className="notice business-warning" role="alert">{businessWarning}</p>}
         {mediaWarning && <p className="notice" role="alert" aria-label="媒体上传隔离">{mediaWarning}</p>}
-      </section>
-      <section className="conversation-panel" aria-label="问题与回答">
-        <div className="section-heading"><span className="eyebrow">资料问答</span><h2>您想了解什么？</h2><p>选择一个问题，查看真实回答和资料来源。</p></div>
-        {mode === "human" && <aside className="handoff-panel" role="status">
-          <h3>销售接管中</h3><p>{handoff.reason}</p>
-          <p><strong>待接管问题：</strong>{handoff.question || "尚无文字问题，请直接向销售说明。"}</p>
-          <small>问答、录音与自动播报已暂停。恢复后重连数字人并保留本组访客，不重发旧问题。</small>
-          <button className="secondary" disabled={resettingVisitor || transitioning || connection === "disconnecting"} onClick={() => void connect("resume")}>{transitioning ? "正在确认会话关闭…" : "恢复问答"}</button>
-        </aside>}
-        <div className="preset-questions" aria-label="推荐问题">
-          {PRESET_QUESTIONS.map((text) => <button type="button" key={text} className="preset-question" disabled={resettingVisitor || mode === "human" || !connected || transitioning} onClick={() => void selectPreset(text)}>{text}</button>)}
-        </div>
-        <p className="preset-hint" role="status">{presetPreparing ? "正在准备新回答，当前段结束后会接着播报，人物保持连接…" : "点击即可提问；未提交的录音会被丢弃，不改变麦克风状态。"}</p>
-        <div className="recording-controls">
-          <button className="recording-stop" disabled={captureStatus === "closed" || captureStatus === "error"}
-            onClick={stopMicrophone}>停止录音</button>
-          <p role="status" aria-label="收音状态">{captureHint}</p>
-          {recordingHint && <p role="status" aria-label="语音识别状态">{recordingHint}</p>}
-        </div>
         {voiceResourceUnknown && <p className="notice" role="alert" aria-label="语音识别资源状态">{VOICE_RESOURCE_UNKNOWN}</p>}
-        <p className="conversation-link"><a href="#conversation-history">查看本组对话记录 ↓</a></p>
-        <aside className="demo-panel">
-          <div className="demo-heading"><h3>固定文本播报</h3><span>非 LLM</span></div>
-          <p>{DEMO_TEXT}</p><small>仅体验声音与口型，不作为您问题的答案。</small>
-          <button className="secondary" disabled={resettingVisitor || mode === "human" || !connected || speechPending || pending} onClick={() => void playDemo()}>{speechPending && speech.current?.kind === "demo" ? "演示处理中…" : "播放固定演示"}</button>
-          {demoStatus && <p className="demo-status" role="status">{demoStatus}</p>}
-        </aside>
-      </section>
-    </div>
-    <section id="conversation-history" className="conversation-history" aria-labelledby="conversation-title">
-      <div className="conversation-history-heading">
+      </div>
+      {mode === "human" && <aside className="handoff-panel" role="status">
+        <h3>销售接管中</h3><p>{handoff.reason}</p><p><strong>待接管问题：</strong>{handoff.question || "尚无文字问题，请直接向销售说明。"}</p>
+        <button className="secondary" disabled={resettingVisitor || transitioning || connection === "disconnecting"} onClick={() => void connect("resume")}>{transitioning ? "正在确认会话关闭…" : "恢复问答"}</button>
+      </aside>}
+    </section>
+    <section id="conversation-history" className={`conversation-history ${historyOpen ? "is-open" : ""}`} aria-labelledby="conversation-title">
+      <div className="conversation-history-heading"><button className="secondary history-close" onClick={() => setHistoryOpen(false)}>关闭记录</button>
         <div><span className="eyebrow">本组访客</span><h2 id="conversation-title">对话记录</h2><p>保留最近20轮 · 语音仅显示最终识别文字</p></div>
         <button className="secondary" onClick={() => {
           followConversation.current = true;
@@ -1164,6 +1218,5 @@ export default function App() {
         </article>)}
       </div>
     </section>
-    <footer>有需要时，请联系现场销售继续为您讲解。<span>展厅导览 · 最小原型</span></footer>
   </main>;
 }
