@@ -11,9 +11,10 @@ process.chdir(path.resolve(__dirname, '../..'));
 const { Fixture, platformFixture } = require('./speech-browser-integration.cjs');
 const requireFrontend = createRequire(path.resolve('frontend/package.json'));
 const { chromium } = requireFrontend('playwright-core');
-const task = path.resolve('docs/problem/20261105-2d7782d-语音打断-起声即取消与附和误打断');
+const task = path.resolve(process.env.SPEECH_TEST_TASK_DIR || 'docs/problem/20261105-2d7782d-语音打断-起声即取消与附和误打断');
 const red = process.argv.includes('--red');
 const racesOnly = process.argv.includes('--races-only');
+const switchExtrasOnly = process.argv.includes('--switch-extras-only');
 const run = (red ? 'red-' : 'green-') + Date.now();
 const evidence = path.join(task, 'evidence', 'audio-' + run);
 const temp = path.join(task, 'tmp', 'audio-' + run);
@@ -190,8 +191,10 @@ async function suite() {
     const old = f.sid(1); const pending = await transcribe(f, { text: '嗯，多少钱？', hold: true });
     noReplacement(f); assert.ok((await volume()).volume <= .2);
     pending.release(); await until(() => f.questions.length === 1, 'valid question submission');
-    assert.equal(f.questions[0].question, '嗯，多少钱？'); assert.ok(f.closed.includes(old));
-    await finishLatest(f); assert.equal(f.serial, 2);
+    assert.equal(f.questions[0].question, '嗯，多少钱？'); assert.equal(f.closed.length, 0);
+    await until(() => f.tts.filter(t => !t.welcome).length === 1, 'new WAV prepares during old speech');
+    assert.equal(f.uploads.length, 1); f.emit(old, 'speech.ended');
+    await finishLatest(f); assert.equal(f.serial, 1);
   });
   await scenario('short stop command ends speech without model request', async f => {
     await transcribe(f, { text: '停' });
@@ -207,7 +210,7 @@ async function suite() {
   await scenario('negated stop is a normal question', async f => {
     f.text = '继续为您介绍。'; await transcribe(f, { text: '不要停' });
     await until(() => f.questions.length === 1, 'negated stop submitted');
-    assert.equal(f.questions[0].question, '不要停'); await finishLatest(f);
+    assert.equal(f.questions[0].question, '不要停'); f.emit(f.sid(1), 'speech.ended'); await finishLatest(f);
   });
   await scenario('invalid STT response restores volume without replacing answer', async f => {
     await transcribe(f, { text: '无效返回', invalid: true }); await restored(); noReplacement(f);
@@ -268,10 +271,13 @@ async function suite() {
     await page.getByRole('button', { name: '锐伽提供哪些服务？', exact: true }).click();
     await until(() => f.uploads.length === 2, 'held answer upload');
     const pending = await transcribe(f, { text: '请换一个问题', hold: true }); pending.release();
-    await delay(150); assert.equal(f.serial, 1); assert.equal(f.closed.length, 0); assert.equal(f.questions.length, 1);
+    await until(() => f.questions.length === 2, 'new business prepares independently of old ACK');
+    assert.equal(f.serial, 1); assert.equal(f.closed.length, 0); assert.equal(f.uploads.length, 2);
     f.holdUploads = false; f.uploads[1].release();
-    await until(() => f.questions.length === 2, 'replacement after ACK');
-    assert.equal(f.questions[1].question, '请换一个问题'); assert.ok(f.closed.includes(f.sid(1)));
+    await delay(100); assert.equal(f.uploads.length, 2, 'ACK alone cannot upload new answer');
+    f.emit(f.sid(1), 'speech.ended'); await until(() => f.uploads.length === 3, 'new upload after both old gates');
+    assert.equal((await volume()).volume, .2); await finishLatest(f); await restored();
+    assert.equal(f.questions[1].question, '请换一个问题'); assert.equal(f.closed.length, 0);
   });
   await scenario('unknown old upload blocks valid interruption replacement', async f => {
     f.emit(f.sid(1), 'speech.ended'); await page.getByText('欢迎语播报结束，您可以继续提问', { exact: true }).waitFor();
@@ -279,9 +285,10 @@ async function suite() {
     await page.getByRole('button', { name: '锐伽提供哪些服务？', exact: true }).click();
     await until(() => f.uploads.length === 2, 'held uncertain upload');
     await transcribe(f, { text: '新的问题' }); await delay(100);
-    assert.equal(f.serial, 1); assert.equal(f.questions.length, 1); assert.equal(f.closed.length, 0);
+    await until(() => f.questions.length === 2, 'new question before unknown ACK');
+    assert.equal(f.serial, 1); assert.equal(f.closed.length, 0);
     f.uploads[1].release(); await page.getByRole('alert', { name: '媒体上传隔离' }).waitFor();
-    assert.equal(f.serial, 1); assert.equal(f.questions.length, 1); assert.equal(f.closed.length, 0);
+    assert.equal(f.serial, 1); assert.equal(f.questions.length, 2); assert.equal(f.closed.length, 0);
     assert.equal(f.uploads.length, 2, 'no retry or new upload');
   });
 }
@@ -296,22 +303,116 @@ async function candidateRaces() {
     assert.ok(f.transcripts[1].nonzeroSamples > 0);
     f.pendingTranscripts[1].release(); await restored(); noReplacement(f);
   });
-  await scenario('candidate B survives A media replacement and uses new SID', async f => {
+  await scenario('candidate B survives A answer switching on the same SID', async f => {
     f.text = '完整的新回答。';
     const first = await transcribe(f, { text: '第一个有效问题', hold: true });
     f.transcriptPlans.push({ text: '第二个有效问题' }); await playSpeech();
     await until(() => page.evaluate(() => window.audioTestInput.secondsPlayed() >= 2), 'B real speech before media replacement');
     first.release();
-    await until(() => f.questions.length === 1 && f.serial === 2, 'A replaces media while B speaks');
+    await until(() => f.questions.length === 1, 'A prepares answer while B speaks');
+    assert.equal(f.serial, 1); assert.equal(f.closed.length, 0);
     assert.equal(f.transcripts.length, 1, 'B utterance is still in progress');
-    await until(() => f.transcripts.length === 2, 'B complete WAV on replacement media');
-    assert.equal(f.transcripts[1].sid, f.sid(2), 'B STT uses the new SID');
-    const oldClose = f.calls.find(c => c.method === 'DELETE' && c.path.endsWith('/' + f.sid(1)));
-    assert.ok(oldClose && oldClose.at <= f.transcripts[1].at);
-    await until(() => f.questions.length === 2 && f.serial === 3, 'B remains a valid subsequent question');
+    await until(() => f.transcripts.length === 2, 'B complete WAV on retained media');
+    assert.equal(f.transcripts[1].sid, f.sid(1), 'B STT uses retained SID');
+    await until(() => f.questions.length === 2, 'B remains a valid subsequent question');
     assert.deepEqual(f.questions.map(q => q.question), ['第一个有效问题', '第二个有效问题']);
-    await until(() => f.uploads.some(u => !u.welcome && u.sid === f.sid(3)), 'B answer upload');
+    await until(() => f.tts.filter(t => !t.welcome).length === 2, 'latest first WAV ready');
+    assert.equal(f.uploads.length, 1); f.emit(f.sid(1), 'speech.ended');
+    await until(() => f.uploads.length === 2, 'only B answer upload');
+    assert.equal(f.uploads[1].marker, f.tts[2].marker); assert.equal(f.serial, 1); assert.equal(f.closed.length, 0);
     await finishLatest(f); await restored();
+  });
+}
+async function switchAudioSuite() {
+  async function kept(f, stream) {
+    assert.equal(f.serial, 1); assert.equal(f.closed.length, 0);
+    assert.equal(await page.evaluate(() => window.rtcTestStats.closed), 0);
+    assert.ok(await page.locator('video').evaluate((v, original) => v.srcObject === original, stream));
+    assert.equal(await page.locator('.stage-placeholder').count(), 0);
+    assert.equal(f.calls.filter(c => c.path.endsWith('/interrupt')).length, 0);
+  }
+  await scenario('three preset and real PCM pairs keep one RTC and serial audio', async f => {
+    const stream = await page.locator('video').evaluateHandle(v => v.srcObject);
+    f.text = '本轮完整回答。';
+    for (let round = 0; round < 3; round++) {
+      for (const input of ['preset', 'voice']) {
+        const count = f.questions.length, uploads = f.uploads.length;
+        if (input === 'preset') await page.locator('.preset-question').nth(round).click();
+        else await transcribe(f, { text: '第' + round + '轮真实语音问题' });
+        await until(() => f.questions.length === count + 1 && f.tts.length === count + 2, 'new question and first WAV');
+        assert.equal(f.uploads.length, uploads, 'old current segment must finish before next upload');
+        assert.equal((await volume()).volume, .2);
+        await kept(f, stream);
+        f.emit(f.sid(1), 'speech.ended');
+        await until(() => f.uploads.length === uploads + 1, 'strict next upload');
+        assert.equal((await volume()).volume, .2, 'ACK does not restore');
+        f.emit(f.sid(1), 'speech.media_started'); await restored();
+        await page.getByRole('status', { name: '收音状态' }).filter({ hasText: '正在持续收音。' }).waitFor();
+      }
+    }
+    f.emit(f.sid(1), 'speech.ended');
+    await page.locator('.conversation-turn').last().getByText('回答播报结束', { exact: true }).waitFor();
+    assert.equal(f.questions.length, 6); assert.equal(f.transcripts.length, 3);
+    assert.equal(new Set(f.questions.map(q => q.turn_id)).size, 6); await kept(f, stream);
+  });
+  await scenario('STT-only preset prepares without inventing old media end', async f => {
+    f.text = '预设回答。'; const stream = await page.locator('video').evaluateHandle(v => v.srcObject);
+    const pending = await transcribe(f, { text: '旧识别不应提交', hold: true });
+    await page.locator('.preset-question').first().click();
+    await until(() => f.uploads.length === 2, 'preset uploads without old speech');
+    pending.release(); await finishLatest(f); await delay(100);
+    assert.equal(f.questions.length, 1); await kept(f, stream);
+  }, { idle: true });
+  await scenario('stopMic preserves submitted switch duck until new media_started', async f => {
+    f.text = '继续播报已提交问题。';
+    await page.locator('.preset-question').first().click();
+    await until(() => f.tts.length === 2, 'new WAV ready');
+    await page.getByRole('button', { name: '停止录音', exact: true }).click();
+    assert.equal((await volume()).volume, .2);
+    f.emit(f.sid(1), 'speech.ended'); await until(() => f.uploads.length === 2, 'new upload');
+    assert.equal((await volume()).volume, .2); await finishLatest(f); await restored();
+    assert.equal(f.closed.length, 0); assert.equal(f.serial, 1);
+  });
+  await scenario('new media_started releases switch only while candidate B is active', async f => {
+    f.text = '切题回答。'; const first = await transcribe(f, { text: '第一个问题', hold: true });
+    f.transcriptPlans.push({ text: '好的', hold: true }); await playSpeech();
+    await until(() => page.evaluate(() => window.audioTestInput.secondsPlayed() >= 2), 'candidate B effective PCM');
+    first.release(); await until(() => f.tts.length === 2, 'A first WAV ready');
+    f.emit(f.sid(1), 'speech.ended'); await until(() => f.uploads.length === 2, 'A upload');
+    f.emit(f.sid(1), 'speech.media_started'); await delay(100);
+    assert.equal((await volume()).volume, .2, 'B retains duck after switch media starts');
+    await until(() => f.transcripts.length === 2, 'B real WAV');
+    f.pendingTranscripts[1].release(); await restored();
+    assert.equal(f.questions.length, 1); f.emit(f.sid(1), 'speech.ended');
+    await page.locator('.conversation-turn').last().getByText('回答播报结束', { exact: true }).waitFor();
+  });
+}
+async function switchExitAndVolume() {
+  await scenario('real short stop overrides prepared replacement while old segment drains', async f => {
+    f.text = '停止后不得播报的新回答。';
+    await page.locator('.preset-question').first().click();
+    await until(() => f.tts.length === 2 && f.tts[1].done, 'new WAV prepared behind old segment');
+    assert.equal(f.uploads.length, 1);
+    await transcribe(f, { text: '停' });
+    await until(() => f.closed.includes(f.sid(1)), 'explicit stop retires old media');
+    await delay(150);
+    assert.equal(f.questions.length, 1, 'stop must not submit a model question');
+    assert.equal(f.uploads.filter(u => !u.welcome).length, 0, 'prepared replacement cannot upload after stop');
+    assert.equal(f.transcripts.length, 1); assert.ok(f.transcripts[0].nonzeroSamples > 0);
+  });
+  await scenario('switch release preserves user volume and mute changes', async f => {
+    f.text = '保留主动音量设置。';
+    await page.locator('.preset-question').first().click();
+    await until(() => f.tts.length === 2, 'new first WAV');
+    assert.equal((await volume()).volume, .2);
+    await page.locator('video').evaluate(v => { v.volume = .55; v.muted = true; });
+    f.emit(f.sid(1), 'speech.ended'); await until(() => f.uploads.length === 2, 'new upload');
+    assert.deepEqual(await volume(), { volume: .55, muted: true });
+    f.emit(f.sid(1), 'speech.media_started'); await delay(100);
+    assert.deepEqual(await volume(), { volume: .55, muted: true }, 'switch release cannot overwrite user adjustment');
+    f.emit(f.sid(1), 'speech.ended');
+    await page.locator('.conversation-turn').last().getByText('回答播报结束', { exact: true }).waitFor();
+    assert.equal(f.closed.length, 0); assert.equal(f.serial, 1);
   });
 }
 (async () => {
@@ -336,8 +437,10 @@ async function candidateRaces() {
   browser.setDefaultTimeout(12000);
   // A single script fixes device-fixture ordering; no application module is replaced.
   await browser.addInitScript({ content: '(' + platformFixture.toString() + ')();(' + audioInputFixture.toString() + ')();' });
-  if (!racesOnly) await suite();
-  if (!red) await candidateRaces();
+  if (!racesOnly && !switchExtrasOnly) await suite();
+  if (!red && !switchExtrasOnly) await candidateRaces();
+  if (!red && !racesOnly && !switchExtrasOnly) await switchAudioSuite();
+  if (!red && !racesOnly) await switchExitAndVolume();
   await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: 'PASS', results }, null, 2));
 })().catch(async error => {
   const expected = red && error.code === 'ERR_ASSERTION' && ['speech onset must not invalidate current answer', 'onset keeps current media session'].some(message => error.message.includes(message));

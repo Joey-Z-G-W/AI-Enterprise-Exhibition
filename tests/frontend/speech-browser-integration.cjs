@@ -10,6 +10,9 @@ const requireFrontend = createRequire(path.resolve('frontend/package.json'));
 const { chromium } = requireFrontend('playwright-core');
 const task = path.resolve(process.env.SPEECH_TEST_TASK_DIR || 'docs/problem/20261104-1b5ff5a-导览播报-文字出现后出声延迟且回答冗长');
 const red = process.argv.includes('--red');
+const switchRed = process.argv.includes('--switch-red');
+const missingStartedRed = process.argv.includes('--missing-started-red');
+const switchOnly = switchRed || missingStartedRed || process.argv.includes('--switch-only');
 const runId = (red ? 'red-' : 'green-') + Date.now();
 const evidence = path.join(task, 'evidence', 'browser-' + runId);
 const temp = path.join(task, 'tmp', 'browser-' + runId);
@@ -29,8 +32,8 @@ function wav() {
   b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write('data', 36); b.writeUInt32LE(320, 40); return b;
 }
 class Fixture {
-  constructor() { this.calls = []; this.sessions = new Map(); this.sse = new Map(); this.tts = []; this.uploads = []; this.questions = []; this.closed = []; this.errors = []; this.serial = 0; this.text = answer; this.status = 'answer'; this.holdTTS = new Set(); this.holdUploads = false; this.responses = []; }
-  emit(sid, event) { const stream = this.sse.get(sid); assert.ok(stream, 'SSE connected'); stream.write('event: ' + event + '\ndata: ' + JSON.stringify({ session_id: sid }) + '\n\n'); }
+  constructor() { this.calls = []; this.events = []; this.sessions = new Map(); this.sse = new Map(); this.tts = []; this.uploads = []; this.questions = []; this.closed = []; this.errors = []; this.serial = 0; this.text = answer; this.status = 'answer'; this.holdTTS = new Set(); this.holdUploads = false; this.responses = []; }
+  emit(sid, event) { const stream = this.sse.get(sid); assert.ok(stream, 'SSE connected'); this.events.push({ sid, event, at: Date.now() }); stream.write('event: ' + event + '\ndata: ' + JSON.stringify({ session_id: sid }) + '\n\n'); }
   sid(index) { return 'fixture-' + this.scenario + '-session-' + index; }
   dispose() { for (const s of this.sse.values()) s.end(); for (const r of [...this.tts, ...this.uploads, ...this.responses]) if (!r.done) r.res.destroy(); }
   async handle(req, res) {
@@ -49,7 +52,7 @@ class Fixture {
     }
     if (pathname === '/opentalking/tts/preview') {
       const b = JSON.parse(body), welcome = b.text.includes('欢迎来到锐伽展厅'), demo = b.text.includes('这是一段固定文本演示');
-      const entry = { text: b.text, voice: b.voice, welcome, demo, res, done: false, release: () => { if (entry.done || res.destroyed) return; entry.done = true; res.writeHead(this.failTTS && !welcome ? 503 : 200, { 'content-type': 'audio/wav' }); res.end(wav()); } };
+      const entry = { text: b.text, voice: b.voice, welcome, demo, marker: this.tts.length + 1, res, done: false, release: () => { if (entry.done || res.destroyed) return; entry.done = true; const audio = wav(); audio.writeInt16LE(entry.marker, 44); res.writeHead(this.failTTS && !welcome ? 503 : 200, { 'content-type': 'audio/wav' }); res.end(audio); } };
       this.tts.push(entry);
       const index = this.tts.filter(x => !x.welcome && !x.demo).length - 1;
       if (welcome ? !this.holdWelcomeTTS : demo || !this.holdTTS.has(index)) entry.release(); return true;
@@ -69,7 +72,8 @@ class Fixture {
       if (suffix === '/start' || suffix === '/interrupt') { json({ status: 'ok' }); return true; }
       if (suffix === '/speak_flashtalk_audio') {
         const welcome = body.includes(Buffer.from('welcome.wav')), demo = body.includes(Buffer.from('fixed-demo.wav'));
-        const entry = { sid, welcome, demo, res, done: false, release: () => { if (entry.done || res.destroyed) return; entry.done = true; json({ session_id: sid, status: 'queued' }, this.failUpload && !welcome ? 502 : 200); } };
+        const riff = body.indexOf(Buffer.from('RIFF'));
+        const entry = { sid, welcome, demo, marker: riff >= 0 ? body.readInt16LE(riff + 44) : null, res, done: false, release: () => { if (entry.done || res.destroyed) return; entry.done = true; json({ session_id: sid, status: 'queued' }, this.failUpload && !welcome ? 502 : 200); } };
         this.uploads.push(entry); if (welcome ? !this.holdWelcomeUpload : demo || !this.holdUploads) entry.release(); return true;
       }
       if (!suffix && req.method === 'DELETE') { this.closed.push(sid); this.sessions.set(sid, 'closed'); json({ status: 'closed' }); return true; }
@@ -81,7 +85,9 @@ class Fixture {
 function platformFixture() {
   // Browser infrastructure is outside the assembled application. No internal application module is replaced.
   Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { configurable: true, value: () => Promise.reject(new DOMException('Integration microphone denied', 'NotAllowedError')) });
+  window.rtcTestStats = { created: 0, closed: 0 };
   window.RTCPeerConnection = class {
+    constructor() { window.rtcTestStats.created++; }
     iceGatheringState = 'complete'; connectionState = 'new'; iceConnectionState = 'new';
     addTransceiver() {}
     async createOffer() { return { type: 'offer', sdp: 'fixture-offer' }; }
@@ -96,7 +102,7 @@ function platformFixture() {
       for (const track of this.tracks) this.ontrack?.({ track });
       this.onconnectionstatechange?.();
     }
-    close() { clearInterval(this.timer); this.tracks?.forEach(t => t.stop()); void this.audio?.close(); this.connectionState = 'closed'; }
+    close() { window.rtcTestStats.closed++; clearInterval(this.timer); this.tracks?.forEach(t => t.stop()); void this.audio?.close(); this.connectionState = 'closed'; }
   };
 }
 let context, vite, server, fixture, page, origin, scenarioNumber = 0;
@@ -136,7 +142,7 @@ async function scenario(name, fn, options = {}) {
       clearTimeout(timer); owner.dispose(); listener.closeAllConnections();
       try { await Promise.race([new Promise(resolve => listener.close(resolve)), new Promise((_, reject) => { timer = setTimeout(() => reject(Error('Listener cleanup exceeded 6000ms')), 6000); })]); }
       finally { clearTimeout(timer); }
-      await fs.writeFile(path.join(evidence, 'scenario-' + owner.scenario + '-boundary.json'), JSON.stringify({ name, scenario: owner.scenario, calls: owner.calls, closed: owner.closed, errors: owner.errors }, null, 2));
+      await fs.writeFile(path.join(evidence, 'scenario-' + owner.scenario + '-boundary.json'), JSON.stringify({ name, scenario: owner.scenario, calls: owner.calls, events: owner.events, closed: owner.closed, errors: owner.errors }, null, 2));
       server = undefined;
     }
   }
@@ -168,7 +174,7 @@ async function suite() {
     await until(() => workUploads(f).length === 1 && workTTS(f).length === 2, 'first upload and one future');
     assert.equal(workTTS(f).length, 2); assert.equal(workUploads(f).length, 1);
     assert.ok((await page.locator('.conversation-answer').innerText()).includes(answer));
-    f.emit(sid, 'speech.ended'); await sleep(100); assert.equal(workUploads(f).length, 1, 'ended alone cannot advance');
+    f.emit(sid, 'speech.media_started'); f.emit(sid, 'speech.ended'); await sleep(100); assert.equal(workUploads(f).length, 1, 'ended alone cannot advance');
     workUploads(f)[0].release(); await sleep(100); assert.equal(workUploads(f).length, 1, 'next WAV still pending');
     workTTS(f)[1].release(); await until(() => workUploads(f).length === 2, 'second upload');
     workUploads(f)[1].release(); await sleep(100); assert.equal(workUploads(f).length, 2, 'ACK alone cannot advance');
@@ -252,11 +258,11 @@ async function suite() {
     const oldTTS = f.tts[0];
     f.text = '替换后的回答。'; f.holdWelcomeTTS = false; f.holdWelcomeUpload = false;
     await page.getByRole('button', { name: Q, exact: true }).click();
-    if (stage === 'upload') { await sleep(80); assert.equal(f.serial, 1); assert.equal(f.closed.length, 0); f.uploads[0].release(); }
-    await until(() => f.serial === 2, 'replacement session'); oldTTS.release();
-    await finishAnswer(f, f.sid(2));
+    if (stage === 'upload') { await sleep(80); assert.equal(f.serial, 1); assert.equal(f.closed.length, 0); f.uploads[0].release(); f.emit(sid, 'speech.ended'); }
+    oldTTS.release();
+    await finishAnswer(f, sid); assert.equal(f.serial, 1); assert.equal(f.closed.length, 0);
     assert.equal(f.tts.filter(x => x.welcome).length, 1, 'internal rebuild never greets');
-    assert.equal(f.uploads.filter(x => x.sid === sid).length, stage === 'upload' ? 1 : 0);
+    assert.equal(f.uploads.filter(x => x.welcome).length, stage === 'upload' ? 1 : 0);
   }, { keepWelcome: true, fixture: stage === 'tts' ? { holdWelcomeTTS: true } : { holdWelcomeUpload: true } });
   for (const stage of ['current-tts', 'prefetch', 'upload']) for (const action of ['断开', '销售接管', '新一组访客', Q]) {
     await scenario('cancel ' + stage + ' via ' + action, async (f, sid, timing) => {
@@ -265,6 +271,7 @@ async function suite() {
       await until(() => workTTS(f).length === (stage === 'current-tts' ? 1 : 2), 'held synthesis');
       if (stage !== 'current-tts') await until(() => workUploads(f).length === 1, 'current upload');
       const oldAudio = [...workTTS(f)], oldUpload = workUploads(f)[0];
+      const oldPendingMarkers = oldAudio.filter(a => !a.done).map(a => a.marker);
       const oldCount = workUploads(f).length;
       f.holdTTS.clear(); f.holdUploads = false; f.text = '新的有效回答。';
       await page.getByRole('button', { name: action, exact: true }).click();
@@ -272,12 +279,16 @@ async function suite() {
         await sleep(80); assert.equal(f.serial, 1, 'independent ACK blocks new session'); assert.equal(f.closed.length, 0);
         oldUpload.release();
       }
-      await until(() => f.closed.includes(sid), 'retired session closed');
+      if (action !== Q) await until(() => f.closed.includes(sid), 'retired session closed');
       oldAudio.forEach(x => x.release());
-      if (action === Q) { await until(() => f.serial === 2, 'replacement session'); await finishAnswer(f, f.sid(2), oldCount); }
+      if (action === Q) {
+        if (oldCount) f.emit(sid, 'speech.ended');
+        await finishAnswer(f, sid, oldCount); assert.equal(f.serial, 1); assert.equal(f.closed.length, 0);
+      }
       if (action === '新一组访客') { await until(() => f.serial === 2, 'new visitor session'); await finishWelcome(f, f.sid(2)); }
       await sleep(80);
-      assert.equal(workUploads(f).filter(x => x.sid === sid).length, oldCount, 'late WAV never uploads');
+      assert.equal(workUploads(f).filter(x => x.sid === sid).length, oldCount + (action === Q ? 1 : 0), 'late WAV never uploads');
+      assert.ok(!workUploads(f).some(x => oldPendingMarkers.includes(x.marker)), 'cancelled audio is never uploaded');
       assert.ok(timing.some(x => x.kind === 'answer' && x.stage === 'cancelled'));
       if (action === Q) assert.equal(f.tts.filter(x => x.welcome).length, 1);
     });
@@ -287,7 +298,8 @@ async function suite() {
     await page.getByRole('button', { name: Q, exact: true }).click(); await until(() => f.responses.length === 1, 'held question');
     f.holdQuestions = false; f.text = '有效的新回答。';
     await page.getByRole('button', { name: Q, exact: true }).click();
-    await until(() => f.serial === 2, 'new session'); f.responses[0].release(); await finishAnswer(f, f.sid(2));
+    await until(() => f.questions.length === 2, 'replacement question'); f.responses[0].release(); await finishAnswer(f, sid);
+    assert.equal(f.serial, 1); assert.equal(f.closed.length, 0);
     assert.equal(workTTS(f).map(x => x.text).join(''), f.text);
     assert.equal(await page.getByText('禁止迟到回填。', { exact: true }).count(), 0);
   });
@@ -323,7 +335,7 @@ async function suite() {
       await page.locator('.conversation-turn .turn-status.error').waitFor(); assert.equal(workTTS(f).length, 0);
     } else {
       if (failure === 'upload') await page.getByText('画面和声音已关闭，但旧会话释放未确认；不会开启新会话，请重试或联系工作人员。', { exact: true }).waitFor();
-      else await page.getByText(/播报未完成，文字已保留/).waitFor();
+      else await page.getByText(/语音合成未完成，文字已保留/).waitFor();
       assert.equal(await page.locator('.answer-text').innerText(), f.text);
     }
     if (failure === 'upload') {
@@ -340,6 +352,131 @@ async function suite() {
     assert.equal(workTTS(f).length, 0); assert.equal(workUploads(f).length, 0);
   });
 }
+async function switchSuite() {
+  const getStream = () => page.locator('video').evaluateHandle(v => v.srcObject);
+  const volume = () => page.locator('video').evaluate(v => v.volume);
+  async function kept(f, stream) {
+    assert.equal(f.closed.length, 0, 'replacement must retain original media session');
+    assert.equal(f.serial, 1, 'replacement must retain original media session');
+    assert.equal(await page.evaluate(() => window.rtcTestStats.closed), 0, 'replacement must retain original media session');
+    assert.ok(await page.locator('video').evaluate((v, original) => v.srcObject === original, stream), 'same video MediaStream');
+    assert.equal(await page.locator('.stage-placeholder').count(), 0, 'avatar never replaced with reconnect placeholder');
+  }
+  async function started(f, sid, ducked = true) {
+    assert.equal(await volume(), ducked ? .2 : 1, 'upload ACK does not release switch duck');
+    f.emit(sid, 'speech.media_started'); await until(async () => await volume() === 1, 'new media_started restores volume');
+    f.emit(sid, 'speech.ended'); await page.locator('.conversation-turn').last().getByText('回答播报结束', { exact: true }).waitFor();
+  }
+  await scenario('ended without media_started cannot succeed or keep switch duck', async (f, sid) => {
+    f.text = '没有起播确认的回答。'; const stream = await getStream();
+    await until(() => f.uploads.length === 1, 'old upload');
+    f.emit(sid, 'speech.media_started');
+    await page.getByRole('button', { name: Q, exact: true }).click();
+    await until(() => workTTS(f).length === 1, 'new first WAV');
+    f.emit(sid, 'speech.ended'); await until(() => workUploads(f).length === 1, 'new upload ACK');
+    assert.equal(await volume(), .2);
+    f.emit(sid, 'speech.ended'); await sleep(250);
+    assert.equal(await volume(), 1, 'missing media_started must not leave permanent switch duck');
+    assert.equal(await page.locator('.conversation-turn').last().getByText('回答播报结束', { exact: true }).count(), 0, 'ended alone is not successful playback');
+    await page.getByText('未确认本段开始播放，已停止后续播报；文字保留，您可以重新提问。', { exact: true }).waitFor();
+    assert.equal(await page.locator('.answer-text').innerText(), f.text);
+    await kept(f, stream);
+  }, { keepWelcome: true });
+  if (missingStartedRed) return;
+  await scenario('busy preset keeps original RTC and SID', async (f, sid) => {
+    f.text = '新的完整回答。'; const stream = await getStream();
+    await until(() => f.uploads.length === 1, 'welcome uploaded'); f.emit(sid, 'speech.media_started');
+    await page.getByRole('button', { name: Q, exact: true }).click();
+    await until(() => f.closed.length > 0 || f.questions.length === 1, 'preset transition visible at HTTP boundary');
+    await kept(f, stream);
+    if (switchRed) return;
+    await until(() => workTTS(f).length === 1 && workTTS(f)[0].done, 'new WAV before old end');
+    assert.equal(workUploads(f).length, 0); assert.equal(await volume(), .2);
+    f.emit(sid, 'speech.ended'); await until(() => workUploads(f).length === 1, 'replacement after natural end');
+    await started(f, sid); await kept(f, stream);
+  }, { keepWelcome: true });
+  if (switchRed) return;
+  for (const order of ['ended-before-ack', 'ack-before-ended', 'old-before-wav']) {
+    await scenario('switch gate ' + order, async (f, sid) => {
+      f.text = '新的完整回答。'; const stream = await getStream();
+      await until(() => f.uploads.length === 1, 'held welcome upload');
+      if (order === 'old-before-wav') f.holdTTS.add(0);
+      await page.getByRole('button', { name: Q, exact: true }).click();
+      await until(() => workTTS(f).length === 1, 'new TTS starts while old upload pending');
+      if (order === 'ended-before-ack') {
+        f.emit(sid, 'speech.ended'); await sleep(80); assert.equal(workUploads(f).length, 0); f.uploads[0].release();
+      } else {
+        f.uploads[0].release(); await sleep(80); assert.equal(workUploads(f).length, 0); f.emit(sid, 'speech.ended');
+      }
+      if (order === 'old-before-wav') { await sleep(80); assert.equal(workUploads(f).length, 0); workTTS(f)[0].release(); }
+      await until(() => workUploads(f).length === 1, 'both old gates and new WAV ready');
+      await started(f, sid); await kept(f, stream);
+    }, { keepWelcome: true, fixture: { holdWelcomeUpload: true } });
+  }
+  await scenario('latest preset wins and old question responses stay obsolete', async (f, sid) => {
+    const stream = await getStream(); f.holdQuestions = true;
+    for (let index = 0; index < 3; index++) {
+      f.text = index === 2 ? '最后选择的回答。' : '旧回答不得出现。';
+      await page.locator('.preset-question').nth(index).click(); await until(() => f.questions.length === index + 1, 'selected business request');
+    }
+    f.responses[0].release(); f.responses[1].release(); f.responses[2].release();
+    await until(() => workTTS(f).length === 1, 'only latest answer synthesized');
+    assert.equal(workTTS(f)[0].text, '最后选择的回答。');
+    f.emit(sid, 'speech.ended'); await until(() => workUploads(f).length === 1, 'latest upload');
+    await started(f, sid); await kept(f, stream);
+    assert.equal(await page.getByText('旧回答不得出现。', { exact: true }).count(), 0);
+  }, { keepWelcome: true });
+  await scenario('old future WAV never uploads after a replacement', async (f, sid) => {
+    f.holdTTS.add(1); await page.getByRole('button', { name: Q, exact: true }).click();
+    await until(() => workUploads(f).length === 1 && workTTS(f).length === 2, 'old first segment plus future');
+    const oldFuture = workTTS(f)[1]; f.text = '新切换回答。'; f.holdTTS.clear();
+    const stream = await getStream(); await page.locator('.preset-question').nth(1).click();
+    await until(() => workTTS(f).some(t => t.text === f.text), 'new first TTS does not wait for cancelled future');
+    oldFuture.release(); f.emit(sid, 'speech.ended');
+    await until(() => workUploads(f).length === 2, 'new first upload');
+    assert.ok(!workUploads(f).some(u => u.marker === oldFuture.marker));
+    assert.equal(workUploads(f)[1].marker, workTTS(f).find(t => t.text === f.text).marker);
+    await started(f, sid); await kept(f, stream);
+  });
+  await scenario('business-only busy preset has no invented media gate', async (f, sid) => {
+    const stream = await getStream(); f.holdQuestions = true;
+    await page.getByRole('button', { name: Q, exact: true }).click(); await until(() => f.questions.length === 1, 'first business pending');
+    f.holdQuestions = false; f.text = '第二个问题回答。';
+    await page.locator('.preset-question').nth(1).click();
+    await until(() => workUploads(f).length === 1, 'new answer uploads without a nonexistent old ended');
+    f.responses[0].release(); await started(f, sid, false); await kept(f, stream);
+  });
+  for (const failure of ['business', 'tts', 'business-timeout', 'tts-timeout']) {
+    await scenario('switch failure restores volume: ' + failure, async (f, sid) => {
+      const stream = await getStream(); f.text = '完整文字仍须保留。';
+      if (failure === 'business') f.status = 'error';
+      if (failure === 'tts') f.failTTS = true;
+      if (failure === 'business-timeout') f.holdQuestions = true;
+      if (failure === 'tts-timeout') f.holdTTS.add(0);
+      await page.getByRole('button', { name: Q, exact: true }).click();
+      await until(() => f.questions.length === 1, 'business request issued');
+      const began = Date.now();
+      if (failure.startsWith('tts')) await until(() => workTTS(f).length === 1, 'TTS requested');
+      f.emit(sid, 'speech.ended');
+      if (failure.endsWith('timeout')) {
+        await until(async () => await volume() === 1, 'actual timeout restores duck', failure === 'business-timeout' ? 32000 : 47000);
+        assert.ok(Date.now() - began >= (failure === 'business-timeout' ? 29000 : 44000), 'no shortened timeout');
+      } else await until(async () => await volume() === 1, 'failure restores duck');
+      if (failure.startsWith('tts')) await page.getByText(/语音合成未完成，文字已保留/).waitFor();
+      else await page.locator('.conversation-turn .turn-status.error').waitFor();
+      await kept(f, stream); assert.equal(workUploads(f).length, 0);
+      if (failure.startsWith('tts')) assert.equal(await page.locator('.answer-text').innerText(), f.text);
+      assert.ok(failure.startsWith('tts') ? await page.getByText(/语音合成未完成，文字已保留/).count() : await page.locator('.turn-status.error').count(), 'failure is visible');
+    }, { keepWelcome: true });
+  }
+  for (const action of ['断开', '销售接管', '新一组访客']) await scenario('exit supersedes prepared replacement: ' + action, async (f, sid) => {
+    f.text = '退出后不应播报。'; await page.getByRole('button', { name: Q, exact: true }).click();
+    await until(() => workTTS(f).length === 1, 'new first WAV prepared');
+    await page.getByRole('button', { name: action, exact: true }).click();
+    await until(() => f.closed.includes(sid), 'explicit exit closes old media');
+    await sleep(100); assert.equal(workUploads(f).length, 0);
+  }, { keepWelcome: true });
+}
 module.exports = { Fixture, platformFixture };
 if (require.main === module) (async () => {
   await fs.mkdir(evidence, { recursive: true }); await fs.mkdir(temp, { recursive: true });
@@ -349,14 +486,15 @@ if (require.main === module) (async () => {
   context = await chromium.launchPersistentContext(path.join(temp, 'chrome-profile'), { channel: 'chrome', headless: true, timeout: 20000, viewport: { width: 1280, height: 900 }, args: ['--autoplay-policy=no-user-gesture-required'], env: { ...process.env, TMP: temp, TEMP: temp } });
   context.setDefaultTimeout(6000); await context.addInitScript(platformFixture);
   await context.route('**/*', route => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
-  await suite();
+  if (switchOnly) await switchSuite(); else await suite();
+  if (switchRed) throw Error('Expected busy preset media retirement was not reproduced');
   if (red) throw Error('Expected regression was not reproduced');
   await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: 'PASS', results, diagnostics }, null, 2));
 })().catch(async error => {
-  const expected = red && error.code === 'ERR_ASSERTION' && error.message.includes('first natural sentence must be synthesized separately');
+  const expected = error.code === 'ERR_ASSERTION' && ((red && error.message.includes('first natural sentence must be synthesized separately')) || (switchRed && error.message.includes('replacement must retain original media session')) || (missingStartedRed && error.message.includes('missing media_started must not leave permanent switch duck')));
   await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: expected ? 'EXPECTED_RED' : 'FAIL', error: error.stack, results, diagnostics }, null, 2));
   if (page) await page.screenshot({ path: path.join(evidence, 'failure.png') }).catch(() => {});
-  console.error(expected ? 'EXPECTED_RED: full-answer TTS blocks first sentence' : error.stack);
+  console.error(expected ? ('EXPECTED_RED: ' + (missingStartedRed ? 'ended without media_started leaves permanent switch duck' : switchRed ? 'busy preset retires original media session' : 'full-answer TTS blocks first sentence')) : error.stack);
   process.exitCode = expected ? 42 : 1;
 }).finally(async () => {
   fixture?.dispose(); await context?.close(); await vite?.close();

@@ -51,6 +51,7 @@ type Speech = {
   session: ActiveSession; visitorId: string; turnId?: string; kind: "answer" | "demo" | "welcome";
   phase: "preparing" | "sent" | "playing" | "ended"; acknowledged: boolean;
   texts: string[]; index: number; future?: Promise<PreparedAudio>; timing: Timing;
+  controller: AbortController; draining?: boolean; prepared?: Blob; mediaStarted: boolean;
 };
 
 function recordTiming(timing: Timing, stage: string, segment = -1) {
@@ -166,6 +167,7 @@ export default function App() {
   const voiceSubmission = useRef<object | null>(null);
   const utteranceCandidate = useRef<(VoiceCandidate & { realSpeech: boolean }) | null>(null);
   const duck = useRef<Duck | null>(null);
+  const switchDuck = useRef<VoiceCandidate | null>(null);
   const microphone = useRef<ContinuousCapture | null>(null);
   const segments = useRef<VoiceSegments | null>(null);
   const [voiceResourceUnknown, setVoiceResourceUnknown] = useState(false);
@@ -173,7 +175,8 @@ export default function App() {
   const [captureHint, setCaptureHint] = useState("麦克风已关闭。");
   const speechTimer = useRef<number>();
   const speech = useRef<Speech | null>(null);
-  const questionTurn = useRef<TurnIdentity & { session: ActiveSession; spoken: boolean; timing: Timing } | null>(null);
+  const pendingSpeech = useRef<Speech | null>(null);
+  const questionTurn = useRef<TurnIdentity & { session: ActiveSession; spoken: boolean; settled: boolean; controller: AbortController; timing: Timing } | null>(null);
   const [connection, setConnection] = useState<Connection>("idle");
   const [mode, setMode] = useState<"assistant" | "human">("assistant");
   const [transitioning, setTransitioning] = useState(false);
@@ -197,18 +200,18 @@ export default function App() {
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
   const conversationList = useRef<HTMLDivElement>(null);
   const followConversation = useRef(true);
-  const presetRequest = useRef<(TurnIdentity & { text: string }) | null>(null);
-  const presetRunner = useRef<object | null>(null);
   const [presetPreparing, setPresetPreparing] = useState(false);
   const current = (session: ActiveSession) => modeRef.current === "assistant"
     && active.current === session && session.visitorId === visitorId.current && !session.controller.signal.aborted;
-  const currentSpeech = (item: Speech) => current(item.session) && item.visitorId === visitorId.current && speech.current === item
-    && (item.kind !== "answer" || (questionTurn.current?.session === item.session && questionTurn.current.turnId === item.turnId));
+  // The audible old segment keeps its identity while a newer question is prepared.
+  const currentSpeech = (item: Speech) => current(item.session) && item.visitorId === visitorId.current && speech.current === item;
+  const preparingSpeech = (item: Speech) => current(item.session) && !item.controller.signal.aborted
+    && !item.draining && (speech.current === item || pendingSpeech.current === item);
   const setSpeechStatus = (item: Speech, text: string) => {
     if (item.kind === "demo") setDemoStatus(text);
     else if (item.kind === "welcome") setWelcomeStatus(text);
     else {
-      setAnswerSpeechStatus(text);
+      if (questionTurn.current?.turnId === item.turnId) setAnswerSpeechStatus(text);
       if (item.turnId) updateConversation({ visitorId: item.visitorId, turnId: item.turnId }, { speechStatus: text });
     }
   };
@@ -217,7 +220,7 @@ export default function App() {
     () => {
       const session = active.current, barrier = businessBarrier.current;
       return !!session?.mediaReady && current(session) && !transition.current && !visitorReset.current
-        && !bargeRecovery.current && !presetRunner.current
+        && !bargeRecovery.current
         && (barrier?.visitorId !== visitorId.current || barrier.status === "confirmed");
     },
     (samples, valid, candidate) => submitRecordedAudio(samples, valid, candidate),
@@ -230,6 +233,12 @@ export default function App() {
     duck.current = null;
     if (state && active.current === state.session && video.current === state.element
       && state.element.volume === state.value) state.element.volume = state.original;
+  }
+
+  function releaseSwitchDuck() {
+    switchDuck.current?.releaseDuck();
+    switchDuck.current = null;
+    setPresetPreparing(false);
   }
 
   function newVoiceCandidate(): VoiceCandidate & { realSpeech: boolean } {
@@ -271,7 +280,8 @@ export default function App() {
       utteranceCandidate.current?.releaseDuck();
       utteranceCandidate.current = null;
     }
-    restoreDuck();
+    // A submitted replacement owns its own duck until media_started or failure.
+    // Stopping capture releases only the candidate owners above.
     if (!keepUtterance) microphone.current?.discardSegment();
     const turn = voiceTurn.current;
     if (turn) {
@@ -353,22 +363,50 @@ export default function App() {
   function finishSpeech(item: Speech) {
     if (!currentSpeech(item) || item.phase !== "ended" || !item.acknowledged) return;
     window.clearTimeout(speechTimer.current);
+    if (!item.draining && !item.mediaStarted) {
+      endTiming(item.timing, "failed", item.index);
+      item.controller.abort();
+      item.future = undefined;
+      setSpeechStatus(item, "未确认本段开始播放，已停止后续播报；文字保留，您可以重新提问。");
+      speech.current = null;
+      releaseSwitchDuck();
+      refreshBusy();
+      segments.current?.pump();
+      return;
+    }
     recordTiming(item.timing, "segment_complete", item.index);
-    if (item.index + 1 < item.texts.length) {
+    if (!item.draining && item.index + 1 < item.texts.length) {
       const prepared = item.future;
       item.future = undefined;
       item.index += 1;
       item.phase = "preparing";
       item.acknowledged = false;
+      item.mediaStarted = false;
       void playSpeechSegment(item, prepared);
       return;
     }
-    item.timing.finished = true;
-    setSpeechStatus(item, item.kind === "welcome" ? "欢迎语播报结束，您可以继续提问" : item.kind === "demo" ? "固定文本播报结束" : "回答播报结束");
+    if (!item.draining) item.timing.finished = true;
+    setSpeechStatus(item, item.draining ? "当前段已结束，旧回答后续不再播报。" : item.kind === "welcome" ? "欢迎语播报结束，您可以继续提问" : item.kind === "demo" ? "固定文本播报结束" : "回答播报结束");
+    item.controller.abort();
     speech.current = null;
-    setSpeechPending(false);
-    busy.current = false;
+    promotePreparedSpeech();
+    refreshBusy();
     segments.current?.pump();
+  }
+
+  function refreshBusy() {
+    busy.current = !!speech.current || !!pendingSpeech.current || !!(questionTurn.current && !questionTurn.current.settled);
+    setSpeechPending(!!speech.current || !!pendingSpeech.current);
+  }
+
+  function promotePreparedSpeech() {
+    const item = pendingSpeech.current;
+    if (speech.current || !item?.prepared || !preparingSpeech(item) || item.session.uploadUnknown) return;
+    pendingSpeech.current = null;
+    speech.current = item;
+    const blob = item.prepared;
+    item.prepared = undefined;
+    void playSpeechSegment(item, Promise.resolve({ blob }));
   }
 
   function newTurn(): TurnIdentity {
@@ -404,12 +442,16 @@ export default function App() {
     bargeRecovery.current = null;
     if (!keepCapture) stopMicrophone();
     else discardVoice(keepUtterance);
+    releaseSwitchDuck();
+    restoreDuck();
     if (cancelBusiness) {
       const visitor = active.current?.visitorId ?? visitorId.current!;
       void invalidateBusiness(visitor, turnSequence.current);
     }
-    if (presetRequest.current) updateConversation(presetRequest.current, { status: "cancelled" });
-    presetRequest.current = null;
+    questionTurn.current?.controller.abort();
+    if (pendingSpeech.current) endTiming(pendingSpeech.current.timing, "cancelled", pendingSpeech.current.index);
+    pendingSpeech.current?.controller.abort();
+    pendingSpeech.current = null;
     generation.current += 1;
     const session = active.current;
     if (session) setConversation((rows) => rows.map((row) =>
@@ -425,6 +467,7 @@ export default function App() {
     session?.playback?.close();
     window.clearTimeout(speechTimer.current);
     if (speech.current) {
+      speech.current.controller.abort();
       endTiming(speech.current.timing, "cancelled", speech.current.index);
       speech.current.future = undefined;
       setSpeechStatus(speech.current, "播报已停止，文字保留。");
@@ -523,6 +566,7 @@ export default function App() {
       voiceSubmission.current = null;
       segments.current?.invalidate();
       utteranceCandidate.current?.releaseDuck(); utteranceCandidate.current = null;
+      releaseSwitchDuck();
       restoreDuck();
       const capture = microphone.current; microphone.current = null; void capture?.stop();
       void fetch(`/guide/visitors/${encodeURIComponent(visitorId.current!)}/invalidate`, {
@@ -534,13 +578,17 @@ export default function App() {
       generation.current += 1;
       transition.current = null;
       visitorReset.current = null;
-      presetRequest.current = null;
-        voiceTurn.current = null;
+      questionTurn.current?.controller.abort();
+      if (pendingSpeech.current) endTiming(pendingSpeech.current.timing, "cancelled", pendingSpeech.current.index);
+      pendingSpeech.current?.controller.abort();
+      pendingSpeech.current = null;
+      voiceTurn.current = null;
       session?.controller.abort();
       session?.events?.close();
       session?.playback?.close();
       window.clearTimeout(speechTimer.current);
       if (speech.current) {
+        speech.current.controller.abort();
         endTiming(speech.current.timing, "cancelled", speech.current.index);
         speech.current.future = undefined;
       }
@@ -629,6 +677,8 @@ export default function App() {
         if (item && item.session === session && currentSpeech(item) && ["sent", "playing"].includes(item.phase)) {
           recordTiming(item.timing, "media_started", item.index);
           item.phase = "playing";
+          item.mediaStarted = true;
+          if (!item.draining && item.turnId === questionTurn.current?.turnId) releaseSwitchDuck();
           setSpeechStatus(item, item.kind === "welcome" ? "欢迎语正在播报" : item.kind === "demo" ? "固定文本正在播报" : "回答正在播报");
         }
       });
@@ -664,7 +714,7 @@ export default function App() {
       if (transition.current === token) {
         transition.current = null;
         setTransitioning(false);
-        // Start after releasing the connection gate so VAD can interrupt the welcome.
+        // Start after releasing the connection gate so speech can be recognized during welcome.
         if (welcomeSession && current(welcomeSession)) void speakText(welcomeSession, WELCOME_TEXT, "welcome");
         segments.current?.pump();
       }
@@ -709,8 +759,8 @@ export default function App() {
     }
   }
 
-  async function bargeIn(text: string | null, owner: ContinuousCapture | null) {
-    // Only a confirmed transcript gets here. Repeated onsets never retire media.
+  async function stopSpeech(owner: ContinuousCapture | null) {
+    // Only an explicit, complete stop command uses the hard retirement path.
     if (bargeRecovery.current) return;
     const session = active.current;
     if (!session?.mediaReady || !current(session) || transition.current || visitorReset.current
@@ -721,14 +771,14 @@ export default function App() {
     bargeRecovery.current = token;
     voiceSubmission.current = token;
     setConnection("idle");
-    setNotice(text === null ? "已收到停止指令，正在停止旧播报。" : "已确认新问题，正在结束旧播报并恢复媒体。");
+    setNotice("已收到停止指令，正在停止旧播报。");
     try {
       await connect("barge");
       const next = active.current;
       const maySubmit = () => voiceSubmission.current === token && microphone.current === owner;
       if (!maySubmit() || bargeRecovery.current !== token || !next?.mediaReady || !current(next)) return;
-      if (text !== null) void sendQuestion(next, text, undefined, "voice", maySubmit);
-      else { voiceSubmission.current = null; setNotice("播报已停止，您可以继续提问。"); }
+      voiceSubmission.current = null;
+      setNotice("播报已停止，您可以继续提问。");
     }
     finally {
       if (bargeRecovery.current === token) { bargeRecovery.current = null; segments.current?.pump(); }
@@ -736,55 +786,57 @@ export default function App() {
   }
 
   async function selectPreset(text: string) {
-    if (!PRESET_QUESTIONS.some((question) => question === text) || visitorReset.current || modeRef.current !== "assistant"
-      || (!presetRunner.current && (!active.current?.mediaSessionId || transition.current || !["ready", "playing"].includes(connection)))) return;
-    const idleSession = !presetRunner.current && !busy.current && !speech.current && !voiceTurn.current
-      ? active.current : null;
+    const session = active.current;
+    if (!PRESET_QUESTIONS.some((question) => question === text) || visitorReset.current || !session?.mediaReady
+      || !current(session) || transition.current || bargeRecovery.current) return;
     discardVoice();
-    if (idleSession?.mediaReady && current(idleSession)) {
-      setQuestion(text);
-      setRecordingHint("未提交录音已丢弃；选择问题不改变麦克风状态。");
-      void sendQuestion(idleSession, text);
+    setRecordingHint("未提交录音已丢弃；选择问题不改变麦克风状态。");
+    switchQuestion(session, text, "text");
+  }
+
+  function switchQuestion(session: ActiveSession, text: string, input: "text" | "voice", maySubmit?: () => boolean) {
+    if (!current(session) || !session.mediaReady || transition.current || bargeRecovery.current) return;
+    if (session.uploadUnknown) {
+      setMediaWarning("旧音频上传结果未确认，新的语音不会提交；请联系现场工作人员。");
       return;
     }
-    // One media replacement at a time; clicks while retiring/connecting replace only the queued selection.
-    if (presetRequest.current) updateConversation(presetRequest.current, { status: "cancelled" });
-    if (!presetRunner.current) {
-      detach(true, true);
-      setConnection("idle");
+    const previous = questionTurn.current;
+    const through = turnSequence.current;
+    if (previous) {
+      previous.controller.abort();
+      endTiming(previous.timing, "cancelled");
+      if (!previous.settled) updateConversation(previous, { status: "cancelled" });
     }
-    const selection = { ...newTurn(), text };
-    presetRequest.current = selection;
-    updateConversation(selection, { question: text, input: "text", status: "pending" }, true);
-    setQuestion(text);
-    setSubmittedQuestion(text);
-    setAnswer(null);
-    setRecordingHint("未提交录音已丢弃；选择问题不改变麦克风状态。");
-    if (presetRunner.current) return;
-    const runner = {};
-    presetRunner.current = runner;
-    setPresetPreparing(true);
-    try {
-      await connect("preset");
-      const selected = presetRequest.current;
-      const session = active.current;
-      if (!selected || selected.visitorId !== visitorId.current) return;
-      if (!session?.mediaSessionId || !current(session) || !session.playback) {
-        updateConversation(selected, { status: "error", error: "媒体准备未完成，本轮问题未提交。请确认连接后重新选择。" });
-        return;
+    if (pendingSpeech.current) endTiming(pendingSpeech.current.timing, "cancelled", pendingSpeech.current.index);
+    pendingSpeech.current?.controller.abort();
+    pendingSpeech.current = null;
+    const old = speech.current;
+    if (old) {
+      old.draining = true;
+      endTiming(old.timing, "cancelled", old.index);
+      old.controller.abort(); // Cancels only TTS, never the independent upload ACK.
+      old.future = undefined;
+      if (old.phase === "preparing") {
+        // Nothing from this segment was uploaded, so there is no ended to await.
+        speech.current = null;
+        window.clearTimeout(speechTimer.current);
       }
-      presetRequest.current = null;
-      busy.current = true;
-      void sendQuestion(session, selected.text, selected, "text");
-    } finally {
-      if (presetRunner.current === runner) { presetRunner.current = null; setPresetPreparing(false); segments.current?.pump(); }
     }
+    if (speech.current && !switchDuck.current) {
+      switchDuck.current = newVoiceCandidate();
+      duckCandidate(switchDuck.current);
+    }
+    setPresetPreparing(true);
+    setQuestion(text);
+    // Watermark only the old turns; sendQuestion allocates the strictly newer one.
+    if (through > 0) void invalidateBusiness(session.visitorId, through);
+    void sendQuestion(session, text, undefined, input, maySubmit);
   }
 
   async function sendQuestion(session: ActiveSession, text: string, identity?: TurnIdentity, input: "text" | "voice" = identity ? "voice" : "text", maySubmit?: () => boolean) {
     if (!current(session)) return;
     const turnIdentity = identity ?? newTurn();
-    const turn = { session, ...turnIdentity, spoken: false, timing: {
+    const turn = { session, ...turnIdentity, spoken: false, settled: false, controller: new AbortController(), timing: {
       trace: crypto.randomUUID(), turnSeq: turnIdentity.turnSeq, kind: "answer" as const, started: performance.now(),
     } };
     if (turn.visitorId !== visitorId.current) return;
@@ -820,7 +872,7 @@ export default function App() {
         return;
       }
       recordTiming(turn.timing, "question_started");
-      const response = await request("/guide/questions", post({ visitor_id: turn.visitorId, turn_id: turn.turnId, turn_seq: turn.turnSeq, question: text }, session.controller.signal), 30000);
+      const response = await request("/guide/questions", post({ visitor_id: turn.visitorId, turn_id: turn.turnId, turn_seq: turn.turnSeq, question: text }, turn.controller.signal), 30000);
       let body: unknown;
       try { body = await response.json(); } catch { throw new RequestError("response"); }
       if (!isBusinessResult(body) || body.visitor_id !== turn.visitorId || body.turn_id !== turn.turnId || body.turn_seq !== turn.turnSeq) throw new RequestError("response");
@@ -840,7 +892,11 @@ export default function App() {
         updateConversation(turn, { status: "error", error: messageFor(error) });
       }
     } finally {
-      if (valid()) { if (!speech.current) busy.current = false; setPending(false); segments.current?.pump(); }
+      turn.settled = true;
+      if (valid()) {
+        if (!pendingSpeech.current && (!speech.current || speech.current.turnId !== turn.turnId)) releaseSwitchDuck();
+        refreshBusy(); setPending(false); segments.current?.pump();
+      }
     }
   }
 
@@ -877,18 +933,15 @@ export default function App() {
       setRecordingState("idle");
       if (intent === "stop") {
         setRecordingHint("已收到停止指令，未提交问答。");
-        if (interrupting) await bargeIn(null, owner);
+        if (interrupting) await stopSpeech(owner);
         return;
       }
       setQuestion(text);
       setRecordingHint("已确认新的问题。");
-      if (interrupting) await bargeIn(text, owner);
-      else {
-        const token = {};
-        voiceSubmission.current = token;
-        void sendQuestion(session, text, undefined, "voice", () => voiceSubmission.current === token
-          && microphone.current === owner && segmentValid());
-      }
+      const token = {};
+      voiceSubmission.current = token;
+      switchQuestion(session, text, "voice", () => voiceSubmission.current === token
+        && microphone.current === owner && segmentValid());
     } catch (error) {
       if (valid()) {
         const message = error instanceof RequestError && error.kind === "timeout"
@@ -913,7 +966,7 @@ export default function App() {
 
   async function speakText(session: ActiveSession, text: string, kind: Speech["kind"], turnId?: string) {
     const sessionId = session.mediaSessionId;
-    if (!sessionId || !current(session) || speech.current) return;
+    if (!sessionId || !current(session) || (kind !== "answer" && (speech.current || pendingSpeech.current))) return;
     if (kind === "answer") {
       const turn = questionTurn.current;
       if (!turn || turn.session !== session || turn.turnId !== turnId || turn.visitorId !== visitorId.current || turn.spoken) return;
@@ -922,31 +975,44 @@ export default function App() {
     const timing = kind === "answer" ? questionTurn.current!.timing
       : { trace: crypto.randomUUID(), turnSeq: 0, kind, started: performance.now() };
     const item: Speech = { session, visitorId: session.visitorId, turnId, kind, phase: "preparing", acknowledged: false,
-      texts: kind === "answer" ? answerSegments(text) : [text], index: 0, timing };
+      texts: kind === "answer" ? answerSegments(text) : [text], index: 0, timing, controller: new AbortController(), mediaStarted: false };
     if (!text.trim() || Array.from(text).length > 1000) {
       endTiming(timing, "failed");
       setSpeechStatus(item, !text.trim() ? "回答没有可播报文字，仅保留文字显示。" : "回答超过 1000 字，无法自动播报；完整文字已保留。");
       return;
     }
-    speech.current = item;
+    pendingSpeech.current = item;
     busy.current = true;
     setSpeechPending(true);
     setSpeechStatus(item, kind === "welcome" ? "正在准备欢迎语" : kind === "demo" ? "正在合成固定演示语音" : "正在合成回答语音");
-    await playSpeechSegment(item);
+    const audio = await prepareSpeechAudio(item, 0);
+    if (!preparingSpeech(item) || pendingSpeech.current !== item) return;
+    if ("error" in audio) {
+      pendingSpeech.current = null;
+      item.controller.abort();
+      endTiming(item.timing, "failed");
+      setSpeechStatus(item, `语音合成未完成，文字已保留。${messageFor(audio.error)}`);
+      releaseSwitchDuck();
+      refreshBusy();
+      if (kind !== "answer") await disconnect(`播报未完成。${messageFor(audio.error)}`);
+      return;
+    }
+    item.prepared = audio.blob;
+    promotePreparedSpeech();
   }
 
   async function prepareSpeechAudio(item: Speech, index: number): Promise<PreparedAudio> {
     try {
-      if (!currentSpeech(item) || !item.session.uiConfig) throw new RequestError("cancelled");
+      if (!preparingSpeech(item) || !item.session.uiConfig) throw new RequestError("cancelled");
       recordTiming(item.timing, "tts_started", index);
       const audio = await request("/opentalking/tts/preview", post({ text: item.texts[index], tts_provider: "edge",
-        voice: item.session.uiConfig.tts_voice }, item.session.controller.signal), 45000);
-      if (!currentSpeech(item)) throw new RequestError("cancelled");
+        voice: item.session.uiConfig.tts_voice }, item.controller.signal), 45000);
+      if (!preparingSpeech(item)) throw new RequestError("cancelled");
       if (!audio.ok || !audio.headers.get("content-type")?.includes("audio/wav")) throw new RequestError("response");
       // request() has already read the entire HTTP body inside its timeout.
       recordTiming(item.timing, "tts_ready", index);
       const blob = await audio.blob();
-      if (!currentSpeech(item)) throw new RequestError("cancelled");
+      if (!preparingSpeech(item)) throw new RequestError("cancelled");
       return { blob };
     } catch (error) {
       // A future segment can fail before it is consumed: never leave a rejecting promise.
@@ -959,9 +1025,9 @@ export default function App() {
     const sessionId = session.mediaSessionId;
     const index = item.index;
     try {
-      if (!sessionId || !currentSpeech(item)) return;
+      if (!sessionId || !currentSpeech(item) || item.draining) return;
       const audio = await (prepared ?? prepareSpeechAudio(item, index));
-      if (!currentSpeech(item) || item.index !== index) return;
+      if (!currentSpeech(item) || item.draining || item.index !== index) return;
       if ("error" in audio) throw audio.error;
       const form = new FormData();
       form.set("file", audio.blob, kind === "welcome" ? "welcome.wav" : kind === "demo" ? "fixed-demo.wav" : "answer.wav");
@@ -1054,9 +1120,9 @@ export default function App() {
           <button className="secondary" disabled={resettingVisitor || transitioning || connection === "disconnecting"} onClick={() => void connect("resume")}>{transitioning ? "正在确认会话关闭…" : "恢复问答"}</button>
         </aside>}
         <div className="preset-questions" aria-label="推荐问题">
-          {PRESET_QUESTIONS.map((text) => <button type="button" key={text} className="preset-question" disabled={resettingVisitor || mode === "human" || (!connected && !presetPreparing) || (transitioning && !presetPreparing)} onClick={() => void selectPreset(text)}>{text}</button>)}
+          {PRESET_QUESTIONS.map((text) => <button type="button" key={text} className="preset-question" disabled={resettingVisitor || mode === "human" || !connected || transitioning} onClick={() => void selectPreset(text)}>{text}</button>)}
         </div>
-        <p className="preset-hint" role="status">{presetPreparing ? "正在结束上一轮播报，随后提交最后选择的问题…" : "点击即可提问；未提交的录音会被丢弃，不改变麦克风状态。"}</p>
+        <p className="preset-hint" role="status">{presetPreparing ? "正在准备新回答，当前段结束后会接着播报，人物保持连接…" : "点击即可提问；未提交的录音会被丢弃，不改变麦克风状态。"}</p>
         <div className="recording-controls">
           <button className="recording-stop" disabled={captureStatus === "closed" || captureStatus === "error"}
             onClick={stopMicrophone}>停止录音</button>
