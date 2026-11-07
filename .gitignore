@@ -1,6 +1,20 @@
-# Local planning documents are submitted only by the owner.
+# Local planning documents stay private except the exact course documents authorized in #10.
 /_docs/
-/docs/
+/docs/*
+!/docs/dev/
+/docs/dev/*
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/
+/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/*
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/
+/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/*
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/20261107-课程项目-展厅AI导览高分交付分批规划-spec.md
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/architecture.md
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/process.md
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/team.md
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/testing.md
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/tracker.md
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/rubric.md
+!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/verification.md
 
 # Credentials and runtime data
 /config/local.toml
