@@ -30,7 +30,7 @@ After the [README setup](../../README.md#linux-setup-and-development), run the e
 ./tools/course_verify.sh
 ```
 
-It runs Python pytest, frontend typecheck/build, browser speech integration, landscape browser integration, landscape system integration, the CPU frontend build and the CPU sample real-browser system journey in sequence.
+It runs Python pytest, frontend typecheck/build, browser speech integration, landscape browser integration, landscape system integration, the VAD development-assets integration, the CPU frontend build and the CPU sample real-browser system journey in sequence.
 
 This command is not a claim that every optional script in the repository is included; specialized RTC/GPU checks require their own dependencies and configured runtime.
 
@@ -68,7 +68,7 @@ Assertions cover exact release identity, retained history, failed-candidate reje
 
 Without both run IDs the test reports an explicit skip; ordinary CI cannot claim that this host-specific acceptance has run.
 
-The hosted workflow executes all existing Python regressions, the four browser suites, a CPU image build and a browser journey against the container; only successful push/main runs upload deployable artifacts.
+The hosted workflow executes all existing Python regressions, the five browser suites, a CPU image build and a browser journey against the container; only successful push/main runs upload deployable artifacts.
 
 A failing verification step prevents image publication and the controller ignores failed CI runs; PR validation never runs on the local Docker host.
 

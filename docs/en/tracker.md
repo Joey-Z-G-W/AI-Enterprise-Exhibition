@@ -22,7 +22,7 @@ Task #11 previously made English authoritative and confined complete translation
 | [#8 Synchronize to main](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8) | Transfer accepted generic functionality from `ruika`. | Historical sync and independent QA at `4e81d9d`. |
 | [#9 Course roadmap](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9) | Persistence, reproducibility, deployment and operations. | Batches 2-4 are in #12; stages 5-6 remain pending; targets are not awarded scores. |
 | [#10 English docs and workflow](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10) | Historical documentation batch with AC1–AC7. | Published at `f30f180`; prior Engineer/QA evidence is retained below. |
-| [#11 English primary and Chinese translations](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) | Current language/path migration with AC1–AC6. | Complete translations, raw-English checks and independent publication review. |
+| [#11 English primary and Chinese translations](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) | Historical language/path migration with AC1-AC6. | Published at baseline f9943c9; translations remain maintained. |
 | [#12 CPU samples and Docker CI/CD](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12) | Current runtime/delivery task with AC1-AC12. | Implementation and actual verification are tracked separately. |
 
 ## Baseline record

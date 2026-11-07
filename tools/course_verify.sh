@@ -11,5 +11,6 @@ npm --prefix frontend run build
 npm --prefix frontend run test:browser
 npm --prefix frontend run test:landscape
 npm --prefix frontend run test:system
+npm --prefix frontend run test:vad-dev
 VITE_GUIDE_MODE=demo npm --prefix frontend run build
 node tests/frontend/demo-system.cjs

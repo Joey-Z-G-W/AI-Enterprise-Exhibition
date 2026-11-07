@@ -37,7 +37,7 @@
 
 [#8 发布记录](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8#issuecomment-6707410043)确认通用 main 同步，其中包括此前的 Linux 支持。
 
-该迁移保留通用配置，排除了企业内容和私有配置；当前文档分支不修改产品源码、vendor gitlink 或原运行工作区。
+该迁移保留通用配置，排除了企业内容和私有配置；历史文档分支未修改产品源码、vendor gitlink 或原运行工作区。
 
 <a id="historical-documentation-activity"></a>
 

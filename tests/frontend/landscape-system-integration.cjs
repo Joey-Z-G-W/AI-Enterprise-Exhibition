@@ -29,6 +29,23 @@ function pcmWav(seconds = .8) {
 }
 function physicalDevices() {
   let mic;
+  // A simulated external RTP peer provides public frame metadata. Application
+  // timeline, playback, VAD and backend implementations remain untouched.
+  let frameCallback, frameSequence = 0, stamp = 0xffff0000, currentFrame;
+  HTMLVideoElement.prototype.requestVideoFrameCallback = function (callback) { frameCallback = callback; return ++frameSequence; };
+  HTMLVideoElement.prototype.cancelVideoFrameCallback = function () { frameCallback = null; };
+  function present() {
+    if (!currentFrame || currentFrame.peer !== window.systemPeer) return;
+    stamp = (stamp + 3600) >>> 0;
+    const peer = currentFrame.peer;
+    peer.channel.onmessage?.({ data: JSON.stringify({ type: 'frame', version: 1, generation: peer.generation,
+      segment_id: currentFrame.segment, source_ms: currentFrame.ms, rtp_timestamp: stamp }) });
+    const callback = frameCallback; frameCallback = null;
+    callback?.(performance.now(), { rtpTimestamp: stamp });
+  }
+  window.systemFrame = (segment, ms) => { currentFrame = { peer: window.systemPeer, segment, ms }; present(); };
+  setInterval(present, 100);
+  let generation = 0;
   Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { configurable: true, value: async () => {
     const audio = new AudioContext({ sampleRate: 16000 }); await audio.resume();
     const destination = audio.createMediaStreamDestination(), track = destination.stream.getAudioTracks()[0];
@@ -46,6 +63,11 @@ function physicalDevices() {
     return { seconds: buffer.duration, samples: buffer.length, sampleRate: buffer.sampleRate };
   };
   window.RTCPeerConnection = class {
+    constructor() { this.generation = 'system-peer-' + (++generation); window.systemPeer = this; }
+    createDataChannel() {
+      const channel = { readyState: 'open', send: () => channel.onmessage?.({ data: JSON.stringify({ type: 'capabilities', version: 1, generation: this.generation, clock: 'rtp-video' }) }) };
+      this.channel = channel; setTimeout(() => channel.onopen?.(), 0); return channel;
+    }
     iceGatheringState = 'complete'; connectionState = 'new'; iceConnectionState = 'new';
     addTransceiver() {} async createOffer() { return { type: 'offer', sdp: 'external-fixture' }; }
     async setLocalDescription(offer) { this.localDescription = offer; }
@@ -68,7 +90,7 @@ function physicalDevices() {
   };
 }
 class ExternalMedia extends Fixture {
-  constructor() { super(); this.scenario = 1; this.transcripts = []; this.transcriptPlans = []; }
+  constructor() { super(); this.scenario = 1; this.transcripts = []; this.transcriptPlans = []; this.aligned = []; this.resets = []; }
   async handle(req, res) {
     if (req.url.endsWith('/transcribe')) {
       const chunks = []; for await (const chunk of req) chunks.push(chunk);
@@ -83,6 +105,21 @@ class ExternalMedia extends Fixture {
       const plan = this.transcriptPlans.shift(); assert.ok(plan, 'every external STT result is planned');
       this.transcripts.push({ text: plan, wavBytes: length, nonzeroSamples: nonzero, at: Date.now() });
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ session_id: req.url.split('/')[3], text: plan })); return true;
+    }
+    if (req.url === '/opentalking/tts/preview-aligned') {
+      const chunks = []; for await (const chunk of req) chunks.push(chunk);
+      const body = JSON.parse(Buffer.concat(chunks));
+      const sentences = body.text.match(/[^。！？]+[。！？]?/gu);
+      const timeline = sentences.map((text, i) => ({ text, start_ms: i * 800, end_ms: (i + 1) * 800 }));
+      this.aligned.push({ text: body.text, timeline });
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ audio_base64: pcmWav(sentences.length * .8).toString('base64'), duration_ms: sentences.length * 800, timeline }));
+      return true;
+    }
+    if (req.url.endsWith('/webrtc/reset')) {
+      this.resets.push({ at: Date.now(), sid: req.url.split('/')[3] });
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ session_id: this.sid(this.serial), status: 'receiver_reset' })); return true;
     }
     if (req.url === '/opentalking/tts/preview') {
       const chunks = []; for await (const chunk of req) chunks.push(chunk); const body = JSON.parse(Buffer.concat(chunks));
@@ -118,41 +155,39 @@ async function proxyGuide(req, res) {
   res.end(payload);
 }
 const hasStage = (identity, stage) => timings.some(t => t.trace === identity.trace && t.segment === identity.segment && t.stage === stage);
-async function uploadIdentity(index) {
-  await until(() => work().length > index, 'sentence upload ' + index);
-  await until(() => timings.filter(t => t.kind === 'answer' && t.stage === 'upload_started').length > index, 'public upload timing ' + index);
-  return timings.filter(t => t.kind === 'answer' && t.stage === 'upload_started')[index];
+async function paragraph(index) {
+  await until(() => work().length > index, 'real paragraph upload ' + index);
+  await until(() => timings.filter(t => t.kind === 'answer' && t.stage === 'upload_started').length > index, 'public paragraph upload timing ' + index);
+  const upload = work()[index];
+  assert.equal(fixture.aligned[index].text, guide.filter(x => x.path === '/questions')[index].response.text, 'one native TTS call keeps the complete answer');
+  return upload;
 }
-async function signalStarted(index) {
-  const identity = await uploadIdentity(index);
-  fixture.emit(sid(), 'speech.media_started');
-  // Observe the application's public timing only; never call its receiver/VAD
-  // internals. A server write alone does not prove EventSource consumption.
-  await until(() => hasStage(identity, 'media_started'), 'browser consumed started for ' + identity.trace + '/' + identity.segment);
-  return identity;
-}
-async function finishSentence(index) {
-  const identity = await uploadIdentity(index);
-  fixture.emit(sid(), 'speech.ended');
-  await until(() => hasStage(identity, 'ended_signal') && hasStage(identity, 'receiver_audio_drained'), 'real receiver drain for sentence ' + index);
-}
-async function playSentence(index, asset, { waitEnd = true } = {}) {
-  const identity = await signalStarted(index);
-  const started = await page.evaluate(() => window.systemReceiver(.8));
-  receiverInputs.push({ sentenceUpload: index, trace: identity.trace, segment: identity.segment, started_ms: started, seconds: .8 });
-  await until(() => hasStage(identity, 'receiver_audio_started'), 'public receiver onset for sentence ' + index);
+async function frame(upload, ms, asset) {
+  await page.waitForFunction(() => { const video = document.querySelector('.avatar-player video'); return video && video.readyState >= 2 && !video.paused && !video.muted; });
+  const started = await page.evaluate(({ id, ms }) => { window.systemFrame(id, ms); return performance.now(); }, { id: upload.segment_id, ms });
+  receiverInputs.push({ segment: upload.segment_id, source_ms: ms, at_ms: started });
   if (asset) {
     const material = page.locator('.material-player [data-asset-id="' + asset + '"]');
-    await material.waitFor({ state: 'attached', timeout: 15000 });
     await material.waitFor({ state: 'visible', timeout: 15000 });
     const latency = await page.evaluate(() => performance.now()) - started;
-    cueDelays.push({ sentenceUpload: index, asset, milliseconds: latency }); assert.ok(latency <= 500);
-    if (asset === 'robot') {
-      assert.ok(await page.locator('.material-player img').evaluate(image => image.complete && image.naturalWidth > 0), 'actual image decoded');
-      if (index === 0) await page.screenshot({ path: path.join(evidence, 'reviewed-image.png') });
-    }
-  } else await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'black no-asset sentence');
-  if (waitEnd) await finishSentence(index);
+    cueDelays.push({ segment: upload.segment_id, source_ms: ms, asset, milliseconds: latency }); assert.ok(latency <= 500);
+    assert.ok(await material.evaluate(image => image.complete && image.naturalWidth > 0), 'actual reviewed image decoded');
+  } else await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'empty or failed-image sentence');
+}
+async function startParagraph(index, asset) {
+  const upload = await paragraph(index);
+  fixture.emit(sid(), 'speech.media_started'); fixture.emit(sid(), 'speech.ended');
+  const identity = timings.filter(t => t.kind === 'answer' && t.stage === 'upload_started')[index];
+  await until(() => hasStage(identity, 'ended_signal'), 'browser consumed external ended event');
+  assert.equal(await page.locator('.material-player img, .material-player video').count(), 0, 'SSE alone cannot paint');
+  await page.evaluate(() => window.systemReceiver(.8));
+  await frame(upload, 0, asset);
+  return upload;
+}
+async function finishParagraph(upload, duration) {
+  await frame(upload, duration, null);
+  await until(() => guide.some(x => x.path.endsWith('/playback') && x.request.completed && x.request.turn_id === guide.filter(y => y.path === '/questions').at(-1).response.turn_id), 'real backend completed playback receipt');
+  assert.ok(guide.filter(x => x.path.endsWith('/playback')).every(x => x.status === 200), 'real playback receipts accepted');
 }
 async function questionReady(previous) {
   await until(() => guide.filter(x => x.path === '/questions').length > previous, 'actual backend answer');
@@ -219,30 +254,28 @@ async function audioQuestion(text) {
   fixture.emit(sid(), 'speech.media_started'); fixture.emit(sid(), 'speech.ended');
   await page.getByText('欢迎语播报结束，您可以继续提问', { exact: true }).waitFor();
   await page.getByRole('button', { name: '关闭记录', exact: true }).click();
-  // Round 1: preset -> real answer -> image, empty sentence, second reviewed image.
+  // Round 1: one aligned paragraph upload, three RTP-cued sentence images.
   await plan('机器人介绍。随后说明。展厅图片说明。', '公司提供哪些服务？', false);
   await page.locator('.preset-question').first().click();
   const first = await questionReady(0); assert.deepEqual(first.response.presentation.sentences.map(s => s.asset_id), ['robot', null, 'hall']);
-  await until(() => work().length === 1, 'first real sentence upload');
-  await signalStarted(0);
-  assert.equal(await page.locator('.material-player img, .material-player video').count(), 0, 'SSE alone cannot paint');
-  await playSentence(0, 'robot'); await playSentence(1, null); await playSentence(2, 'hall', { waitEnd: false });
-  assert.ok(await page.locator('.material-player img').evaluate(img => img.complete && img.naturalWidth > 0));
-  assert.equal(await page.locator('.material-player video').count(), 0);
+  let upload = await startParagraph(0, 'robot');
+  await page.screenshot({ path: path.join(evidence, 'reviewed-image.png') });
+  await frame(upload, 800, null); await frame(upload, 1600, 'hall');
   await page.screenshot({ path: path.join(evidence, 'second-image.png') });
-  await finishSentence(2);
-  results.push({ name: 'preset + verified-source image/null/second image, receiver PCM gating', status: 'PASS' });
-  // Round 2: free voice, physical WAV -> real VAD -> STT -> real context rewrite/answer.
+  await finishParagraph(upload, 2400);
+  assert.equal(work().length, 1, 'all three sentences share one complete paragraph upload');
+  results.push({ name: 'preset + real backend + aligned paragraph + RTP image/null/second image + actual playback receipts', status: 'PASS' });
+  // Round 2: physical WAV -> real VAD -> external STT -> real context/answer.
   await plan('失效素材介绍。机器人恢复说明。', '请说明失效素材和机器人', true); failNextAsset = true;
-  const before = work().length; await audioQuestion('请说明失效素材和机器人');
+  await audioQuestion('请说明失效素材和机器人');
   const second = await questionReady(1); assert.deepEqual(second.response.presentation.sentences.map(s => s.asset_id), ['broken', 'robot']);
-  await playSentence(before, null); await playSentence(before + 1, 'robot');
+  upload = await startParagraph(1, null); await frame(upload, 800, 'robot'); await finishParagraph(upload, 1600);
   assert.ok(guide.some(x => x.path === '/media/broken' && x.status === 404), 'real hash failure reaches browser');
-  results.push({ name: 'real PCM/VAD voice turn, failed material black and next image recovers', status: 'PASS' });
-  // Round 3: preset starts image; voice interrupts before its end and creates round 4.
+  results.push({ name: 'real PCM/VAD voice turn, failed material empty and next native sentence image recovers', status: 'PASS' });
+  // Round 3: free voice interrupts an active paragraph, preserving SID and mic.
   await plan('机器人正在介绍。随后说明。', '公司提供哪些服务？', true);
-  const thirdStart = work().length; await page.locator('.preset-question').first().click(); await questionReady(2);
-  await playSentence(thirdStart, 'robot', { waitEnd: false });
+  await page.locator('.preset-question').first().click(); await questionReady(2);
+  await startParagraph(2, 'robot');
   await plan('机器人完成恢复。', '请换个机器人问题', true);
   const previousTranscripts = fixture.transcripts.length;
   fixture.transcriptPlans.push('请换个机器人问题'); await page.evaluate(() => window.systemMic());
@@ -250,28 +283,24 @@ async function audioQuestion(text) {
   await until(() => fixture.transcripts.length > previousTranscripts, 'interrupt VAD transcript', 20000);
   await questionReady(3);
   await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'confirmed spoken switch clears old material');
-  assert.equal(work().length, thirdStart + 1, 'old segment end still required before replacement upload');
-  fixture.emit(sid(), 'speech.ended');
-  await playSentence(thirdStart + 1, 'robot');
-  await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'last answer clears');
+  await until(() => fixture.resets.length === 1, 'external same-session paragraph receiver reset');
+  upload = await startParagraph(3, 'robot'); await finishParagraph(upload, 800);
   assert.equal(fixture.serial, 1); assert.equal(fixture.closed.length, 0);
-  assert.equal(work().length, thirdStart + 2, 'cancelled old tail must never upload');
+  assert.equal(work().length, 4, 'each answer has one upload; cancelled paragraph has no queued sentence tail');
+  assert.ok(!guide.some(x => x.path.endsWith('/playback') && x.request.completed && x.request.turn_id === guide.filter(y => y.path === '/questions')[2].response.turn_id), 'interrupted paragraph cannot claim complete playback');
   await page.getByRole('status', { name: '收音状态' }).filter({ hasText: '正在持续收音。' }).waitFor();
-  results.push({ name: 'preset/free-voice switching and spoken interruption clear + recover, same RTC session/mic', status: 'PASS' });
-  // Round 5: QA regression. A real microphone segment classified as a busy
-  // acknowledgement must preserve the original plan, including its next cue.
+  results.push({ name: 'preset/free voice switch, actual VAD interruption, same SID/mic and bounded receiver reset recover', status: 'PASS' });
+  // Round 5: ignored acknowledgement preserves the remaining paragraph cue.
   await plan('机器人正在介绍。机器人继续说明。', '公司提供哪些服务？', true);
-  const acknowledgementStart = work().length;
   await page.locator('.preset-question').first().click(); await questionReady(4);
-  await playSentence(acknowledgementStart, 'robot', { waitEnd: false });
+  upload = await startParagraph(4, 'robot');
   await audioQuestion('好的');
   await until(async () => (await page.locator('.control-status').innerText()).includes('未确认新的问题'), 'real acknowledgement classified as ignored');
   assert.equal(guide.filter(x => x.path === '/questions').length, 5, 'ignored acknowledgement does not create a sixth question');
-  assert.equal(fixture.serial, 1); assert.equal(fixture.closed.length, 0);
-  await finishSentence(acknowledgementStart);
-  await playSentence(acknowledgementStart + 1, 'robot');
-  await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'acknowledged original answer completes and clears');
-  results.push({ name: 'real PCM/VAD ignored acknowledgement preserves remaining original sentence image', status: 'PASS' });
+  assert.equal(fixture.serial, 1); assert.equal(fixture.closed.length, 0); assert.equal(fixture.resets.length, 1);
+  await frame(upload, 800, 'robot'); await finishParagraph(upload, 1600);
+  assert.equal(fixture.aligned.length, 5); assert.equal(work().length, 5);
+  results.push({ name: 'real PCM/VAD ignored acknowledgement preserves original next sentence image and completes receipt', status: 'PASS' });
   const providers = await control('state');
   assert.equal(providers.queries.length, 5); assert.equal(providers.completions.length, 9); assert.equal(providers.remaining_replies, 0);
   assert.equal(guide.filter(x => x.path === '/questions').length, 5); assert.equal(fixture.transcripts.length, 3);
@@ -279,7 +308,7 @@ async function audioQuestion(text) {
   await page.screenshot({ path: path.join(evidence, 'finished.png') });
   await fs.writeFile(path.join(evidence, 'provider-http.json'), JSON.stringify(providers, null, 2));
   await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: 'PASS', results, cueDelays, timings, receiverInputs, actualImage: process.env.REAL_TEST_IMAGE || null,
-    simulation: 'Actual React/backend/SDK/knowledge/history/catalog and real MicVAD/ORT. External providers/media peer and hardware input simulated. Receiver uses real PCM MediaStream; no app/VAD internal event triggered. No acoustic/device latency claim.' }, null, 2));
+    simulation: 'Actual React/backend/SDK/knowledge/history/catalog/playback receipts and real MicVAD/ORT. External native TTS timeline/RTP peer and hardware input simulated; real PCM MediaStreams remain active. No app/VAD internal event triggered and no acoustic/device latency claim.' }, null, 2));
   console.log(JSON.stringify({ status: 'PASS', results, cueDelays, evidence }));
 })().catch(async error => {
   let browserSnapshot;
@@ -293,7 +322,7 @@ async function audioQuestion(text) {
   console.error(error.stack); console.log(evidence); process.exitCode = 1;
 }).finally(async () => {
   if (backend) await fs.writeFile(path.join(evidence, 'provider-final.json'), JSON.stringify(await control('state').catch(() => null), null, 2));
-  await fs.writeFile(path.join(evidence, 'boundary.json'), JSON.stringify({ guide, timings, receiverInputs, transcripts: fixture?.transcripts, tts: fixture?.tts.map(({ text, welcome }) => ({ text, welcome })), uploads: fixture?.uploads.map(({ sid, welcome, marker }) => ({ sid, welcome, marker })), diagnostics, pythonOutput,
+  await fs.writeFile(path.join(evidence, 'boundary.json'), JSON.stringify({ guide, timings, receiverInputs, transcripts: fixture?.transcripts, aligned: fixture?.aligned, resets: fixture?.resets, tts: fixture?.tts.map(({ text, welcome }) => ({ text, welcome })), uploads: fixture?.uploads.map(({ sid, welcome, marker }) => ({ sid, welcome, marker })), diagnostics, pythonOutput,
     audio: speechInput ? { bytes: speechInput.length, sha256: crypto.createHash('sha256').update(speechInput).digest('hex') } : null,
     vad: [...staticAssets].map(([url, asset]) => ({ url, bytes: asset.bytes.length, sha256: asset.sha256 })) }, null, 2));
   fixture?.dispose(); await browser?.close(); await vite?.close();
