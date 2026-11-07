@@ -72,7 +72,7 @@ Sample authorship, licenses, stable IDs and checksums ship in [sample_data](src/
 
 [Course CI](.github/workflows/ci.yml) runs tests and image builds on GitHub-hosted runners for pull requests and main; only a successful push to this repository's main publishes a deployable image artifact.
 
-A fixed local controller downloads that exact run's artifact, verifies commit/checksum/image identity, starts a candidate, and changes the stable gateway route only after readiness succeeds.
+A fixed local controller downloads that exact run's artifact with up to 16 bounded parallel byte ranges, verifies the GitHub archive checksum and commit/image identity, starts a candidate, and changes the stable gateway route only after readiness succeeds.
 
 Dev uses port 8090 and volume `course-dev-data`; prod uses port 8091 and volume `course-prod-data`, with distinct visitor cookies.
 
@@ -87,9 +87,11 @@ python3 tools/course_deploy.py rollback --environment prod
 ./tools/course_runner.sh stop
 ```
 
-The controller needs Docker access, GitHub CLI authentication with Actions read and Deployments write access, and an online host; no self-hosted Actions runner is registered and PR code is never assigned to this host.
+The controller needs Docker access, GitHub CLI authentication with Actions read and Deployments write access, and an online host; no self-hosted Actions runner is registered, and automated PR jobs run only on GitHub-hosted runners.
 
-`install` copies the reviewed controller outside the checkout; review and reinstall changes explicitly, and restart after host reboot or configure a user service.
+A manually reviewed PR QA image can be loaded for local acceptance; the automatic deployment controller still accepts only successful main releases.
+
+`install` copies the reviewed controller and its standard-library artifact helper outside the checkout; review and reinstall changes explicitly, and restart after host reboot or configure a user service.
 
 Override `COURSE_CONTROLLER_DIR` and `COURSE_STATE_DIR` for persistent locations; pass the same state path via `--state-dir` before CLI subcommands.
 

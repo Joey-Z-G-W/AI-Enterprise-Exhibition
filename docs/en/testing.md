@@ -24,7 +24,7 @@ Rewrite or delete unit tests touched by a change; leave unrelated historical tes
 
 ## Commands and prerequisites
 
-After the [README setup](../../README.md#linux-setup-and-development), run the existing combined entry point with Google Chrome available.
+After the [README setup](../../README.md#linux-setup-and-development), run the existing combined entry point with Google Chrome and the OpenSSL CLI available (the latter generates temporary certificates for local TLS integration tests).
 
 ```bash
 ./tools/course_verify.sh
@@ -70,12 +70,20 @@ Without both run IDs the test reports an explicit skip; ordinary CI cannot claim
 
 The hosted workflow executes all existing Python regressions, the five browser suites, the documented `docker compose up --build --wait`, a browser journey against the full stack and [real Compose recreation/persistence acceptance](../../tests/deployment/compose_persistence.py); only successful push/main runs upload deployable artifacts.
 
-A failing verification step prevents image publication and the controller ignores failed CI runs; PR validation never runs on the local Docker host.
+A failing verification step prevents image publication and the controller ignores failed CI runs; automated PR jobs run only on GitHub-hosted runners.
+
+Manually reviewed PR QA images may be loaded for local acceptance, while the deployment controller still accepts only successful main releases.
 
 ## Local controller lifecycle
 
-`tools/course_runner.sh install` copies only the reviewed standalone controller; `start` checks GitHub login and Docker, then starts a background process, while `stop` verifies its PID command before termination.
+`tools/course_runner.sh install` copies the reviewed controller and `course_artifact.py` helper, both requiring only the Python standard library; `start` checks GitHub login and Docker, then starts a background process, while `stop` verifies its PID command before termination.
 
 Keep its state/artifact directory outside temporary worktrees; configure a user service if it must resume after reboot, and explicitly review/reinstall controller updates.
 
 The host must remain online and retain Docker access and GitHub authentication; stopping the controller leaves existing application containers running and pauses future deployment processing.
+
+Artifact CLI integration uses a real local TLS API redirect and byte-range server, with only the external GitHub CLI substituted.
+
+It verifies that credentials stay on the API host, signed URLs never enter output, malformed ranges/checksums/ZIP paths fail closed, incomplete caches are never published, and the controller rejects PR deployment before transfer.
+
+The read-only artifact helper can explicitly download a successful PR QA artifact; the deployment controller independently requires successful push/main CI and the exact `course-image-<sha>` artifact.

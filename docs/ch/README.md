@@ -82,7 +82,7 @@ docker compose up --build --force-recreate --wait
 
 [Course CI](../../.github/workflows/ci.yml) 在 GitHub 托管 runner 上运行 PR 和 main 的测试、镜像构建；只有本仓 main push 成功才发布可部署镜像 artifact。
 
-固定的本机控制器下载该次运行的精确 artifact，核对提交、校验值和镜像身份，启动候选，仅在就绪成功后切换稳定网关路由。
+固定的本机控制器使用最多 16 路有界并行字节范围下载该次运行的精确 artifact，核对 GitHub 归档校验值及提交/镜像身份，启动候选，仅在就绪成功后切换稳定网关路由。
 
 dev 使用 8090 和卷 `course-dev-data`，prod 使用 8091 和卷 `course-prod-data`，访客 cookie 也分开。
 
@@ -97,9 +97,11 @@ python3 tools/course_deploy.py rollback --environment prod
 ./tools/course_runner.sh stop
 ```
 
-控制器需要 Docker 权限、具备 Actions 读取与 Deployments 写入权限的 GitHub CLI 登录，以及在线主机；不注册 self-hosted Actions runner，PR 代码不会分配给这台主机执行。
+控制器需要 Docker 权限、具备 Actions 读取与 Deployments 写入权限的 GitHub CLI 登录，以及在线主机；不注册 self-hosted Actions runner，自动 PR 作业仅在 GitHub 托管 runner 上执行。
 
-`install` 把审核后的控制器复制到检出目录之外；改动需明确审核、重新安装，主机重启后需再次启动或配置用户服务。
+经过人工审核的 PR QA 镜像可加载到本机验收；自动部署控制器仍只接受成功的 main release。
+
+`install` 把审核后的控制器及其仅使用标准库的 artifact helper 复制到检出目录之外；改动需明确审核、重新安装，主机重启后需再次启动或配置用户服务。
 
 可通过 `COURSE_CONTROLLER_DIR` 和 `COURSE_STATE_DIR` 指定持久目录；CLI 子命令之前通过 `--state-dir` 传入同一状态路径。
 

@@ -13,6 +13,8 @@ import tempfile
 import time
 import urllib.request
 
+from course_artifact import download_release
+
 REPOSITORY = 'Joey-Z-G-W/AI-Enterprise-Exhibition'
 WORKFLOW = '.github/workflows/ci.yml'
 PORTS = {'dev': 8090, 'prod': 8091}
@@ -75,10 +77,7 @@ def load_release(state, run_id):
     run = valid_run(run_id)
     sha = run['head_sha']
     directory = state / 'artifacts' / str(run_id)
-    directory.mkdir(parents=True, exist_ok=True)
-    if not (directory / 'manifest.json').exists():
-        command('gh', 'run', 'download', str(run_id), '--repo', REPOSITORY,
-                '--name', f'course-image-{sha}', '--dir', str(directory))
+    download_release(run_id, sha, directory)
     manifest = read_json(directory / 'manifest.json')
     image = f'exhibition-course:{sha}'
     if manifest.get('sha') != sha or manifest.get('image') != image:

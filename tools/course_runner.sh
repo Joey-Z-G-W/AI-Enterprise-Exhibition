@@ -7,11 +7,12 @@ state_dir="${COURSE_STATE_DIR:-$HOME/.local/state/exhibition-course}"
 case "${1:-help}" in
   install)
     mkdir -p "$controller_dir" "$state_dir"
-    cp tools/course_deploy.py "$controller_dir/course_deploy.py"
+    cp tools/course_deploy.py tools/course_artifact.py "$controller_dir/"
     printf '%s\n' "Installed controller: $controller_dir/course_deploy.py" "State: $state_dir"
     ;;
   start)
     test -f "$controller_dir/course_deploy.py"
+    test -f "$controller_dir/course_artifact.py"
     if [[ -f "$state_dir/controller.pid" ]] && kill -0 "$(cat "$state_dir/controller.pid")" 2>/dev/null; then
       echo 'Controller is already running'; exit 1
     fi

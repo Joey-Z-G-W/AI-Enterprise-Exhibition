@@ -80,7 +80,9 @@ flowchart TD
     Candidate --> Gateway
 ```
 
-控制器独立于 Actions，只接受固定仓库、`ci.yml`、成功的 `push` 事件和 `main` 分支；PR 使用托管 CI，不会获得主机执行权限。
+控制器独立于 Actions，只接受固定仓库、`ci.yml`、成功的 `push` 事件和 `main` 分支；自动 PR 作业仅使用 GitHub 托管 CI。
+
+经过审核的 PR QA 镜像可人工加载到本机验收，这不赋予它们自动 main 部署权限。
 
 候选共享对应环境的持久卷，必须兼容 schema；就绪失败保持旧网关路由不变，切换后的失败会恢复旧路由。
 

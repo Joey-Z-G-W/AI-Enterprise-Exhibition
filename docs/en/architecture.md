@@ -70,7 +70,9 @@ flowchart TD
     Candidate --> Gateway
 ```
 
-The controller runs outside Actions and accepts only the fixed repository, `ci.yml`, successful `push` event and `main` branch; pull requests use hosted CI and never receive host execution.
+The controller runs outside Actions and accepts only the fixed repository, `ci.yml`, successful `push` event and `main` branch; automated pull-request jobs use only GitHub-hosted CI.
+
+Reviewed PR QA images can be loaded manually for local acceptance; this does not grant them access to automatic main deployment.
 
 A candidate shares its environment's persistent volume and must be schema-compatible; failed readiness leaves the old gateway route unchanged, while post-switch failure restores it.
 

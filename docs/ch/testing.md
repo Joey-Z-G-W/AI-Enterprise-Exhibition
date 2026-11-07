@@ -30,7 +30,7 @@
 
 ## 命令与前提
 
-完成 [README 安装](README.md#linux-setup-and-development)后，在已安装 Google Chrome 的环境运行现有统一入口。
+完成 [README 安装](README.md#linux-setup-and-development)后，在已安装 Google Chrome 和 OpenSSL CLI 的环境运行统一入口（后者为本机 TLS 集成测试生成临时证书）。
 
 ```bash
 ./tools/course_verify.sh
@@ -80,14 +80,22 @@ COURSE_RELEASE_RUN_B=SECOND_SUCCESSFUL_MAIN_RUN_ID \
 
 托管 workflow 执行全部既有 Python 回归、五组浏览器测试、文档中的 `docker compose up --build --wait`、针对完整环境的浏览器流程以及[真实 Compose 重建/持久化验收](../../tests/deployment/compose_persistence.py)；只有成功的 push/main run 上传可部署 artifact。
 
-验证步骤失败会阻止镜像发布，控制器忽略失败的 CI run；PR 验证不会在本机 Docker 主机运行。
+验证步骤失败会阻止镜像发布，控制器忽略失败的 CI run；自动 PR 作业仅在 GitHub 托管 runner 上执行。
+
+经过人工审核的 PR QA 镜像可以加载到本机验收，部署控制器仍只接受成功的 main release。
 
 <a id="local-controller-lifecycle"></a>
 
 ## 本机控制器生命周期
 
-`tools/course_runner.sh install` 只复制已审核的独立控制器；`start` 检查 GitHub 登录与 Docker 后启动后台进程，`stop` 先核对 PID 命令再停止。
+`tools/course_runner.sh install` 复制已审核的控制器与 `course_artifact.py` helper，两者都只需要 Python 标准库；`start` 检查 GitHub 登录与 Docker 后启动后台进程，`stop` 先核对 PID 命令再停止。
 
 状态/artifact 目录应在临时 worktree 之外；如需重启后恢复，配置用户服务，并明确审核、重新安装控制器更新。
 
 主机必须在线并保持 Docker 权限与 GitHub 登录；停止控制器不会停止应用容器，只会暂停后续部署处理。
+
+Artifact CLI 集成使用真实本机 TLS API 重定向与字节范围服务器，只替换外部 GitHub CLI。
+
+它验证凭据仅留在 API 主机、签名 URL 不进入输出、错误范围/校验值/ZIP 路径被拒绝、不发布不完整缓存，以及控制器在传输前拒绝 PR 部署。
+
+只读 artifact helper 可以显式下载成功的 PR QA artifact；部署控制器独立要求成功的 push/main CI 和精确的 `course-image-<sha>` artifact。
