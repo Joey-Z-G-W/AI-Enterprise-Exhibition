@@ -1,0 +1,14 @@
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!src/
+!src/**
+!frontend/
+!frontend/**
+frontend/node_modules
+frontend/dist
+!tools/
+!tools/course_proxy.py
+**/__pycache__
+**/*.pyc

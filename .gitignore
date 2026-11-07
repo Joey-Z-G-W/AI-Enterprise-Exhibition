@@ -41,9 +41,9 @@
 /logs/
 
 # Development environments
-.venv/
+.venv
 .tools/
-node_modules/
+node_modules
 __pycache__/
 .pytest_cache/
 *.egg-info/

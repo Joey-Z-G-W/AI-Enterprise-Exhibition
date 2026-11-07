@@ -1,4 +1,4 @@
-# Documentation-batch verification
+# Verification and release evidence
 
 English is authoritative.
 
@@ -6,62 +6,57 @@ English is authoritative.
 
 ## Overview and evidence index
 
-Task #11 changes documentation language, paths and exact ignore exceptions only; product code and runtime services are outside scope.
+[#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12) covers persistent CPU samples and roadmap stages 2-4, starting from main `f9943c9` in an isolated worktree.
 
-[E1 Current task acceptance criteria](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11), [E2 Current role record](tracker.md#current-role-activity), [E3 Startup source](../../tools/linux.sh) and [E4 Historical testing](testing.md#historical-evidence-and-score-limit) provide the audit trail.
+[E1 Acceptance criteria](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12), [E2 Role activity](tracker.md#current-role-activity), [E3 Test commands](testing.md) and [E4 CI workflow](../../.github/workflows/ci.yml) are the audit entry points.
 
-## Historical Engineer checks
+Source implementation is separate from executed evidence; independent QA and final remote release acceptance must be recorded before the issue is considered complete.
 
-The Engineer for historical task #10, published at `f30f180`, read the complete #10 issue, the current official rubric, the source of the Linux launchers, frontend scripts, example configuration, API contracts and the #8 historical QA/publication comments.
+## Current delivery checks
 
-Local validation covers Markdown target existence and heading anchors, shell syntax/help, expected launcher command branches, configuration defaults, exact public-document allowlisting and whitespace errors.
+The delivery CLI's four interface tests first failed because the command did not exist, then passed after implementation; the optional two-release system test reports a skip until actual main CI run IDs are supplied.
 
-Engineer validation passed for 10 Markdown documents and 65 local links/anchors, shell syntax/help, expected command branches and exact ignore behavior.
+Docker Compose configuration validation passed locally; the first local image build was blocked before compilation by registry requests returning EOF from the host Docker daemon.
 
-The [Engineer handoff](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10#issuecomment-6707553029) records 10 documents and 65 local links/anchors passing, alongside the command and ignore checks, without publishing raw private evidence.
+That network failure is not a passing container test; a hosted image build and actual local container/browser acceptance remain required.
 
-No dependency installation, model download, GPU launch, application test suite, build, deployment or browser acceptance run was claimed for that historical documentation batch; the same exclusions apply to current task #11.
+Shell syntax and Python compilation checks passed for the new delivery scripts.
 
-## Historical independent QA and publication
+| Gate | Status and required evidence |
+| --- | --- |
+| Full Python and real-browser regression | Pending final combined result and independent QA. |
+| CPU Compose startup/restart and browser journey | Pending actual image and retained SQLite records. |
+| PR/main CI success | Pending public run URL and exact commit. |
+| Controlled validation failure | Pending failed run or failed-candidate record proving delivery stays blocked. |
+| Automatic dev deployment | Pending successful GitHub Deployment with exact CI run/image/commit. |
+| Manual prod promotion and rollback | Pending two real releases, retained records and failed-candidate rejection. |
+| Publication | Pending final reviewed main commit, public links and independent acceptance. |
 
-The [independent local QA report](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10#issuecomment-6707585830) records 10 documents, 65 local links/anchors, 20 ignore probes, the exact 11-file scope, shell syntax/help and unchanged product files passing.
-
-QA found that the specification incorrectly described conflicting answers as a handoff; the Engineer corrected it to the implementation's explicit inability-to-confirm response, and QA rechecked the repair.
-
-The [final publication acceptance](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10#issuecomment-6707633096) records the reviewed commit, remote publication receipt and pushed-branch retrieval results for historical #10.
-
-The local review covered AC1–AC7 as applicable before publication, source/command accuracy and exclusions, including ignored evidence/tmp directories and the unchanged vendor pointer; final remote acceptance remains a separate recorded gate.
-
-The historical publication gate required retrieving README, AGENTS and all eight linked public task documents at the pushed branch and matching its head to the reviewed commit.
+The final PM release receipt in #12 must replace pending operational claims with actual run/deployment links; configuration files alone do not satisfy those gates.
 
 ## Current localization checks
 
-Engineer validation for #11 checks all ten English raw Markdown files for Chinese characters and CJK punctuation, the ten complete Chinese counterparts, reciprocal links, local targets/anchors, identical command blocks, table/section coverage and exact publication scope.
+English README/AGENTS and eight `docs/en/` pages remain authoritative, with a complete corresponding Chinese set under `docs/ch/`.
 
-The eight old public task documents are removed; only the eight `docs/en/` modules and ten `docs/ch/` translations are allowed under public docs, while task evidence remains ignored.
+The delivery update must preserve reciprocal links, exact command blocks, no Chinese characters or CJK punctuation in raw English Markdown, and ignored task evidence.
 
-The baseline is `main` at `f30f180`; previous #10 document checks and #8 product tests remain historical evidence, not new executions.
+Independent QA must check the final diff and both language sets, not only the earlier localization baseline.
 
-Independent QA must verify language purity, faithful translation, navigation and unchanged product files; consult [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) for the actual QA result, final reviewed commit, remote publication receipt and retrieval checks.
+## Historical evidence
 
-After publication, PM must retrieve the two root English documents, eight English modules and ten Chinese translations from remote main and match its head to the reviewed commit.
+The [#8 migration QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8#issuecomment-6707409190) reported 366 Python passes and five optional skips at baseline `4e81d9d`; those results remain historical.
+
+Historical [#10 local QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10#issuecomment-6707585830) checked ten documents, 65 links/anchors, 20 ignore probes and unchanged product files; its [final publication acceptance](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10#issuecomment-6707633096) is separate from this runtime task.
+
+[#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) established English-primary documentation and complete Chinese translations; it did not execute the new CPU/Docker delivery path.
 
 ## Recheck commands
 
-Check whitespace in the current diff.
-
 ```bash
 git diff --check
+bash -n tools/course_verify.sh tools/course_runner.sh
+python3 -m py_compile tools/course_deploy.py tools/course_proxy.py
+./tools/course_verify.sh
 ```
 
-Check shell parsing without installing or starting anything.
-
-```bash
-bash -n tools/linux.sh tools/opentalking.sh
-```
-
-Read the supported Linux entry-point commands without starting services.
-
-```bash
-./tools/linux.sh --help
-```
+The complete verification command requires installed Python/Node dependencies and Google Chrome; host-specific release acceptance additionally requires two actual main CI artifacts, GitHub permissions and Docker access as described in [testing](testing.md#cpu-and-deployment-acceptance).

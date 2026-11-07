@@ -8,9 +8,11 @@
 
 ## 总览与证据索引
 
-任务 #11 确立英文权威，并把完整中文译文限定在 `docs/ch/`，不实施后续路线图批次。
+任务 #12 交付路线图阶段 2–4：持久化 CPU 样例、可复现 Docker 交付和可信 main 本机 CI/CD。
 
-[E1 当前任务 #11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11)、[E2 路线图 #9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9)和 [E3 验证记录](verification.md)提供当前范围与证据。
+历史任务 #11 确立英文权威版本，并将完整译文限定在 `docs/ch/`。
+
+[E1 当前任务 #12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12)、[E2 路线图 #9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9)和 [E3 验证记录](verification.md)提供当前范围与证据。
 
 <a id="existing-tasks"></a>
 
@@ -22,9 +24,10 @@
 | [#6 内容扩充](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/6) | 审核更多归档企业案例/图片。 | 独立内容工作，此处不发布企业归档。 |
 | [#7 动态舞台](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/7) | 数字人/资料布局与无图平滑状态。 | 历史已实现功能，任务保持开启供用户反馈。 |
 | [#8 同步到 main](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8) | 从 `ruika` 迁移已验收的通用功能。 | `4e81d9d` 上的历史同步与独立 QA。 |
-| [#9 课程路线图](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9) | 持久化、可复现交付、部署与运维。 | 后续批次待完成，目标分数不是已得分。 |
+| [#9 课程路线图](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9) | 持久化、可复现交付、部署与运维。 | 阶段 2–4 归 #12，阶段 5–6 仍待完成；目标不是已获分数。 |
 | [#10 英文文档与工作流](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10) | 包含 AC1–AC7 的历史文档批次。 | 已在 `f30f180` 发布，之前的 Engineer/QA 证据保留在下文。 |
-| [#11 英文主文与中文译文](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) | 包含 AC1–AC6 的当前语言/路径迁移。 | 完整翻译、英文原文检查与独立发布审核。 |
+| [#11 英文权威与中文译文](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) | 历史语言/路径迁移，AC1–AC6。 | 已发布于基线 f9943c9，继续维护译文。 |
+| [#12 CPU 样例与 Docker CI/CD](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12) | 当前运行/交付任务，AC1–AC12。 | 分别跟踪实现与实际验证。 |
 
 <a id="baseline-record"></a>
 
@@ -51,9 +54,9 @@
 
 本地 QA 报告与[最终发布验收](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10#issuecomment-6707633096)明确区分；后者记录历史 #10 的审核提交和远端验收结果。
 
-<a id="current-role-activity"></a>
+<a id="historical-localization-activity"></a>
 
-## 当前角色活动
+## 历史语言迁移活动
 
 任务 [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11)从 `main` 的 `f30f180` 开始，复用既有任务目录存放被忽略的证据。
 
@@ -65,3 +68,19 @@
 | PM 发布 | 发布通过审核的文档，并验证远端 main 与公开文件内容。 | 最终审核提交、发布回执和远端读取结果见 #11。 |
 
 本次语言迁移不声称重新执行应用、GPU 或浏览器测试。
+
+<a id="current-role-activity"></a>
+
+## 当前角色活动
+
+[#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12) 在独立 worktree 从 main `f9943c9` 开始；原有 GPU 工作区、vendor 修改和无关容器均不在范围内。
+
+| 角色 | 真实活动 | 证据/状态 |
+| --- | --- | --- |
+| PM | 梳理 AC1–AC12、分离应用/交付范围并确认本机 Docker 部署。 | [PM 交接](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708111741)。 |
+| 应用 Engineer | 实现 CPU 样例检索、持久化隔离会话/问题/反馈及 HTTP/浏览器测试。 | 源码 diff，精确检查见[验证](verification.md)。 |
+| 交付 Engineer | 实现 Compose/镜像打包、统一验证、托管 CI 与固定可信 main 部署控制器。 | CLI 测试和源码 diff；实际容器/CI/CD 结果单独记录。 |
+| 独立 QA | 必须检查 AC1–AC12、发布范围、运行隔离和操作证据。 | 待独立验收，最终结果见 #12。 |
+| PM 发布 | 必须发布审核后的代码，验证 main CI 与真实本机部署、晋级和回滚。 | 最终发布回执待记录在 #12。 |
+
+阶段 5–6 继续在 #9 保持待办；不宣称新增可观测性、告警或值班响应代理已完成。

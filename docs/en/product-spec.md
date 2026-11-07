@@ -8,7 +8,7 @@ English is authoritative.
 
 Visitors need clear, supportable exhibit explanations; staff need a guide that admits missing knowledge and does not mix one visitor's session with another's.
 
-The current product provides a local GPU avatar experience; the next course batches will add persistent business behavior and reproducible delivery.
+The product provides the original local GPU avatar experience and a standalone CPU sample guide with persistent business behavior and reproducible Docker delivery.
 
 [E1 Architecture](architecture.md), [E2 Tracker](tracker.md), [E3 Testing](testing.md) and [E4 Scoring evidence](rubric.md) distinguish source evidence from future acceptance work.
 
@@ -18,7 +18,11 @@ The public baseline `4e81d9d` includes a React interface, FastAPI question and s
 
 The full experience requires local models, GPU runtime, a configured knowledge base and external service credentials; these are not included as public sample data.
 
-The business service stores visitor context in memory and clears it on shutdown; OpenTalking's own runtime database is not proof of an implemented visitor-facing business persistence flow.
+The original GPU service stores visitor context in memory; the new CPU sample app persists visitor sessions, questions and ratings in SQLite, including restart/recreate recovery.
+
+The sample UI supports exhibit browsing, evidence-backed questions, feedback, history, clear history and a new visitor; it labels deterministic sample retrieval honestly and does not impersonate a live LLM or avatar.
+
+CPU acceptance criteria AC1-AC12, including isolation, validation, retry idempotency, Docker delivery, trusted-main CI/CD and rollback, are defined in [#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12).
 
 ## Observable acceptance criteria
 
@@ -42,21 +46,23 @@ Production use needs reviewed provider/data policies; this batch does not claim 
 
 ## Public sample-data requirements
 
-A future public walkthrough must ship fictional, author-owned or explicitly licensed material, with a source URL or authorship record, license/permission, retrieval date, stable ID and checksum for each document and image.
+The public CPU walkthrough ships original fictional sample material in [sample_data](../../src/exhibition_guide/sample_data/), with authorship, license, date, stable IDs and checksums.
+
+It requires no private import; packaged material is loaded automatically by the CPU application.
 
 Each sample must label historical, proposed and built exhibits accurately, retain source-to-fact mappings, and avoid customer names, email addresses, internal quotations and restricted archives.
 
 Include supported, ambiguous, unknown and conflicting questions, expected observable responses, and at least one image-failure case; publish import/configuration instructions that work from a fresh checkout.
 
-Current synthetic test fixtures demonstrate selected contracts; they do not replace a published end-to-end sample corpus.
+Packaged examples cover supported, unknown, ambiguous and conflicting outcomes; the CPU browser journey exercises real application state, while the existing GPU browser regression covers image fallback.
 
 ## Planned scope
 
 | Batch | Acceptance direction | Status |
 | --- | --- | --- |
-| 2 | A visitor-facing write/read flow persists business data across restart; provide public samples and groom a CPU core mode independent of avatar hardware. | Pending, [#9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9) |
-| 3 | One container command starts the documented mode and database; one command runs the supported checks. | Pending |
-| 4 | Show deployment, PR checks, dev deployment and rollback, with optional manual production deployment. | Pending |
+| 2 | Persistent CPU sample questions, feedback and isolated history. | Implemented in #12; see [verification](verification.md). |
+| 3 | One Compose startup and one complete verification command. | Implemented in #12; see [verification](verification.md). |
+| 4 | Hosted CI, automatic local dev, manual prod and verified rollback. | Implemented in #12; operational evidence in [verification](verification.md). |
 | 5 | Correlate request logs, metrics and traces in a UI; demonstrate user-impact alert and recovery without private content. | Pending |
 | 6 | An alert wakes an agent for diagnosis, a bounded repair and verified recovery. | Pending stretch |
 

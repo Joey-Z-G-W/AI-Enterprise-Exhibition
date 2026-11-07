@@ -6,9 +6,11 @@ English is authoritative.
 
 ## Overview and evidence index
 
-Task #11 makes English authoritative and confines the complete Chinese translations to `docs/ch/`, without implementing later roadmap batches.
+Task #12 delivers roadmap batches 2-4: persistent CPU samples, reproducible Docker delivery and trusted-main local CI/CD.
 
-[E1 Current task #11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11), [E2 Roadmap #9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9) and [E3 Verification](verification.md) provide the active scope and evidence.
+Task #11 previously made English authoritative and confined complete translations to `docs/ch/`.
+
+[E1 Current task #12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12), [E2 Roadmap #9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9) and [E3 Verification](verification.md) provide the active scope and evidence.
 
 ## Existing tasks
 
@@ -18,9 +20,10 @@ Task #11 makes English authoritative and confines the complete Chinese translati
 | [#6 Content expansion](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/6) | Review further archived enterprise cases/images. | Separate content work; no enterprise archive published here. |
 | [#7 Adaptive stage](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/7) | Avatar/material layout and smooth no-image states. | Historical implemented feature; issue remains open for user feedback. |
 | [#8 Synchronize to main](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8) | Transfer accepted generic functionality from `ruika`. | Historical sync and independent QA at `4e81d9d`. |
-| [#9 Course roadmap](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9) | Persistence, reproducibility, deployment and operations. | Later batches pending; target scores are not awarded scores. |
+| [#9 Course roadmap](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9) | Persistence, reproducibility, deployment and operations. | Batches 2-4 are in #12; stages 5-6 remain pending; targets are not awarded scores. |
 | [#10 English docs and workflow](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10) | Historical documentation batch with AC1–AC7. | Published at `f30f180`; prior Engineer/QA evidence is retained below. |
 | [#11 English primary and Chinese translations](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) | Current language/path migration with AC1–AC6. | Complete translations, raw-English checks and independent publication review. |
+| [#12 CPU samples and Docker CI/CD](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12) | Current runtime/delivery task with AC1-AC12. | Implementation and actual verification are tracked separately. |
 
 ## Baseline record
 
@@ -28,7 +31,7 @@ The original product baseline is [4e81d9d](https://github.com/Joey-Z-G-W/AI-Ente
 
 The [#8 publication record](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8#issuecomment-6707410043) confirms the generic main synchronization, including the earlier Linux support.
 
-That migration retained generic configuration and excluded enterprise content and private configuration; the current documentation branch does not alter product source, vendor gitlinks or the original running workspace.
+That migration retained generic configuration and excluded enterprise content and private configuration; the historical documentation branch did not alter product source, vendor gitlinks or the original running workspace.
 
 ## Historical documentation activity
 
@@ -43,7 +46,7 @@ This historical record describes task #10 on 2026-11-07, published at `f30f180`;
 
 The local QA report is deliberately separate from the [final publication acceptance](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10#issuecomment-6707633096), which records the reviewed commit and remote acceptance result for historical #10.
 
-## Current role activity
+## Historical localization activity
 
 Task [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) starts from `main` at `f30f180` and reuses the existing task directory for ignored evidence.
 
@@ -55,3 +58,17 @@ Task [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11) sta
 | PM publication | Publish reviewed documents and verify remote main and public file contents. | Consult #11 for the final reviewed commit, publication receipt and remote retrieval results. |
 
 This language migration does not claim new application, GPU or browser test execution.
+
+## Current role activity
+
+[#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12) starts from main `f9943c9` in a separate worktree; the original GPU workspace, vendor modifications and unrelated containers are excluded.
+
+| Role | Actual activity | Evidence/status |
+| --- | --- | --- |
+| PM | Groomed AC1-AC12, separate application/delivery scopes and local Docker deployment. | [PM handoff](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708111741). |
+| Application Engineer | Implemented CPU sample retrieval, persistent isolated sessions/questions/feedback and HTTP/browser tests. | Source diff; exact checks in [verification](verification.md). |
+| Delivery Engineer | Implemented Compose/image packaging, combined verification, hosted CI and a fixed trusted-main deployment controller. | CLI tests and source diff; actual container/CI/CD results recorded separately. |
+| Independent QA | Must inspect AC1-AC12, publication scope, runtime isolation and operational evidence. | Pending independent acceptance; consult #12 for final result. |
+| PM publication | Must publish reviewed code, verify main CI and real local deployment, promotion and rollback. | Pending final release receipt in #12. |
+
+Stages 5-6 remain open in #9; no new observability, alerting or on-call responder completion is claimed.
