@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const base = fs.readFileSync('tests/frontend/visitor-races.cjs','utf8').split('// Execute actual App handlers')[0]
   .replace('demoStatus, speechPending };','demoStatus, speechPending, conversation, presetRequest, presetPreparing };');
 const checks = String.raw`
-const Q=['锐伽提供哪些服务？','品牌设计包含哪些内容？','有哪些展厅或展览空间案例？'];
+const Q=['公司提供哪些服务？','品牌设计包含哪些内容？','有哪些展厅或展览空间案例？'];
 const calls=h=>h.workRequests.filter(r=>r.url==='/guide/questions');
 function business(h){h.overrides.set('POST /guide/questions',init=>{const b=JSON.parse(init.body);return h.response({visitor_id:b.visitor_id,turn_id:b.turn_id,turn_seq:b.turn_seq,status:'error',text:'unavailable',sources:[]},503);});}
 const watchdog=setTimeout(()=>{console.error('Preset checks timed out');process.exitCode=1;},10000);

@@ -86,7 +86,7 @@ class ExternalMedia extends Fixture {
     }
     if (req.url === '/opentalking/tts/preview') {
       const chunks = []; for await (const chunk of req) chunks.push(chunk); const body = JSON.parse(Buffer.concat(chunks));
-      const welcome = body.text.includes('欢迎来到锐伽展厅'); this.tts.push({ text: body.text, welcome, done: true, at: Date.now() });
+      const welcome = body.text.includes('您好，欢迎来到我们的展厅！'); this.tts.push({ text: body.text, welcome, done: true, at: Date.now() });
       res.writeHead(200, { 'content-type': 'audio/wav' }); res.end(pcmWav()); return true;
     }
     assert.ok(!req.url.startsWith('/guide/'), 'guide requests must reach real Python backend');
@@ -217,7 +217,7 @@ async function audioQuestion(text) {
   await page.getByText('欢迎语播报结束，您可以继续提问', { exact: true }).waitFor();
   await page.getByRole('button', { name: '关闭记录', exact: true }).click();
   // Round 1: preset -> real answer -> image, empty sentence, second reviewed image.
-  await plan('机器人介绍。随后说明。展厅图片说明。', '锐伽提供哪些服务？', false);
+  await plan('机器人介绍。随后说明。展厅图片说明。', '公司提供哪些服务？', false);
   await page.locator('.preset-question').first().click();
   const first = await questionReady(0); assert.deepEqual(first.response.presentation.sentences.map(s => s.asset_id), ['robot', null, 'hall']);
   await until(() => work().length === 1, 'first real sentence upload');
@@ -237,7 +237,7 @@ async function audioQuestion(text) {
   assert.ok(guide.some(x => x.path === '/media/broken' && x.status === 404), 'real hash failure reaches browser');
   results.push({ name: 'real PCM/VAD voice turn, failed material black and next image recovers', status: 'PASS' });
   // Round 3: preset starts image; voice interrupts before its end and creates round 4.
-  await plan('机器人正在介绍。随后说明。', '锐伽提供哪些服务？', true);
+  await plan('机器人正在介绍。随后说明。', '公司提供哪些服务？', true);
   const thirdStart = work().length; await page.locator('.preset-question').first().click(); await questionReady(2);
   await playSentence(thirdStart, 'robot', { waitEnd: false });
   await plan('机器人完成恢复。', '请换个机器人问题', true);
@@ -257,7 +257,7 @@ async function audioQuestion(text) {
   results.push({ name: 'preset/free-voice switching and spoken interruption clear + recover, same RTC session/mic', status: 'PASS' });
   // Round 5: QA regression. A real microphone segment classified as a busy
   // acknowledgement must preserve the original plan, including its next cue.
-  await plan('机器人正在介绍。机器人继续说明。', '锐伽提供哪些服务？', true);
+  await plan('机器人正在介绍。机器人继续说明。', '公司提供哪些服务？', true);
   const acknowledgementStart = work().length;
   await page.locator('.preset-question').first().click(); await questionReady(4);
   await playSentence(acknowledgementStart, 'robot', { waitEnd: false });

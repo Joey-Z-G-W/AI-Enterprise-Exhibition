@@ -16,8 +16,8 @@ from exhibition_guide.knowledge import KnowledgeResults, KnowledgeSnippet, Known
 from exhibition_guide.llm import ModelClient, ModelError
 from exhibition_guide import main
 
-QUOTE = "2014年在厦门成立锐伽联创广告公司"
-ANSWER = "官网介绍，锐伽联创广告公司于2014年在厦门成立。"
+QUOTE = "2014年在厦门成立示例公司"
+ANSWER = "官网介绍，示例公司于2014年在厦门成立。"
 REQUEST = QuestionRequest(visitor_id="group-a", turn_id="turn-1", turn_seq=1, question="公司何时在厦门成立？")
 
 

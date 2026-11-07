@@ -12,7 +12,7 @@ const watchdog=setTimeout(()=>{console.error('Capture App checks timed out');pro
  }
  {
   const h=harness();await h.render().connect();await finishWelcome(h);const owner=h.continuous[0];h.overrides.set('POST /guide/questions',init=>h.response({...JSON.parse(init.body),status:'error',text:'offline',sources:[]},503));
-  await h.render().selectPreset('锐伽提供哪些服务？');await flush();assert.equal(h.continuous.length,1);assert.equal(owner.stops,0);assert.equal(h.render().microphone.current,owner);
+  await h.render().selectPreset('公司提供哪些服务？');await flush();assert.equal(h.continuous.length,1);assert.equal(owner.stops,0);assert.equal(h.render().microphone.current,owner);
   h.render().stopMicrophone();await flush();await h.render().selectPreset('品牌设计包含哪些内容？');await flush();assert.equal(h.continuous.length,1);assert.equal(owner.stops,1);assert.equal(h.render().captureStatus,'closed');assert.equal(h.workRequests.filter(r=>r.url==='/guide/questions').length,2);checks++;
  }
  {

@@ -48,7 +48,7 @@ def test_complete_social_utterances_reply_without_knowledge_or_model(text):
 
 
 @pytest.mark.parametrize("text", [
-    "你好，锐伽是哪年成立的？", "你好，请给出固定报价", "谢谢，你们保证30天吗？",
+    "你好，公司是哪年成立的？", "你好，请给出固定报价", "谢谢，你们保证30天吗？",
     "你好有什么服务？", "你是谁公司的负责人？", "资料里写着谢谢", "你好\n报价是多少？",
 ])
 def test_social_words_inside_business_questions_cannot_bypass_retrieval(text):

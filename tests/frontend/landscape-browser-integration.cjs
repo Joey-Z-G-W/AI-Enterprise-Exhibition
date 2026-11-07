@@ -32,7 +32,7 @@ class LandscapeFixture extends Fixture {
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ visitor_id: b.visitor_id, turn_id: b.turn_id, turn_seq: b.turn_seq, status: 'answer', text: this.text, sources: [], presentation: this.presentation })); return true;
     }
     if (req.url === '/opentalking/tts/preview') {
-      const chunks = []; for await (const c of req) chunks.push(c); const b = JSON.parse(Buffer.concat(chunks)); this.tts.push({ text: b.text, welcome: b.text.includes('欢迎来到锐伽展厅'), done: true }); res.writeHead(200, { 'content-type': 'audio/wav' }); res.end(wav()); return true;
+      const chunks = []; for await (const c of req) chunks.push(c); const b = JSON.parse(Buffer.concat(chunks)); this.tts.push({ text: b.text, welcome: b.text.includes('您好，欢迎来到我们的展厅！'), done: true }); res.writeHead(200, { 'content-type': 'audio/wav' }); res.end(wav()); return true;
     }
     return super.handle(req, res);
   }

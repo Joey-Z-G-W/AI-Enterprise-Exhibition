@@ -11,7 +11,7 @@ import { createPresentationCoordinator, readPresentation, type Presentation, typ
 import { wavDuration } from "./lib/receiverClock";
 
 const DEMO_TEXT = "欢迎来到我们的展厅。这是一段固定文本演示，用于体验数字人的声音与口型。";
-const WELCOME_TEXT = "您好，欢迎来到锐伽展厅！您可以直接向我提问，也可以选择下方的问题。我会根据现有资料为您介绍。";
+const WELCOME_TEXT = "您好，欢迎来到我们的展厅！您可以直接向我提问，也可以选择下方的问题。我会根据现有资料为您介绍。";
 const CANCELLATION_UNKNOWN = "旧问答取消尚未确认，新的问题暂不提交。请断开后重新连接并重新选择问题，或联系工作人员。";
 type Connection = "idle" | "connecting" | "ready" | "playing" | "disconnecting" | "error";
 type BusinessResult = {

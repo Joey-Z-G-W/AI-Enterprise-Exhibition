@@ -33,7 +33,7 @@ function answer(h){h.overrides.set('POST /guide/questions',init=>h.response({...
   await owner.realStart();assert.equal(h.created(),2);assert.equal(h.continuous.length,1);assert.equal(owner.stops,0);assert.equal(h.render().visitorId.current,visitor);
   assert.equal(JSON.parse(creates(h)[1].body).avatar_id,B.avatar_id);assert.equal(JSON.parse(creates(h)[1].body).tts_voice,B.tts_voice);
   media(h,'sess_2');await h.render().playDemo();assert.equal(previews(h).at(-1).voice,B.tts_voice); // Still speaking: replacement must load the next snapshot.
-  config={...C};const uploaded=deferred();media(h,'sess_3',uploaded);await h.render().selectPreset('锐伽提供哪些服务？');await uploaded.promise;
+  config={...C};const uploaded=deferred();media(h,'sess_3',uploaded);await h.render().selectPreset('公司提供哪些服务？');await uploaded.promise;
   assert.equal(JSON.parse(creates(h)[2].body).avatar_id,C.avatar_id);assert.equal(previews(h).at(-1).voice,C.tts_voice);
   assert.equal(h.workRequests.filter(r=>r.url==='/guide/ui-config').length,3);assert.equal(h.continuous.length,1);assert.equal(owner.stops,0);assert.equal(h.render().visitorId.current,visitor);checks++;
  }

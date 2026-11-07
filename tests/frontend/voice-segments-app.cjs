@@ -18,13 +18,13 @@ const watchdog=setTimeout(()=>{console.error('Voice segment App checks timed out
  for(const action of ['stopMicrophone','resetVisitor','selectPreset']){
   const h=harness();await h.render().connect();await finishWelcome(h);failAnswer(h);const late=deferred();h.overrides.set('POST /opentalking/sessions/sess_1/transcribe',()=>late.promise);
   const owner=h.continuous[0];owner.segment(new Float32Array([.1]));await flush();owner.segment(new Float32Array([.2]));
-  if(action==='selectPreset')await h.render().selectPreset('锐伽提供哪些服务？');else await h.render()[action]();await flush();const before=questions(h).length;
+  if(action==='selectPreset')await h.render().selectPreset('公司提供哪些服务？');else await h.render()[action]();await flush();const before=questions(h).length;
   late.resolve(h.response({session_id:'sess_1',text:'旧的语音'}));await flush();assert.equal(questions(h).length,before);assert.equal(stt(h).length,1);assert.ok(!h.markup().includes('旧的语音'));
   if(action==='selectPreset'){assert.equal(owner.stops,0);assert.ok(owner.discards>0);assert.equal(h.continuous.length,1);}checks++;
  }
  {
   const h=harness();await h.render().connect();await finishWelcome(h);failAnswer(h);await startBusyDemo(h);const ready=deferred();h.overrides.set('GET /opentalking/sessions/sess_2',()=>ready.promise);
-  const rebuilding=h.render().selectPreset('锐伽提供哪些服务？');await flush();h.continuous[0].segment(new Float32Array([.1]));await flush();assert.equal(stt(h).length,0);
+  const rebuilding=h.render().selectPreset('公司提供哪些服务？');await flush();h.continuous[0].segment(new Float32Array([.1]));await flush();assert.equal(stt(h).length,0);
   h.overrides.set('POST /opentalking/sessions/sess_2/transcribe',()=>h.response({session_id:'sess_2',text:'重建期间的新句子'}));ready.resolve(h.response({session_id:'sess_2',state:'ready'}));await rebuilding;await flush();
   assert.equal(stt(h).length,1);assert.match(stt(h)[0].url,/sess_2/);assert.equal(questions(h).length,2);assert.equal(h.continuous.length,1);checks++;
  }
@@ -87,7 +87,7 @@ const watchdog=setTimeout(()=>{console.error('Voice segment App checks timed out
   h.overrides.set('POST /guide/questions',init=>h.response({...JSON.parse(init.body),status:'answer',text:'预设仍正常回答',sources:[]}));
   h.overrides.set('POST /opentalking/tts/preview',()=>new Response(new Blob(['wav']),{headers:{'content-type':'audio/wav'}}));
   const uploadStarted=deferred();h.overrides.set('POST /opentalking/sessions/sess_1/speak_flashtalk_audio',()=>{uploadStarted.resolve();return h.response({session_id:'sess_1',status:'queued'});});
-  if(action==='selectPreset')await h.render().selectPreset('锐伽提供哪些服务？');else await h.render()[action]();await flush();
+  if(action==='selectPreset')await h.render().selectPreset('公司提供哪些服务？');else await h.render()[action]();await flush();
   assert.match(h.markup(),/aria-label="语音识别资源状态"/);assert.match(h.markup(),/等待片段已放弃/);assert.match(h.markup(),/断开后重新连接/);assert.equal(stt(h).length,1);
   if(action==='selectPreset'){await uploadStarted.promise;assert.equal(owner.stops,0);assert.equal(h.continuous.length,1);assert.equal(questions(h).length,1);assert.equal(h.render().answer.text,'预设仍正常回答');assert.equal(h.workRequests.filter(r=>r.url.endsWith('/speak_flashtalk_audio')).length,1);}
   if(h.render().active.current)await h.render().disconnect();await flush();assert.match(h.markup(),/aria-label="语音识别资源状态"/);

@@ -30,7 +30,7 @@ function harness() {
     request: async (url, init = {}, timeoutMs) => {
       const method = init.method || 'GET'; requests.push({ url, method, signal: init.signal, body: init.body, timeoutMs });
       const recorded=requests.at(-1);
-      if(url==='/opentalking/tts/preview' && JSON.parse(init.body).text==='您好，欢迎来到锐伽展厅！您可以直接向我提问，也可以选择下方的问题。我会根据现有资料为您介绍。') {
+      if(url==='/opentalking/tts/preview' && JSON.parse(init.body).text==='您好，欢迎来到我们的展厅！您可以直接向我提问，也可以选择下方的问题。我会根据现有资料为您介绍。') {
         welcomeRequests.add(recorded);
         return welcomeTransport.preview ? welcomeTransport.preview(init) : new Response(new Blob(['welcome']),{headers:{'content-type':'audio/wav'}});
       }
