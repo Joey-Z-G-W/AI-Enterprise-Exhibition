@@ -84,7 +84,9 @@ export function createContinuousCapture(report: Report, callbacks: SegmentCallba
         model: "v5", positiveSpeechThreshold: .3, negativeSpeechThreshold: .25,
         redemptionMs: 1400, preSpeechPadMs: 800, minSpeechMs: 400,
         startOnLoad: false, submitUserSpeechOnPause: false, processorType: "AudioWorklet",
-        baseAssetPath: "/vad/", onnxWASMBasePath: "/ort/", audioContext: context,
+        // ORT dynamically imports its .mjs loader. An absolute same-origin URL
+        // prevents Vite from adding ?import and treating public assets as source.
+        baseAssetPath: "/vad/", onnxWASMBasePath: new URL("/ort/", window.location.href).href, audioContext: context,
         ortConfig: ort => { ort.env.wasm.numThreads = 1; ort.env.wasm.proxy = false; },
         getStream: async () => { if (stopped || !stream) throw Error("capture stopped"); return stream; },
         pauseStream: async () => { stopTracks(); },

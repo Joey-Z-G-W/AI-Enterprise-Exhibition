@@ -9,6 +9,7 @@
     "test:browser": "node ../tests/frontend/speech-browser-integration.cjs",
     "test:landscape": "node ../tests/frontend/landscape-browser-integration.cjs",
     "test:system": "node ../tests/frontend/landscape-system-integration.cjs",
+    "test:vad-dev": "npm run prepare-vad-assets && node ../tests/frontend/vad-dev-integration.cjs",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5290 --strictPort",
     "prepare-vad-assets": "node scripts/prepare-vad-assets.mjs",
