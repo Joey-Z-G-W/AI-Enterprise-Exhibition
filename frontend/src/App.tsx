@@ -8,6 +8,7 @@ import { createVoiceSegments, segmentWav, VOICE_RESOURCE_UNKNOWN, type VoiceSegm
 import { PRESET_QUESTIONS } from "./presetQuestions";
 import { AvatarPlayer } from "./components/AvatarPlayer";
 import { MaterialPlayer } from "./components/MaterialPlayer";
+import { flushSync } from "react-dom";
 import { createPresentationCoordinator, readPresentation, type Presentation, type MaterialCommands } from "./lib/presentationCoordinator";
 import { wavDuration } from "./lib/receiverClock";
 
@@ -151,6 +152,7 @@ async function releaseSession(id: string): Promise<boolean> {
 export default function App() {
   const video = useRef<HTMLVideoElement>(null);
   const material = useRef<MaterialCommands>(null);
+  const [materialStage, setMaterialStage] = useState({ active: false, reserve: false });
   const coordinator = useRef(createPresentationCoordinator(() => material.current));
   const [historyOpen, setHistoryOpen] = useState(false);
   const [frameScale, setFrameScale] = useState(() => Math.min(innerWidth / 1920, innerHeight / 1080));
@@ -1297,7 +1299,8 @@ export default function App() {
 
   const connected = connection === "ready" || connection === "playing";
   return <main className="landscape-frame" style={{ transform: `translate(-50%, -50%) scale(${frameScale})` }}>
-    <div className="presentation-stage">
+    <div className="presentation-stage" data-mode={materialStage.active ? "material" : "conversation"} data-reserve={materialStage.reserve}>
+      <div className="stage-context" aria-hidden="true"><span>展厅导览</span><span>{materialStage.active ? "跟随讲解 · 了解设计" : "与您一起，发现更多"}</span></div>
       <AvatarPlayer ref={video} onPlaying={() => {
         if (active.current && !active.current.controller.signal.aborted) setConnection(value => value === "ready" ? "playing" : value);
       }}>
@@ -1305,7 +1308,16 @@ export default function App() {
         {soundBlocked && <button className="sound-button" onClick={() => void enableSound()}>开启声音</button>}
         {connected && <span className="sound-caption">{soundBlocked ? "当前静音 · 请开启声音" : "声音已启用"}</span>}
       </AvatarPlayer>
-      <MaterialPlayer ref={material} />
+      <MaterialPlayer ref={material} onStageChange={image => {
+        if (!image) { setMaterialStage({ active: false, reserve: false }); return; }
+        // Compare the current decoded image's contained pixels with the corner window.
+        // A wide image gets its own lower safety band; empty sentences keep this geometry.
+        const scale = Math.min(1872 / image.width, 738 / image.height);
+        const right = 960 + image.width * scale / 2;
+        const bottom = 48 + (738 + image.height * scale) / 2;
+        // Commit the safe rectangle in the same paint as the newly selected image.
+        flushSync(() => setMaterialStage({ active: true, reserve: right > 1656 && bottom > 486 }));
+      }} />
     </div>
     <section className="control-bar" aria-label="导览控制">
       <div className="control-heading">

@@ -3,12 +3,13 @@ import type { MaterialAsset, MaterialCommands } from "../lib/presentationCoordin
 
 type Entry = { controller: AbortController; objectUrl?: string; element: HTMLImageElement; ready: boolean; settled: Promise<boolean>; settle: (ready: boolean) => void };
 // Resource decoding, readiness and DOM lifetime belong to this independent player.
-export const MaterialPlayer = forwardRef<MaterialCommands>(function MaterialPlayer(_, ref) {
+export const MaterialPlayer = forwardRef<MaterialCommands, { onStageChange: (image: { width: number; height: number } | null) => void }>(function MaterialPlayer({ onStageChange }, ref) {
   const host = useRef<HTMLDivElement>(null);
   const assets = useRef(new Map<string, Entry>());
   const epoch = useRef(0), current = useRef<string | null>(null);
   function clear() {
     ++epoch.current; current.current = null;
+    onStageChange(null);
     for (const { element, settle, controller, objectUrl } of assets.current.values()) {
       controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl);
       settle(false); element.onload = element.onerror = null; element.removeAttribute("src");
@@ -62,6 +63,7 @@ export const MaterialPlayer = forwardRef<MaterialCommands>(function MaterialPlay
     // A late decode never paints itself. Only an authorized sentence cue can.
     if (!entry || !entry.ready) return;
     current.current = id; host.current?.replaceChildren(entry.element);
+    onStageChange({ width: entry.element.naturalWidth, height: entry.element.naturalHeight });
   } }), []);
   useEffect(() => clear, []);
   return <section className="material-player" aria-label="讲解素材"><div ref={host} className="material-surface" /></section>;

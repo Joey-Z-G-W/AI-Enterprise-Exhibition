@@ -67,7 +67,7 @@ async function sentence(index, asset) {
     const delay = await page.evaluate(() => performance.now()) - audioAt;
     cueDelays.push({ index, asset, delay_ms: delay }); assert.ok(delay <= 500, 'simulated receiver-audio to material visible <= 500ms');
   }
-  else await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'black null material');
+  else await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'empty null material');
   await sleep(180); assert.equal(work().length, index + 1, 'SSE ended cannot replace still audible sentence');
   await sleep(820);
 }
@@ -90,7 +90,7 @@ async function sentence(index, asset) {
     await page.setViewportSize({ width, height });
     await until(async () => { const rect = await page.locator('.landscape-frame').boundingBox(); return Math.abs(rect.width - Math.min(width, height * 16 / 9)) < 1; }, 'resize committed');
     const box = await page.locator('.landscape-frame').boundingBox(); assert.ok(Math.abs(box.width / box.height - 16 / 9) < .01);
-    const avatar = await page.locator('.avatar-player').boundingBox(), material = await page.locator('.material-player').boundingBox(); assert.ok(Math.abs(material.width / avatar.width - 2) < .01);
+    const avatar = await page.locator('.avatar-player').boundingBox(); assert.ok(Math.abs(avatar.x + avatar.width / 2 - width / 2) < 1, 'conversation avatar is centered');
     const controls = await page.locator('.control-bar').boundingBox(); assert.ok(controls.y + controls.height <= height + 1);
     assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth));
   }
@@ -106,7 +106,7 @@ async function sentence(index, asset) {
   assert.equal(work().length, 1, 'old segment events cannot advance current answer');
   assert.equal(await page.locator('.material-player img').count(), 0, 'old segment events cannot select an image');
   fixture.emit(fixture.sid(1), 'speech.media_started'); await sleep(250);
-  assert.equal(await page.locator('.material-player img, .material-player video').count(), 0, 'server started without receiver audio must remain black');
+  assert.equal(await page.locator('.material-player img, .material-player video').count(), 0, 'server started without receiver audio must remain empty');
   for (let i = 0; i < 5; i++) await sentence(i, ['one', 'two', 'three', 'four', 'five'][i]);
   await until(async () => await page.locator('.material-player img').count() === 0, 'answer ended clears material');
   assert.deepEqual(fixture.tts.filter(t => !t.welcome).map(t => t.text), texts); results.push('five actual WAV sentences and receive-audio gated images; drain and end clear');
@@ -115,7 +115,7 @@ async function sentence(index, asset) {
   assert.equal(await imageHandle.evaluate(el => el.isConnected), true, 'same next asset retains element across sentence gap');
   await sentence(start + 1, 'one');
   await until(async () => await page.locator('.material-player img').count() === 0, 'sentence end clears before next null sentence starts');
-  await sentence(start + 2, null); await sentence(start + 3, null); await sentence(start + 4, 'five'); results.push('same image retained; null and 404 black; audio continues');
+  await sentence(start + 2, null); await sentence(start + 3, null); await sentence(start + 4, 'five'); results.push('same image retained; null and 404 empty; audio continues');
   for (const rejected of [{ kind: 'video', mime: 'video/mp4' }, { kind: 'image', mime: 'video/webm' }]) {
     const unsupported = plan(['unsupported', null, null, null, null]); Object.assign(unsupported.assets[0], rejected);
     const closed = fixture.closed.length; start = await question(unsupported);
@@ -136,7 +136,7 @@ async function sentence(index, asset) {
   start = await question(plan(['missing', 'missing', 'missing', 'missing', 'missing']));
   for (let i = 0; i < 5; i++) await sentence(start + i, null);
   assert.deepEqual(fixture.tts.filter(t => !t.welcome).slice(-5).map(t => t.text), texts);
-  results.push('all images fail: five separate TTS uploads, all material remains black');
+  results.push('all images fail: five separate TTS uploads, all material remains empty');
   const beforeSlow = work().length;
   fixture.presentation = plan(['slow', null, null, null, null]);
   await page.locator('.preset-question').first().click();
@@ -145,7 +145,7 @@ async function sentence(index, asset) {
   assert.equal(work().length, beforeSlow, 'undecoded image prevents sentence upload');
   await until(() => work().length > beforeSlow, 'image timeout continues same sentence', 4000);
   start = beforeSlow;
-  assert.equal(await page.locator('.material-player img').count(), 0, 'image timeout is black');
+  assert.equal(await page.locator('.material-player img').count(), 0, 'image timeout is empty');
   results.push('bounded image readiness waits before upload and degrades to audio-only');
    await until(() => fixture.heldMedia.length > 0, 'slow preload requested');
   fixture.emit(fixture.sid(1), 'speech.media_started'); await page.evaluate(() => window.receiverAudio(.8)); fixture.emit(fixture.sid(1), 'speech.ended'); await sleep(100);
@@ -159,7 +159,7 @@ async function sentence(index, asset) {
   results.push('new question clears immediately; late old preload cannot paint; disconnect reconnect recovers');
   const invalid = plan(); invalid.assets[0].url = 'https://invalid.example/track'; start = await question(invalid);
   fixture.emit(fixture.sid(2), 'speech.media_started'); await page.evaluate(() => window.receiverAudio(.8)); fixture.emit(fixture.sid(2), 'speech.ended');
-  await sleep(200); assert.equal(await page.locator('.material-player img, .material-player video').count(), 0); results.push('invalid plan keeps material black and answer survives');
+  await sleep(200); assert.equal(await page.locator('.material-player img, .material-player video').count(), 0); results.push('invalid plan keeps material empty and answer survives');
   await page.getByRole('button', { name: '断开', exact: true }).click(); await until(() => fixture.closed.length === 2, 'disconnect');
   assert.equal(await page.locator('.material-player img, .material-player video').count(), 0); results.push('disconnect clears material');
   assert.deepEqual(diagnostics, []); await page.screenshot({ path: path.join(evidence, 'layout.png') });
@@ -208,7 +208,7 @@ async function sentence(index, asset) {
       results.push('audio-only completion guard cancelled on replacement; late old segment cannot advance');
     }
     await page.getByRole('button', { name: '断开', exact: true }).click(); await until(() => fixture.closed.length === closed + 1, 'fallback scenario cleanup');
-    results.push('receiver clock ' + failure + ': black materials, legacy speech continues');
+    results.push('receiver clock ' + failure + ': empty materials, legacy speech continues');
   }
   for (const failure of ['low-amplitude', 'silent', 'runtime-suspend', 'long-active']) {
     await page.close(); page = await browser.newPage();
@@ -255,7 +255,7 @@ async function sentence(index, asset) {
     await page.getByRole('button', { name: '对话记录', exact: true }).click(); await page.getByText('回答播报结束', { exact: true }).waitFor();
     assert.equal(fixture.closed.length, closed); assert.equal(fixture.serial, serial);
     await page.getByRole('button', { name: '断开', exact: true }).click(); await until(() => fixture.closed.length === closed + 1, 'runtime fallback cleanup');
-    results.push('receiver ' + failure + ': bounded fallback completes remaining sentences with same RTC and black material');
+    results.push('receiver ' + failure + ': bounded fallback completes remaining sentences with same RTC and empty material');
   }
   for (const ordering of ['audio-first-100ms', 'audio-first-200ms', 'late-700ms', 'audio-ended', 'no-audio']) {
     await page.close(); page = await browser.newPage();
@@ -279,13 +279,13 @@ async function sentence(index, asset) {
       for (let repeat = 0; repeat < 3; repeat++) fixture.emit(fixture.sid(serial), 'speech.media_started');
       await sleep(120); assert.equal(await page.evaluate(() => window.materialMutations), 0, 'duplicate SSE cannot repeat cue or replace material');
     } else {
-      await sleep(180); assert.equal(await page.locator('.material-player img, .material-player video').count(), 0, 'late or ended or absent audio must remain black');
+      await sleep(180); assert.equal(await page.locator('.material-player img, .material-player video').count(), 0, 'late or ended or absent audio must remain empty');
     }
     fixture.emit(fixture.sid(serial), 'speech.ended');
     await until(() => work().length > initial + 1, 'ordering preserves sentence drain or optional-observer fallback');
     assert.equal(fixture.serial, serial); assert.equal(fixture.closed.length, closed);
     await page.getByRole('button', { name: '断开', exact: true }).click(); await until(() => fixture.closed.length === closed + 1, 'ordering cleanup');
-    results.push(ordering + ': activity and SSE converge once only inside 500ms; late or unconfirmed material stays black');
+    results.push(ordering + ': activity and SSE converge once only inside 500ms; late or unconfirmed material stays empty');
   }
   await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: 'PASS', results, diagnostics, cueDelays, simulation: 'Manufactured PCM WAV duration and independently generated sine MediaStream; no real TTS waveform or acoustic device measurement.' }, null, 2)); console.log(JSON.stringify({ status: 'PASS', results, cueDelays, evidence }));
 })().catch(async error => {

@@ -116,15 +116,29 @@ footer { max-width: 1396px; margin: 22px auto; padding: 0 42px; display: flex; j
 @media (max-width: 480px) { .preset-questions { grid-template-columns: 1fr; } .preset-question { min-height: 48px; } }
 
 /* One 1920×1080 canvas, including the permanently visible control bar. */
-html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #080c0b; }
+html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #e7eae1; }
 .landscape-frame { position: fixed; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center; overflow: hidden; background: #eef1e9; }
-.presentation-stage { display: grid; grid-template-columns: 1fr 2fr; width: 1920px; height: 810px; background: #000; }
-.avatar-player, .material-player { width: 100%; height: 810px; min-width: 0; overflow: hidden; }
-.avatar-player .video-stage { height: 100%; min-height: 0; background: #10241f; }
+.presentation-stage { position: relative; width: 1920px; height: 810px; overflow: hidden; background: radial-gradient(ellipse at 50% 30%, #f5f3ea, #e3e9de 76%); }
+.stage-context { position: absolute; top: 15px; left: 28px; right: 28px; display: flex; justify-content: space-between; color: #6b7c70; font-size: 13px; letter-spacing: 2px; }
+.avatar-player { position: absolute; left: 680px; top: 42px; width: 560px; height: 744px; overflow: hidden; border-radius: 24px; border: 1px solid #c7d1c3; box-shadow: 0 14px 45px #43534318; z-index: 2; transition: left .24s ease, top .24s ease, width .24s ease, height .24s ease, border-radius .24s ease; }
+.avatar-player .video-stage { height: 100%; min-height: 0; background: #e4e9df; }
 .avatar-player video { width: 100%; height: 100%; object-fit: contain; }
-.material-player, .material-surface { background: #000; }
+.presentation-stage .stage-placeholder { background: radial-gradient(ellipse at 50% 35%, #d9e3d4, #e8ebe2 76%); color: #315449; }
+.presentation-stage .stage-placeholder p { color: #6d8072; }
+.presentation-stage .orbit span { color: #587965; }
+.material-player { position: absolute; left: 24px; top: 48px; width: 1872px; height: 738px; min-width: 0; overflow: hidden; }
+.material-player, .material-surface { background: transparent; }
 .material-surface { width: 100%; height: 100%; }
 .material-surface img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.presentation-stage[data-mode="material"] .avatar-player { left: 1656px; top: 486px; width: 240px; height: 300px; border-radius: 16px; }
+.presentation-stage[data-reserve="true"] .material-player { height: 414px; }
+/* Let the avatar arrive before the first picture becomes visible. No outgoing image overlaps an incoming one. */
+.presentation-stage[data-mode="material"] .material-player { animation: reveal-material .36s ease both; }
+@keyframes reveal-material { 0%, 78% { opacity: 0; } 100% { opacity: 1; } }
+.presentation-stage[data-mode="material"] .material-surface:empty::after { content: "听我为您继续讲解"; position: absolute; inset: 0; display: grid; place-items: center; color: #81917f; font-size: 23px; font-weight: 400; letter-spacing: 3px; }
+.presentation-stage .sound-caption { padding: 3px 6px; border-radius: 5px; background: #203e3ac9; color: #fff; }
+.presentation-stage[data-mode="material"] .sound-button { bottom: 28px; padding: 9px 13px; font-size: 15px; }
+@media (prefers-reduced-motion: reduce) { .avatar-player { transition: none; } .presentation-stage[data-mode="material"] .material-player { animation: none; } }
 .control-bar { position: relative; height: 270px; padding: 20px 28px; background: #f4f5ef; border-top: 1px solid #ced7cd; }
 .control-heading { display: flex; align-items: center; gap: 22px; }
 .control-heading .button-row { margin-left: auto; flex-wrap: nowrap; gap: 10px; }
@@ -136,7 +150,11 @@ html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #08
 .control-status p, .control-status small { margin: 0; font-size: 15px; line-height: 1.5; }
 .control-status .notice { padding: 4px 10px; }
 .control-bar .handoff-panel { position: absolute; left: 640px; bottom: 280px; width: 650px; background: #f4f5ef; border: 1px solid #b7c8b6; z-index: 5; }
-.landscape-frame .conversation-history { display: none; position: absolute; top: 30px; left: 660px; width: 1230px; height: 750px; max-width: none; margin: 0; padding: 24px; background: #fff; border: 1px solid #ced7cd; border-radius: 12px; z-index: 4; box-shadow: 0 10px 50px #0008; }
+.landscape-frame .conversation-history { display: none; position: absolute; top: 48px; left: 24px; width: 608px; height: 738px; max-width: none; margin: 0; padding: 24px; background: #fff; border: 1px solid #ced7cd; border-radius: 12px; z-index: 4; box-shadow: 0 10px 50px #43534324; }
+.presentation-stage[data-mode="material"] ~ .conversation-history { width: 1604px; animation: history-space .28s steps(1, end); }
+/* An already-open history must not expand across the avatar while it is moving. */
+@keyframes history-space { from { width: 608px; } to { width: 1604px; } }
+@media (prefers-reduced-motion: reduce) { .presentation-stage[data-mode="material"] ~ .conversation-history { animation: none; } }
 .landscape-frame .conversation-history.is-open { display: flex; flex-direction: column; }
 .landscape-frame .conversation-history-heading { flex-shrink: 0; }
 .landscape-frame .conversation-log { flex: 1; max-height: none; min-height: 0; overflow-y: auto; }
