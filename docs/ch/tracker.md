@@ -80,7 +80,7 @@
 | PM | 梳理 AC1–AC12、分离应用/交付范围并确认本机 Docker 部署。 | [PM 交接](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708111741)。 |
 | 应用 Engineer | 实现 CPU 样例检索、持久化隔离会话/问题/反馈及 HTTP/浏览器测试。 | 源码 diff，精确检查见[验证](verification.md)。 |
 | 交付 Engineer | 实现 Compose/镜像打包、统一验证、托管 CI 与固定可信 main 部署控制器。 | CLI 测试和源码 diff；实际容器/CI/CD 结果单独记录。 |
-| 独立 QA | 必须检查 AC1–AC12、发布范围、运行隔离和操作证据。 | 待独立验收，最终结果见 #12。 |
-| PM 发布 | 必须发布审核后的代码，验证 main CI 与真实本机部署、晋级和回滚。 | 最终发布回执待记录在 #12。 |
+| 独立 QA | 审核精确实现文件树、应用/持久化/隔离、真实 Docker 检查及双语发布范围。 | [合并前验收](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862)；最终运行验收记录在 #12。 |
+| PM 发布 | 通过 PR #13 合并已评审的实现 A，验证其可信 main 构建成功；发布 B 整理证据。 | [A main CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385984934)；最终提交、部署、晋级和回滚回执持续记录在 [#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12)。 |
 
 阶段 5–6 继续在 #9 保持待办；不宣称新增可观测性、告警或值班响应代理已完成。
