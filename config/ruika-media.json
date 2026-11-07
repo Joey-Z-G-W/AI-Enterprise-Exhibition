@@ -1,0 +1,213 @@
+{
+  "assets": [
+    {
+      "id": "ruika-video",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/8a431d23ac53032beac6.jpg",
+      "sha256": "d4345942a98ca75c7de20910d1970c6622e58d74fcff211fe1a48ba70039f435",
+      "mime": "image/jpeg",
+      "source_filename": "03-video-cases.md",
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=30&m=content",
+      "alt": "千纸鹤男装广告片静态海报",
+      "keywords": [
+        "千纸鹤",
+        "QIAN ZHI HE",
+        "有态度的服装"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "arno-fashion",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/6e4b679368a085b7e6c8.jpg",
+      "sha256": "7a2a9c643b63027b6e32cee36930f0569da8beead16cf88aced794cf6e99c17b",
+      "mime": "image/jpeg",
+      "source_filename": "05-arno-brand.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=224&m=content",
+      "alt": "ARNO眼镜品牌时尚视觉案例",
+      "keywords": [
+        "ARNO",
+        "亚诺",
+        "阿格斯",
+        "老花镜"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "ruika-yanjan",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/7e53c576acb871f75595.jpg",
+      "sha256": "37baad9c386af2114bc2b2dcad2e08a3905b93291502dd0f51a627184d7c4b2d",
+      "mime": "image/jpeg",
+      "source_filename": "07-yanjan-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+      "alt": "延江股份美国展厅设计效果图",
+      "keywords": [
+        "延江",
+        "YANJAN",
+        "美国展厅",
+        "无纺布"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "solar-interior",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/31a9bd1b7835e1b370b3.jpg",
+      "sha256": "2f65759f995c4393c5948eef23ffd2f4e95656ca7facc3d8d40b33f04f61f525",
+      "mime": "image/jpeg",
+      "source_filename": "08-solar-cafe.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=207&m=content",
+      "alt": "SOLAR咖啡店内部空间设计效果图",
+      "keywords": [
+        "SOLAR",
+        "咖啡"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "huadi-conference",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/2e87ddef8defcb3605a5.jpg",
+      "sha256": "f0a0f60f932b15bc9086356bf784412bde3205c2524d87e44b532732724d955d",
+      "mime": "image/jpeg",
+      "source_filename": "09-huadi-office.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=84&m=content",
+      "alt": "华地投资办公室会议空间设计效果图",
+      "keywords": [
+        "华地"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "bolon-interior",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/e199366ae8200d064644.jpg",
+      "sha256": "012dc7696a3906d7c70f4191751da8ac712f57bd53bc8ae32c4ea307abeb4fa1",
+      "mime": "image/jpeg",
+      "source_filename": "10-bolon-shop.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=211&m=content",
+      "alt": "暴龙眼镜BOLON店面陈列空间效果图",
+      "keywords": [
+        "暴龙",
+        "BOLON"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "gujiguji-vi",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/0069134bf92a965faa37.jpg",
+      "sha256": "fe081cdd0bba07676176b2f27689b5db8626e35e9b41a531f5d1b032ce492e4e",
+      "mime": "image/jpeg",
+      "source_filename": "11-gujiguji-brand.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=104&m=content",
+      "alt": "咕叽咕叽创意童话馆品牌名片应用设计",
+      "keywords": [
+        "咕叽咕叽",
+        "咕叽",
+        "GUJI",
+        "童话馆"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "vemolly-visual",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/cfbe45119d064e6e0c6d.jpg",
+      "sha256": "fc07236c176cd1d33f81a23172c86d1ffdbcb8d1b7fdc6b2e1898b04c82580db",
+      "mime": "image/jpeg",
+      "source_filename": "12-vemolly-brand.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=110&m=content",
+      "alt": "薇茉丽Vemolly护肤品包装与广告视觉案例",
+      "keywords": [
+        "薇茉丽",
+        "Vemolly",
+        "MOLLY"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "home-brand",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/1ab966e873c167cdbec7.jpg",
+      "sha256": "30e6712f3dad13268fa0ff886681b4d85105e93fd2f51ff419a891ec6b082e97",
+      "mime": "image/jpeg",
+      "source_filename": "01-home.md",
+      "source_url": "https://www.ruika.hk/",
+      "alt": "锐伽品牌综合服务官网横幅",
+      "keywords": [
+        "品牌策划",
+        "品牌定位",
+        "品牌设计",
+        "形象包装",
+        "品牌落地"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "home-space",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/24a421abab8d50fca3fd.jpg",
+      "sha256": "25e38e1028a4f7ac7426802b6c8d92156a4c4defa71b50dcdb9bc1845d1fd36e",
+      "mime": "image/jpeg",
+      "source_filename": "01-home.md",
+      "source_url": "https://www.ruika.hk/",
+      "alt": "国际国内展览设计搭建一体化服务官网横幅",
+      "keywords": [
+        "商业空间",
+        "展览",
+        "展厅",
+        "展会",
+        "办公空间",
+        "商业店铺",
+        "会所酒店",
+        "建筑改造"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "home-film",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/46907b1403336cf493d6.jpg",
+      "sha256": "28505aa4a19ab10fed4b135ba7f5cec045e9278beab27fa9c0e7b3067b2aec1b",
+      "mime": "image/jpeg",
+      "source_filename": "01-home.md",
+      "source_url": "https://www.ruika.hk/",
+      "alt": "锐伽影视广告拍摄制作官网横幅",
+      "keywords": [
+        "视频广告",
+        "影视制作",
+        "影视广告",
+        "企业宣传片",
+        "广告片",
+        "三维动画",
+        "自媒体"
+      ],
+      "reviewed": true
+    },
+    {
+      "id": "ruika-services",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/163ca8bce0d9054a4641.jpg",
+      "sha256": "bbf86c6d70c75c43b74e6fa58fb5812e012b3838e1a7a27ab1b749fd04e70e1d",
+      "mime": "image/jpeg",
+      "source_filename": "02-about-services.md",
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=54&m=content",
+      "alt": "锐伽公司前台与品牌策划商业空间影视广告服务标识",
+      "keywords": [
+        "锐伽",
+        "锐咖",
+        "公司",
+        "品牌",
+        "服务",
+        "定位",
+        "视觉",
+        "传播",
+        "沿革",
+        "团队"
+      ],
+      "reviewed": true
+    }
+  ]
+}

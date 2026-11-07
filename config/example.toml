@@ -25,7 +25,7 @@ avatar_id = "companion"
 tts_voice = "zh-CN-XiaoxiaoNeural"
 
 [media]
-enabled = false
-# Reviewed local assets; manifest is a JSON file relative to root.
-root = "media"
-manifest = "manifest.json"
+enabled = true
+# Ruika reviewed images already tracked in the repository archive.
+root = "."
+manifest = "config/ruika-media.json"
