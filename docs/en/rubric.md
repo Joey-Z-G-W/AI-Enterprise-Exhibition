@@ -1,12 +1,16 @@
 # Course evidence and gaps
 
+English is authoritative.
+
+[Chinese translation](../ch/rubric.md)
+
 ## Overview and evidence index
 
 The [official project rubric](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp/blob/main/project/README.md), checked on 2026-11-07, has 12 criteria totaling 24 points and a 10-point passing threshold.
 
 English documentation and three peer reviews are mandatory; deadlines and submission/review workflow belong to the [course platform](https://courses.datatalks.club/ai-dev-tools-2026/).
 
-[E1 README](../../../../README.md), [E2 Specification](20261107-课程项目-展厅AI导览高分交付分批规划-spec.md), [E3 Tracker](tracker.md) and [E4 Verification](verification.md) are the review entry points.
+[E1 README](../../README.md), [E2 Specification](product-spec.md), [E3 Tracker](tracker.md) and [E4 Verification](verification.md) are the review entry points.
 
 ## Evidence map
 
@@ -14,11 +18,11 @@ Evidence here supports review; it does not award points or replace a working dem
 
 | Criterion | Maximum | Accessible evidence now | Missing evidence / next step |
 | --- | ---: | --- | --- |
-| Problem Description | 2 | [README users, problem and expected behavior](../../../../README.md#functionality-and-expected-behavior). | Reviewer evaluation pending. |
-| Product Specification | 2 | [Spec](20261107-课程项目-展厅AI导览高分交付分批规划-spec.md), public [#10](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10) AC and [actual PM/Engineer/QA record](tracker.md#current-role-activity). | Consult #10 for the final publication receipt; reviewer evaluation pending. |
-| Agent Team Specification | 2 | [Team roles](team.md) and [process](process.md). | Independent QA execution recorded on #10. |
-| Context Management | 2 | [Root AGENTS](../../../../AGENTS.md) links modular repository docs. | Verify every link on the pushed branch. |
-| Application | 2 | [React](../../../../frontend/src/App.tsx), [FastAPI](../../../../src/exhibition_guide/main.py) and historical [#8](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8). | Visitor-facing database write/read/restart flow and public samples pending. |
+| Problem Description | 2 | [README users, problem and expected behavior](../../README.md#functionality-and-expected-behavior). | Reviewer evaluation pending. |
+| Product Specification | 2 | [Spec](product-spec.md), public [#10](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10) AC and [historical PM/Engineer/QA record](tracker.md#historical-documentation-activity). | Consult #10 for the historical publication receipt and #11 for the localization review; reviewer evaluation pending. |
+| Agent Team Specification | 2 | [Team roles](team.md) and [process](process.md). | Historical QA is recorded on #10; current localization QA belongs to #11. |
+| Context Management | 2 | [Root AGENTS](../../AGENTS.md) links modular repository docs. | Verify every link on the pushed branch. |
+| Application | 2 | [React](../../frontend/src/App.tsx), [FastAPI](../../src/exhibition_guide/main.py) and historical [#8](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8). | Visitor-facing database write/read/restart flow and public samples pending. |
 | Testing | 2 | [Test command and historical results](testing.md). | Fresh reproducible result and legacy boundary audit pending; budget 1 conservatively. |
 | Containerization | 2 | No current delivery evidence claimed. | Full system/database container command pending in #9. |
 | Deployment | 2 | No usable public URL or deployment demo claimed. | Deployment and accessible demo pending in #9. |

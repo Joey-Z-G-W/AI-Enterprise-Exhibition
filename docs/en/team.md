@@ -1,10 +1,14 @@
 # Agent team
 
+English is authoritative.
+
+[Chinese translation](../ch/team.md)
+
 ## Overview and evidence index
 
 The current workflow separates requirements, implementation and independent acceptance.
 
-[E1 Process](process.md) describes the sequence; [E2 Tracker activity](tracker.md#current-role-activity) records what actually happened in this batch.
+[E1 Process](process.md) describes the sequence; [E2 Tracker activity](tracker.md#current-role-activity) records current language-migration activity and preserves the earlier documentation history.
 
 | Role | Responsibility | Handoff |
 | --- | --- | --- |

@@ -1,10 +1,14 @@
 # Architecture and context
 
+English is authoritative.
+
+[Chinese translation](../ch/architecture.md)
+
 ## Overview and evidence index
 
 A browser orchestrates interaction with the business API and OpenTalking; GPU avatar rendering is one dependency of the full local experience.
 
-[E1 Launcher](../../../../tools/linux_dev.py), [E2 API](../../../../src/exhibition_guide/main.py), [E3 Configuration](../../../../config/example.toml) and [E4 Proxy](../../../../frontend/vite.config.ts) are the implementation references.
+[E1 Launcher](../../tools/linux_dev.py), [E2 API](../../src/exhibition_guide/main.py), [E3 Configuration](../../config/example.toml) and [E4 Proxy](../../frontend/vite.config.ts) are the implementation references.
 
 ```mermaid
 flowchart TD
@@ -44,4 +48,4 @@ The course requirement for a persistent visitor-facing business flow remains pen
 
 The course documentation starts from public `main` at `4e81d9d`, whose generic features were synchronized from `ruika` at `a523fa1`; see [the baseline record](tracker.md#baseline-record).
 
-A separately runnable CPU core, business persistence, container delivery and production operations remain planned in the [product specification](20261107-课程项目-展厅AI导览高分交付分批规划-spec.md#planned-scope).
+A separately runnable CPU core, business persistence, container delivery and production operations remain planned in the [product specification](product-spec.md#planned-scope).

@@ -1,10 +1,14 @@
 # Testing policy and execution
 
+English is authoritative.
+
+[Chinese translation](../ch/testing.md)
+
 ## Overview and evidence index
 
 New or changed tests must exercise an interface, integration or complete system boundary; no new unit tests are allowed under this repository's policy.
 
-[E1 Combined launcher](../../../../tools/linux.sh), [E2 Frontend scripts](../../../../frontend/package.json), [E3 Python configuration](../../../../pyproject.toml) and [E4 Current verification](verification.md) distinguish runnable commands from this batch's actual checks.
+[E1 Combined launcher](../../tools/linux.sh), [E2 Frontend scripts](../../frontend/package.json), [E3 Python configuration](../../pyproject.toml) and [E4 Current verification](verification.md) distinguish runnable commands from this batch's actual checks.
 
 ## Test boundaries
 
@@ -20,7 +24,7 @@ Rewrite or delete unit tests touched by a change; leave unrelated historical tes
 
 ## Commands and prerequisites
 
-After the [README setup](../../../../README.md#linux-setup-and-development), run the existing combined entry point with Google Chrome available.
+After the [README setup](../../README.md#linux-setup-and-development), run the existing combined entry point with Google Chrome available.
 
 ```bash
 ./tools/linux.sh test

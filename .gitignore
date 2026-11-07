@@ -1,20 +1,28 @@
-# Local planning documents stay private except the exact course documents authorized in #10.
+# Private task documents stay ignored; only the exact bilingual set in #11 is public.
 /_docs/
 /docs/*
-!/docs/dev/
-/docs/dev/*
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/
-/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/*
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/
-/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/*
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/20261107-课程项目-展厅AI导览高分交付分批规划-spec.md
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/architecture.md
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/process.md
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/team.md
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/testing.md
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/tracker.md
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/rubric.md
-!/docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/verification.md
+!/docs/en/
+/docs/en/*
+!/docs/ch/
+/docs/ch/*
+!/docs/en/architecture.md
+!/docs/en/process.md
+!/docs/en/product-spec.md
+!/docs/en/rubric.md
+!/docs/en/team.md
+!/docs/en/testing.md
+!/docs/en/tracker.md
+!/docs/en/verification.md
+!/docs/ch/README.md
+!/docs/ch/agent-guide.md
+!/docs/ch/architecture.md
+!/docs/ch/process.md
+!/docs/ch/product-spec.md
+!/docs/ch/rubric.md
+!/docs/ch/team.md
+!/docs/ch/testing.md
+!/docs/ch/tracker.md
+!/docs/ch/verification.md
 
 # Credentials and runtime data
 /config/local.toml

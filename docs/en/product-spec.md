@@ -1,5 +1,9 @@
 # Exhibition guide product specification
 
+English is authoritative.
+
+[Chinese translation](../ch/product-spec.md)
+
 ## Overview and evidence index
 
 Visitors need clear, supportable exhibit explanations; staff need a guide that admits missing knowledge and does not mix one visitor's session with another's.
@@ -22,14 +26,14 @@ These criteria describe the intended contract of the implemented scope and must 
 
 | ID | Scenario and observable result | Current source evidence |
 | --- | --- | --- |
-| S1 | A valid supported question returns HTTP 200 with matching visitor/turn identity, answer text and validated source excerpts; ambiguous evidence prompts clarification. | [Question contract](../../../../src/exhibition_guide/answer.py) |
-| S2 | Missing evidence produces an explicit unknown response; conflicting evidence returns `status=answer` and explicitly states that the material conflicts and the correct answer cannot be confirmed. | [Answer decisions](../../../../src/exhibition_guide/answer.py) |
-| S3 | On a configured GPU session, a spoken paragraph retains the same RTC session while verified images follow sentence boundaries; missing/failed images use the shared stage background. | [Presentation coordination](../../../../frontend/src/lib/presentationCoordinator.ts), [stage](../../../../frontend/src/App.tsx) |
-| S4 | Stop, interruption or a new visitor prevents old callbacks from restoring speech/images; a subsequent visitor does not inherit previous tour state. | [Session context](../../../../src/exhibition_guide/context.py), [browser integration](../../../../tests/frontend/stage-browser-integration.cjs) |
-| E1 | Disabled answer configuration returns HTTP 503 and `service_not_configured`; invalid request bodies return HTTP 422. | [HTTP application](../../../../src/exhibition_guide/main.py) |
-| E2 | Retrieval/model timeouts return HTTP 504 with a stable error code; other upstream failures return a safe error response, without raw exception details. | [HTTP application](../../../../src/exhibition_guide/main.py), [answer errors](../../../../src/exhibition_guide/answer.py) |
-| E3 | Stale/conflicting/cancelled turns return HTTP 409; visitor capacity returns HTTP 429. | [HTTP application](../../../../src/exhibition_guide/main.py) |
-| P1 | Public UI configuration exposes only avatar ID and voice, never service credentials; response and error checks must detect leaked keys or private endpoints. | [UI config contract](../../../../tests/test_ui_config.py) |
+| S1 | A valid supported question returns HTTP 200 with matching visitor/turn identity, answer text and validated source excerpts; ambiguous evidence prompts clarification. | [Question contract](../../src/exhibition_guide/answer.py) |
+| S2 | Missing evidence produces an explicit unknown response; conflicting evidence returns `status=answer` and explicitly states that the material conflicts and the correct answer cannot be confirmed. | [Answer decisions](../../src/exhibition_guide/answer.py) |
+| S3 | On a configured GPU session, a spoken paragraph retains the same RTC session while verified images follow sentence boundaries; missing/failed images use the shared stage background. | [Presentation coordination](../../frontend/src/lib/presentationCoordinator.ts), [stage](../../frontend/src/App.tsx) |
+| S4 | Stop, interruption or a new visitor prevents old callbacks from restoring speech/images; a subsequent visitor does not inherit previous tour state. | [Session context](../../src/exhibition_guide/context.py), [browser integration](../../tests/frontend/stage-browser-integration.cjs) |
+| E1 | Disabled answer configuration returns HTTP 503 and `service_not_configured`; invalid request bodies return HTTP 422. | [HTTP application](../../src/exhibition_guide/main.py) |
+| E2 | Retrieval/model timeouts return HTTP 504 with a stable error code; other upstream failures return a safe error response, without raw exception details. | [HTTP application](../../src/exhibition_guide/main.py), [answer errors](../../src/exhibition_guide/answer.py) |
+| E3 | Stale/conflicting/cancelled turns return HTTP 409; visitor capacity returns HTTP 429. | [HTTP application](../../src/exhibition_guide/main.py) |
+| P1 | Public UI configuration exposes only avatar ID and voice, never service credentials; response and error checks must detect leaked keys or private endpoints. | [UI config contract](../../tests/test_ui_config.py) |
 | P2 | Any published corpus, screenshot, log or telemetry sample contains no enterprise-only data, visitor personal data or credentials. | Publication review in [process](process.md); continuous telemetry controls remain planned. |
 
 Questions and retrieved material can be sent to the configured external LLM, and narration text to the configured TTS provider; this is not an offline-only product.

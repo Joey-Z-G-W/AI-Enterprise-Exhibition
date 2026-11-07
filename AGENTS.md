@@ -1,15 +1,19 @@
 # Repository agent instructions
 
+English is authoritative.
+
+[Chinese translation](docs/ch/agent-guide.md)
+
 Build one exhibition guide application with React, FastAPI and OpenTalking; distinguish implemented behavior from proposed work.
 
-Start with the [product specification](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/20261107-课程项目-展厅AI导览高分交付分批规划-spec.md) and [architecture/context](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/architecture.md).
+Start with the [product specification](docs/en/product-spec.md) and [architecture/context](docs/en/architecture.md).
 
 ## Required context
 
-- Follow the [coding process](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/process.md) for one groomed issue at a time.
-- Use the [team responsibilities](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/team.md): PM → Engineer → independent QA.
-- Follow the [testing boundaries](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/testing.md); add only interface, integration or system tests.
-- Consult the [public tracker](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/tracker.md) and [evidence map](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/rubric.md) before claiming completion.
+- Follow the [coding process](docs/en/process.md) for one groomed issue at a time.
+- Use the [team responsibilities](docs/en/team.md): PM → Engineer → independent QA.
+- Follow the [testing boundaries](docs/en/testing.md); add only interface, integration or system tests.
+- Consult the [public tracker](docs/en/tracker.md) and [evidence map](docs/en/rubric.md) before claiming completion.
 
 ## Work boundaries
 
@@ -25,7 +29,15 @@ Keep one task directory per requirement under `docs/dev/YYYYMMDD-module-detailed
 
 Reuse an existing task directory and keep evidence, temporary scripts and intermediate JSON reports in its `evidence/`, `scripts/` and `tmp/` subdirectories.
 
-Keep only explicitly approved generic documents in a task's `public/` directory; do not broadly unignore docs.
+Keep authoritative project documentation in English: root `README.md` and `AGENTS.md`, plus the eight modules under `docs/en/`.
+
+Keep one complete secondary Chinese translation set only under `docs/ch/`, using `agent-guide.md` for the agent-instruction translation; English remains authoritative.
+
+English Markdown must contain no Chinese characters or CJK punctuation, including paths, link targets and code blocks; use ASCII filenames and paths rather than encoded non-ASCII paths.
+
+Link each English page to its Chinese translation with an English label, and each translation back to its English source; update both sets together and preserve facts, commands, limitations and pending statuses.
+
+Publish only exactly allowlisted documents; keep private task evidence ignored and do not retain public copies under task directories.
 
 Never commit credentials, customer corpora, private configuration, downloaded models, vendor working-tree changes or unrelated user edits.
 
@@ -33,4 +45,4 @@ Use a separate worktree when another branch runs the local experience; do not st
 
 Record actual role activity and exact checks in the issue, label historical results, and keep unresolved acceptance criteria pending.
 
-The current task is [#10](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10), based on `main` at `4e81d9d`; later runtime and operations work belongs to [#9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9).
+The current language migration is [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11), based on `main` at `f30f180`; the earlier documentation task is [#10](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10), and later runtime and operations work belongs to [#9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9).

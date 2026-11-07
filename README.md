@@ -1,5 +1,9 @@
 # Exhibition AI Guide
 
+English is authoritative.
+
+[Chinese translation](docs/ch/README.md)
+
 An exhibition visitor can ask questions about reviewed exhibits and hear a digital guide explain relevant material while images follow the spoken sentences.
 
 The application helps visitors find reliable information without waiting for a human guide, and helps exhibition staff avoid unsupported answers.
@@ -10,12 +14,12 @@ The current interface is Chinese; reviewer documentation is English.
 
 | Entry | What it explains |
 | --- | --- |
-| [E1 Product specification](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/20261107-课程项目-展厅AI导览高分交付分批规划-spec.md) | Users, observable acceptance criteria, implemented scope and roadmap |
-| [E2 Architecture](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/architecture.md) | React, FastAPI, OpenTalking, configuration and data boundaries |
+| [E1 Product specification](docs/en/product-spec.md) | Users, observable acceptance criteria, implemented scope and roadmap |
+| [E2 Architecture](docs/en/architecture.md) | React, FastAPI, OpenTalking, configuration and data boundaries |
 | [E3 Agent instructions](AGENTS.md) | Repository-local process, roles and testing rules |
-| [E4 Public tracker](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/tracker.md) | Current work, actual role activity and historical baseline |
-| [E5 Course evidence](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/rubric.md) | All 12 scoring criteria, gaps and targets |
-| [E6 Verification](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/verification.md) | Checks performed for this documentation batch |
+| [E4 Public tracker](docs/en/tracker.md) | Current work, actual role activity and historical baseline |
+| [E5 Course evidence](docs/en/rubric.md) | All 12 scoring criteria, gaps and targets |
+| [E6 Verification](docs/en/verification.md) | Checks performed for this documentation batch |
 
 ## Functionality and expected behavior
 
@@ -103,7 +107,7 @@ Build the frontend after setup.
 ./tools/linux.sh build
 ```
 
-Run the existing combined verification entry point with Google Chrome installed; see [E7 Testing details](docs/dev/20261107-课程项目-展厅AI导览高分交付分批规划/public/testing.md) for dependencies, scope and historical limitations.
+Run the existing combined verification entry point with Google Chrome installed; see [E7 Testing details](docs/en/testing.md) for dependencies, scope and historical limitations.
 
 ```bash
 ./tools/linux.sh test
