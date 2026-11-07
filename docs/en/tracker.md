@@ -68,7 +68,7 @@ This language migration does not claim new application, GPU or browser test exec
 | PM | Groomed AC1-AC12, separate application/delivery scopes and local Docker deployment. | [PM handoff](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708111741). |
 | Application Engineer | Implemented CPU sample retrieval, persistent isolated sessions/questions/feedback and HTTP/browser tests. | Source diff; exact checks in [verification](verification.md). |
 | Delivery Engineer | Implemented Compose/image packaging, combined verification, hosted CI and a fixed trusted-main deployment controller. | CLI tests and source diff; actual container/CI/CD results recorded separately. |
-| Independent QA | Must inspect AC1-AC12, publication scope, runtime isolation and operational evidence. | Pending independent acceptance; consult #12 for final result. |
-| PM publication | Must publish reviewed code, verify main CI and real local deployment, promotion and rollback. | Pending final release receipt in #12. |
+| Independent QA | Reviewed the exact implementation tree, application/persistence/isolation, real Docker checks and bilingual publication scope. | [Pre-merge acceptance](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862); final operational acceptance is recorded in #12. |
+| PM publication | Merged reviewed implementation A through PR #13 and verified its successful trusted-main build; release B curates the evidence. | [A main CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385984934); final commit, deployment, promotion and rollback receipts are maintained in [#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12). |
 
 Stages 5-6 remain open in #9; no new observability, alerting or on-call responder completion is claimed.

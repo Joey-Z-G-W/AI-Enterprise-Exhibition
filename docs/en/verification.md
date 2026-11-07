@@ -10,29 +10,50 @@ English is authoritative.
 
 [E1 Acceptance criteria](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12), [E2 Role activity](tracker.md#current-role-activity), [E3 Test commands](testing.md) and [E4 CI workflow](../../.github/workflows/ci.yml) are the audit entry points.
 
-Source implementation is separate from executed evidence; independent QA and final remote release acceptance must be recorded before the issue is considered complete.
+Implementation A was merged through [PR #13](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/pull/13) as `0a0ca69e4ac3f72b7280f9e542b32e7f061786a1`, with the same tree independently reviewed at `23179cc`.
+
+Its [trusted-main CI run](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385984934) succeeded; the [independent pre-merge acceptance](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862) separates completed source/local checks from later release operations.
 
 ## Current delivery checks
 
-The delivery CLI's four interface tests first failed because the command did not exist, then passed after implementation; the optional two-release system test reports a skip until actual main CI run IDs are supplied.
-
-Docker Compose configuration validation passed locally; the first local image build was blocked before compilation by registry requests returning EOF from the host Docker daemon.
-
-That network failure is not a passing container test; a hosted image build and actual local container/browser acceptance remain required.
-
-Shell syntax and Python compilation checks passed for the new delivery scripts.
-
-| Gate | Status and required evidence |
+| Executed check | Evidence and scope |
 | --- | --- |
-| Full Python and real-browser regression | Pending final combined result and independent QA. |
-| CPU Compose startup/restart and browser journey | Pending actual image and retained SQLite records. |
-| PR/main CI success | Pending public run URL and exact commit. |
-| Controlled validation failure | Pending failed run or failed-candidate record proving delivery stays blocked. |
-| Automatic dev deployment | Pending successful GitHub Deployment with exact CI run/image/commit. |
-| Manual prod promotion and rollback | Pending two real releases, retained records and failed-candidate rejection. |
-| Publication | Pending final reviewed main commit, public links and independent acceptance. |
+| Python and browser regression | [Final PR CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385501939): 402 Python passes, six explicit optional skips, five browser suites, both builds and Compose browser/recreation checks. |
+| Exact Compose startup | Hosted CI ran the documented `docker compose up --build --wait` from a clean checkout and verified actual recreation with retained SQLite records. |
+| Actual local Docker | [Independent QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862) verified the real Chrome cookie/session/question/citations/rating through both Docker restart and recreation on the same named volume, using a separately approved QA image on port 8092. |
+| Isolation and runtime boundaries | QA verified different-visitor rejection, cleared payloads, stored-XSS handling, non-root/read-only containers and unchanged unrelated container identities/images/configurations. |
+| Validation blocks delivery | [Failed PR run](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42382556438) did not publish a deployable image; an actual controller attempt rejected it without changing containers or routes. |
+| Trusted-main build | [Implementation A main CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385984934) completed successfully for the exact merged commit above. |
+| Automatic dev deployment | [Deployment 7623123912](https://api.github.com/repos/Joey-Z-G-W/AI-Enterprise-Exhibition/deployments/7623123912/statuses) succeeded on loopback port 8090 with release `0a0ca69e4ac3f72b7280f9e542b32e7f061786a1`; the controller was already active before main CI completed. |
+| Manual production promotion | [Deployment 7623145538](https://api.github.com/repos/Joey-Z-G-W/AI-Enterprise-Exhibition/deployments/7623145538/statuses) succeeded on loopback port 8091 for the same implementation A commit and main CI run. |
 
-The final PM release receipt in #12 must replace pending operational claims with actual run/deployment links; configuration files alone do not satisfy those gates.
+The automatic dev deployment used verified image `sha256:51ea7b584be5e66daa6649a9ae5d3164dea863e9ee73cbda19fa9210a53522de` from main CI run `42385984934`, and the served health release matched the deployed commit.
+
+The six optional skips are four local embedding/model checks, one explicit live-GPU cancellation check and one two-main-release opt-in test; mandatory CPU checks were not skipped.
+
+The two-release deployment test has its own operational receipt rather than being counted as executed in the standard CI suite.
+
+The initial local registry EOF was a build-network failure, not a passing test; hosted clean-checkout Compose acceptance and later actual local container checks provide the executed evidence.
+
+## Local sample demonstration
+
+This unedited screenshot was captured during independent real-Chrome acceptance on production port 8091, serving implementation A `0a0ca69e4ac3f72b7280f9e542b32e7f061786a1`.
+
+It shows the original fictional collection, supported/unknown/ambiguous/conflicting responses, source citations and saved visitor feedback of 5/5; it contains no enterprise corpus or credentials.
+
+![CPU sample guide on implementation A production, with four response outcomes and saved feedback](assets/cpu-sample-demo.png)
+
+The browser journey also verified reload retention, isolated visitors, rejected cross-visitor feedback, retry conflicts, clear history, new visitor and mobile layout; this screenshot alone does not prove container restart or rollback.
+
+## Release acceptance and publication
+
+The [#12 release receipt](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12) records release identities, automatic dev deployment, manual production promotion, two-release rollback and failed-candidate retention checks, plus final main publication and independent acceptance.
+
+Read the actual linked run/deployment results in that receipt; source files, a screenshot or the pre-merge QA result alone do not establish those operational outcomes.
+
+The final deployed revision, CI result and promotion/rollback acceptance are maintained in that receipt.
+
+The selected deployment is local Docker on loopback-only ports, not a publicly hosted application.
 
 ## Current localization checks
 

@@ -21,7 +21,7 @@
 | [E3 代理指引](agent-guide.md) | 仓内流程、角色和测试规则 |
 | [E4 公开任务跟踪](tracker.md) | 当前工作、真实角色活动和历史基线 |
 | [E5 课程证据](rubric.md) | 全部 12 项评分标准、缺口和目标 |
-| [E6 验证记录](verification.md) | 本次文档工作执行的检查 |
+| [E6 验证记录](verification.md) | 实际测试、本机 Docker 演示与发布证据 |
 
 <a id="functionality-and-expected-behavior"></a>
 
@@ -39,7 +39,7 @@
 
 ## 当前限制与演示状态
 
-公开产品基线 `main` 的 `4e81d9d` 通过[任务 #8](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8)，包含了从 `ruika` 的 `a523fa1` 同步的通用功能。
+历史 GPU 产品基线 `main` 的 `4e81d9d` 通过[任务 #8](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8)，包含了从 `ruika` 的 `a523fa1` 同步的通用功能。
 
 其中明确不包含企业语料、私有配置和本地修改的 vendor 工作树。
 
@@ -47,7 +47,7 @@ CPU 样例模式在 [#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition
 
 它不调用实时 LLM，也不渲染数字人；原有 GPU 模式仍可按下文使用。
 
-本次选择本机 Docker 部署，dev/prod URL 仅监听回环地址，并非公网托管服务；见[已执行验证和剩余关卡](verification.md)。
+本次选择本机 Docker 部署，dev/prod URL 仅监听回环地址，并非公网托管服务；见[已执行验证与发布回执](verification.md)。
 
 <a id="cpu-sample-quick-start"></a>
 
@@ -189,4 +189,4 @@ curl --fail http://127.0.0.1:5290/guide/health
 ./tools/course_verify.sh
 ```
 
-该命令运行 Python、既有语音/横屏/浏览器系统回归和 CPU 样例浏览器流程；实际结果及待完成的运行检查记录在[验证](verification.md)。
+该命令运行 Python、既有语音/横屏/浏览器系统回归和 CPU 样例浏览器流程；已执行结果与发布回执记录在[验证](verification.md)。

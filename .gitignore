@@ -1,4 +1,4 @@
-# Private task documents stay ignored; only the exact bilingual set in #11 is public.
+# Private task documents stay ignored; only the exact bilingual docs and curated #12 demo image are public.
 /_docs/
 /docs/*
 !/docs/en/
@@ -13,6 +13,9 @@
 !/docs/en/testing.md
 !/docs/en/tracker.md
 !/docs/en/verification.md
+!/docs/en/assets/
+/docs/en/assets/*
+!/docs/en/assets/cpu-sample-demo.png
 !/docs/ch/README.md
 !/docs/ch/agent-guide.md
 !/docs/ch/architecture.md

@@ -19,7 +19,7 @@ The original GPU interface is Chinese; the CPU sample interface and authoritativ
 | [E3 Agent instructions](AGENTS.md) | Repository-local process, roles and testing rules |
 | [E4 Public tracker](docs/en/tracker.md) | Current work, actual role activity and historical baseline |
 | [E5 Course evidence](docs/en/rubric.md) | All 12 scoring criteria, gaps and targets |
-| [E6 Verification](docs/en/verification.md) | Checks performed for this documentation batch |
+| [E6 Verification](docs/en/verification.md) | Executed tests, local Docker demo and release evidence |
 
 ## Functionality and expected behavior
 
@@ -33,7 +33,7 @@ These capabilities are present in the public source; a fresh checkout still need
 
 ## Current limits and demo status
 
-Public baseline `main` at `4e81d9d` contains generic functionality synchronized from `ruika` at `a523fa1` through [issue #8](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8).
+The historical GPU baseline, `main` at `4e81d9d`, contains generic functionality synchronized from `ruika` at `a523fa1` through [issue #8](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8).
 
 It deliberately excludes the enterprise corpus, private configuration and locally modified vendor tree.
 
@@ -41,7 +41,7 @@ The CPU sample mode adds original fictional exhibits, deterministic evidence ret
 
 It does not call a live LLM or render an avatar; the existing GPU mode remains available below.
 
-The selected deployment is local Docker, with loopback-only dev/prod URLs rather than a public hosted service; see [executed verification and remaining gates](docs/en/verification.md).
+The selected deployment is local Docker, with loopback-only dev/prod URLs rather than a public hosted service; see [executed verification and release receipts](docs/en/verification.md).
 
 ## CPU sample quick start
 
@@ -173,4 +173,4 @@ Run the existing combined verification entry point with Google Chrome installed;
 ./tools/course_verify.sh
 ```
 
-The command runs Python, existing speech/landscape/browser system regressions and the CPU sample browser journey; actual results and pending operational checks are recorded in [verification](docs/en/verification.md).
+The command runs Python, existing speech/landscape/browser system regressions and the CPU sample browser journey; executed results and release receipts are recorded in [verification](docs/en/verification.md).
