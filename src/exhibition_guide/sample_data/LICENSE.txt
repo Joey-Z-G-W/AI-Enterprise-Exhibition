@@ -1,0 +1,4 @@
+Original fictional sample text: AI-Enterprise-Exhibition project contributors, 2026.
+Dedicated to the public domain under CC0 1.0 Universal.
+License: https://creativecommons.org/publicdomain/zero/1.0/
+The catalog provenance and manifest identify its authorship and exact SHA-256 content.

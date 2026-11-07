@@ -8,7 +8,7 @@ An exhibition visitor can ask questions about reviewed exhibits and hear a digit
 
 The application helps visitors find reliable information without waiting for a human guide, and helps exhibition staff avoid unsupported answers.
 
-The current interface is Chinese; reviewer documentation is English.
+The original GPU interface is Chinese; the CPU sample interface and authoritative reviewer documentation are English.
 
 ## Overview and evidence index
 
@@ -37,11 +37,71 @@ Public baseline `main` at `4e81d9d` contains generic functionality synchronized 
 
 It deliberately excludes the enterprise corpus, private configuration and locally modified vendor tree.
 
-There is no published, usable public demo or deployment for reviewers yet; a public sample corpus and a reproducible walkthrough are pending.
+The CPU sample mode adds original fictional exhibits, deterministic evidence retrieval, visitor history and feedback in SQLite, and Docker delivery in [#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12).
 
-Conversation and tour state are held in memory; a visitor-facing business database and a separately runnable CPU core are planned in [roadmap #9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9).
+It does not call a live LLM or render an avatar; the existing GPU mode remains available below.
 
-The existing CPU embedding component and health-only development mode do not constitute that proposed CPU application.
+The selected deployment is local Docker, with loopback-only dev/prod URLs rather than a public hosted service; see [executed verification and remaining gates](docs/en/verification.md).
+
+## CPU sample quick start
+
+Install Docker Engine and Docker Compose, then run from a clean checkout; no Python environment, GPU, API key or private configuration is required.
+
+```bash
+docker compose up --build --wait
+```
+
+Open [the sample guide](http://127.0.0.1:8090), choose a fictional exhibit, ask one of its example questions, submit feedback, and reload to inspect retained history.
+
+Use the clear-history action to remove your records, or the new-visitor action to start an isolated session.
+
+The app serves the built React interface and FastAPI on one origin; its named `course-demo_guide-data` volume retains SQLite data across restart/recreate.
+
+```bash
+docker compose restart
+docker compose up --build --force-recreate --wait
+```
+
+Do not add `--volumes` to `docker compose down` when retaining visitor data.
+
+If managed dev is already using port 8090, start the standalone sample with `GUIDE_PORT=8092 docker compose up --build --wait` and open port 8092.
+
+Sample authorship, licenses, stable IDs and checksums ship in [sample_data](src/exhibition_guide/sample_data/); no enterprise corpus is required.
+
+## Local deployment and rollback
+
+[Course CI](.github/workflows/ci.yml) runs tests and image builds on GitHub-hosted runners for pull requests and main; only a successful push to this repository's main publishes a deployable image artifact.
+
+A fixed local controller downloads that exact run's artifact with up to 16 bounded parallel byte ranges, verifies the GitHub archive checksum and commit/image identity, starts a candidate, and changes the stable gateway route only after readiness succeeds.
+
+Dev uses port 8090 and volume `course-dev-data`; prod uses port 8091 and volume `course-prod-data`, with distinct visitor cookies.
+
+Stop the standalone Compose sample before starting managed dev on the same port.
+
+```bash
+./tools/course_runner.sh install
+./tools/course_runner.sh start
+./tools/course_runner.sh status
+python3 tools/course_deploy.py promote
+python3 tools/course_deploy.py rollback --environment prod
+./tools/course_runner.sh stop
+```
+
+The controller needs Docker access, GitHub CLI authentication with Actions read and Deployments write access, and an online host; no self-hosted Actions runner is registered, and automated PR jobs run only on GitHub-hosted runners.
+
+A manually reviewed PR QA image can be loaded for local acceptance; the automatic deployment controller still accepts only successful main releases.
+
+`install` copies the reviewed controller and its standard-library artifact helper outside the checkout; review and reinstall changes explicitly, and restart after host reboot or configure a user service.
+
+Override `COURSE_CONTROLLER_DIR` and `COURSE_STATE_DIR` for persistent locations; pass the same state path via `--state-dir` before CLI subcommands.
+
+Each deployment records its CI run, exact commit and image ID in local state and [GitHub Deployments](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/deployments); the environment URL is reachable only on the selected host.
+
+Rollback uses the previous health-verified image and retains the database volume; candidates must remain compatible with the existing SQLite schema, and destructive schema migrations need a separate backup/migration design.
+
+Image artifacts expire after 14 days; rollback keeps the verified local image, while a new promotion needs the retained CI artifact.
+
+Detailed acceptance, including two real releases and failed-candidate recovery, is in [testing](docs/en/testing.md).
 
 ## Linux setup and development
 
@@ -110,7 +170,7 @@ Build the frontend after setup.
 Run the existing combined verification entry point with Google Chrome installed; see [E7 Testing details](docs/en/testing.md) for dependencies, scope and historical limitations.
 
 ```bash
-./tools/linux.sh test
+./tools/course_verify.sh
 ```
 
-This documentation batch checks links, syntax and command definitions only; it does not claim a fresh product test run.
+The command runs Python, existing speech/landscape/browser system regressions and the CPU sample browser journey; actual results and pending operational checks are recorded in [verification](docs/en/verification.md).

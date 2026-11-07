@@ -1,0 +1,24 @@
+name: course-demo
+services:
+  guide:
+    build:
+      context: .
+      args:
+        GUIDE_RELEASE_ID: ${GUIDE_RELEASE_ID:-local}
+    image: exhibition-course:${GUIDE_RELEASE_ID:-local}
+    ports:
+      - "127.0.0.1:${GUIDE_PORT:-8090}:8080"
+    environment:
+      GUIDE_DEMO_DB: /data/guide.sqlite3
+      GUIDE_STATIC_DIR: /app/frontend/dist
+      GUIDE_DEMO_COOKIE_NAME: course_demo
+    volumes:
+      - guide-data:/data
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+volumes:
+  guide-data:

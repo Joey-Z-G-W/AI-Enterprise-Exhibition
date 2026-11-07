@@ -30,13 +30,13 @@
 
 ## 命令与前提
 
-完成 [README 安装](README.md#linux-setup-and-development)后，在已安装 Google Chrome 的环境运行现有统一入口。
+完成 [README 安装](README.md#linux-setup-and-development)后，在已安装 Google Chrome 和 OpenSSL CLI 的环境运行统一入口（后者为本机 TLS 集成测试生成临时证书）。
 
 ```bash
-./tools/linux.sh test
+./tools/course_verify.sh
 ```
 
-它依次运行 Python pytest、前端类型检查/构建、浏览器语音集成、横屏浏览器集成和横屏系统集成。
+它依次运行 Python pytest、前端类型检查/构建、浏览器语音集成、横屏浏览器集成、横屏系统集成、VAD 开发资源集成、CPU 前端构建和 CPU 样例真实浏览器系统流程。
 
 这条命令不代表仓库内所有可选脚本都已包含；专门的 RTC/GPU 检查需要自己的依赖和已配置运行环境。
 
@@ -53,3 +53,49 @@
 这些是之前迁移的历史结果，不是本次文档改动重新执行的结果。
 
 官方课程满分 Testing 要求同时存在单元与集成测试；本仓库禁止新增单元测试，因此在如实审计未触及的历史测试之前，保守按 1 分规划。
+
+<a id="cpu-and-deployment-acceptance"></a>
+
+## CPU 与部署验收
+
+[HTTP 集成](../../tests/test_demo_http.py)使用真实 SQLite 和公开应用 API；[浏览器系统覆盖](../../tests/frontend/demo-system.cjs)运行实际 React/FastAPI 样例。
+
+[CLI 契约](../../tests/test_deploy_cli.py)通过子进程执行命令，不导入部署内部函数。
+
+[发布系统测试](../../tests/deployment/test_release_system.py)需要显式启用，因为它会修改授权的本机 dev/prod 环境，并需要两个不同提交的成功 main CI release；它不替换应用/数据库，也不删除数据卷。
+
+```bash
+COURSE_RELEASE_RUN_A=FIRST_SUCCESSFUL_MAIN_RUN_ID \
+COURSE_RELEASE_RUN_B=SECOND_SUCCESSFUL_MAIN_RUN_ID \
+.venv/bin/python -m pytest tests/deployment/test_release_system.py -q
+```
+
+执行这个受控流程时先停止轮询控制器，避免自动 dev 晋级与测试竞争；完成后重新启动。
+
+流程部署并晋级 A，写入真实问题/评分，部署并晋级 B，重启 B，将 prod 回滚至 A，然后注入不健康 B 容器，再次尝试回滚。
+
+断言覆盖精确 release 身份、历史保留、坏候选拒绝以及健康路由不变；所有操作都创建 GitHub Deployment 状态。
+
+缺少任一 run ID 时明确报告 skip；普通 CI 不得声称已经执行这项主机专用验收。
+
+托管 workflow 执行全部既有 Python 回归、五组浏览器测试、文档中的 `docker compose up --build --wait`、针对完整环境的浏览器流程以及[真实 Compose 重建/持久化验收](../../tests/deployment/compose_persistence.py)；只有成功的 push/main run 上传可部署 artifact。
+
+验证步骤失败会阻止镜像发布，控制器忽略失败的 CI run；自动 PR 作业仅在 GitHub 托管 runner 上执行。
+
+经过人工审核的 PR QA 镜像可以加载到本机验收，部署控制器仍只接受成功的 main release。
+
+<a id="local-controller-lifecycle"></a>
+
+## 本机控制器生命周期
+
+`tools/course_runner.sh install` 复制已审核的控制器与 `course_artifact.py` helper，两者都只需要 Python 标准库；`start` 检查 GitHub 登录与 Docker 后启动后台进程，`stop` 先核对 PID 命令再停止。
+
+状态/artifact 目录应在临时 worktree 之外；如需重启后恢复，配置用户服务，并明确审核、重新安装控制器更新。
+
+主机必须在线并保持 Docker 权限与 GitHub 登录；停止控制器不会停止应用容器，只会暂停后续部署处理。
+
+Artifact CLI 集成使用真实本机 TLS API 重定向与字节范围服务器，只替换外部 GitHub CLI。
+
+它验证凭据仅留在 API 主机、签名 URL 不进入输出、错误范围/校验值/ZIP 路径被拒绝、不发布不完整缓存，以及控制器在传输前拒绝 PR 部署。
+
+只读 artifact helper 可以显式下载成功的 PR QA artifact；部署控制器独立要求成功的 push/main CI 和精确的 `course-image-<sha>` artifact。

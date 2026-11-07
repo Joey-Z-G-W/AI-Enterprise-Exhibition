@@ -40,12 +40,42 @@ React coordinates voice capture, playback and the adaptive stage, while a single
 
 `config/local.toml` and `config/opentalking.env` are local and ignored; downloaded weights, runtime databases and caches must stay outside commits.
 
-Guide conversation/tour state is in memory, while OpenTalking may use its own SQLite and knowledge storage under `data/opentalking`.
+The original GPU guide conversation/tour state remains in memory, while OpenTalking may use its own SQLite and knowledge storage under `data/opentalking`.
 
-The course requirement for a persistent visitor-facing business flow remains pending; the presence of an upstream runtime SQLite file does not satisfy it by itself.
+The CPU sample app is a separate FastAPI factory in `demo.py`, serving React assets and `/api` on one origin; sessions, questions and feedback live in a real SQLite database at `GUIDE_DEMO_DB`.
+
+Opaque HttpOnly visitor cookies select hashed session records; every history and feedback query is scoped to that session, and request IDs make retries idempotent.
+
+The CPU mode uses deterministic retrieval over packaged original fictional exhibits, without GPU, external credentials or LLM calls.
 
 ## Baseline and future context
 
 The course documentation starts from public `main` at `4e81d9d`, whose generic features were synchronized from `ruika` at `a523fa1`; see [the baseline record](tracker.md#baseline-record).
 
-A separately runnable CPU core, business persistence, container delivery and production operations remain planned in the [product specification](product-spec.md#planned-scope).
+The CPU core, business persistence and container deployment are implemented in #12; executed results remain separate from source availability in [verification](verification.md).
+
+Correlated observability and alert-driven operations remain planned in the [product specification](product-spec.md#planned-scope).
+
+## Container and deployment boundary
+
+```mermaid
+flowchart TD
+    Visitor[Visitor] --> Gateway[Loopback gateway: dev 8090 / prod 8091]
+    Gateway --> CPU[Non-root React + FastAPI CPU container]
+    CPU --> SQLite[Per-environment named SQLite volume]
+    Maintainer[Maintainer: merge reviewed main] --> Hosted[GitHub-hosted CI: tests + image]
+    Hosted --> Artifact[Exact-run image artifact + checksum manifest]
+    Artifact --> Controller[Fixed local controller: verify trusted main]
+    Controller --> Candidate[Candidate readiness + release identity]
+    Candidate --> Gateway
+```
+
+The controller runs outside Actions and accepts only the fixed repository, `ci.yml`, successful `push` event and `main` branch; automated pull-request jobs use only GitHub-hosted CI.
+
+Reviewed PR QA images can be loaded manually for local acceptance; this does not grant them access to automatic main deployment.
+
+A candidate shares its environment's persistent volume and must be schema-compatible; failed readiness leaves the old gateway route unchanged, while post-switch failure restores it.
+
+Dev and prod have separate cookies, networks and volumes; promotion and rollback retain business data and write GitHub Deployment statuses.
+
+The gateway and app run without root, with a read-only root filesystem and dropped capabilities; the controller still requires host Docker privileges, so review its fixed installation separately from image releases.

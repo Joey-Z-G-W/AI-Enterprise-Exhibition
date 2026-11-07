@@ -1,0 +1,155 @@
+{
+  "title": "Future Commons: a fictional exhibition",
+  "disclaimer": "Original fictional exhibits for public software review. Deterministic local retrieval, not a live LLM. No real customer or company content.",
+  "license": {
+    "id": "CC0-1.0",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "statement": "The project contributors dedicate this original fictional sample content to the public domain under CC0 1.0."
+  },
+  "provenance": {
+    "author": "AI-Enterprise-Exhibition project contributors",
+    "created": "2026-11-07",
+    "origin": "Original fictional text authored for course issue #12; not scraped from an enterprise source.",
+    "source_id": "future-commons-v1",
+    "version": 1
+  },
+  "exhibits": [
+    {
+      "id": "aster-pavilion",
+      "name": "Aster Pavilion",
+      "summary": "A fictional pavilion exploring solar-powered exhibition design.",
+      "aliases": [
+        "aster",
+        "pavilion"
+      ],
+      "facts": [
+        {
+          "id": "aster-power",
+          "text": "In this fictional design, Aster Pavilion generates power with 48 rooftop solar panels.",
+          "keywords": [
+            "power",
+            "solar",
+            "panels",
+            "energy",
+            "electricity",
+            "roof"
+          ]
+        },
+        {
+          "id": "aster-material",
+          "text": "Aster Pavilion uses reusable timber frames in this fictional design.",
+          "keywords": [
+            "material",
+            "materials",
+            "timber",
+            "frames",
+            "reuse",
+            "reusable"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "beacon-pavilion",
+      "name": "Beacon Pavilion",
+      "summary": "A fictional pavilion demonstrating rainwater collection.",
+      "aliases": [
+        "beacon",
+        "pavilion"
+      ],
+      "facts": [
+        {
+          "id": "beacon-water",
+          "text": "In this fictional design, Beacon Pavilion collects rainwater in a 1200-liter tank.",
+          "keywords": [
+            "water",
+            "rainwater",
+            "tank",
+            "capacity",
+            "liters",
+            "collect"
+          ]
+        },
+        {
+          "id": "beacon-display",
+          "text": "Beacon Pavilion has an interactive display explaining its fictional water cycle.",
+          "keywords": [
+            "display",
+            "interactive",
+            "cycle"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "river-gallery",
+      "name": "River Gallery",
+      "summary": "A fictional gallery with deliberately conflicting opening-date records.",
+      "aliases": [
+        "river",
+        "gallery"
+      ],
+      "facts": [
+        {
+          "id": "river-opening-a",
+          "text": "Fictional planning note A lists River Gallery opening in 2032.",
+          "keywords": [
+            "open",
+            "opened",
+            "opening",
+            "year",
+            "date"
+          ],
+          "conflict_group": "river-opening"
+        },
+        {
+          "id": "river-opening-b",
+          "text": "Fictional planning note B lists River Gallery opening in 2033.",
+          "keywords": [
+            "open",
+            "opened",
+            "opening",
+            "year",
+            "date"
+          ],
+          "conflict_group": "river-opening"
+        }
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "id": "supported-power",
+      "label": "Supported: solar power",
+      "question": "How does Aster Pavilion generate power?",
+      "exhibit_id": "aster-pavilion",
+      "expected_status": "supported"
+    },
+    {
+      "id": "supported-water",
+      "label": "Supported: rainwater",
+      "question": "What is the rainwater tank capacity?",
+      "exhibit_id": "beacon-pavilion",
+      "expected_status": "supported"
+    },
+    {
+      "id": "unknown-topic",
+      "label": "Unknown: outside the catalog",
+      "question": "Who won the football match?",
+      "expected_status": "unknown"
+    },
+    {
+      "id": "ambiguous-exhibit",
+      "label": "Ambiguous: which pavilion?",
+      "question": "Tell me about the pavilion.",
+      "expected_status": "ambiguous"
+    },
+    {
+      "id": "conflicting-date",
+      "label": "Conflicting: opening date",
+      "question": "When does River Gallery open?",
+      "exhibit_id": "river-gallery",
+      "expected_status": "conflicting"
+    }
+  ]
+}

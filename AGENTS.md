@@ -45,4 +45,6 @@ Use a separate worktree when another branch runs the local experience; do not st
 
 Record actual role activity and exact checks in the issue, label historical results, and keep unresolved acceptance criteria pending.
 
-The current language migration is [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11), based on `main` at `f30f180`; the earlier documentation task is [#10](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10), and later runtime and operations work belongs to [#9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9).
+The current delivery task is [#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12), based on `main` at `f9943c9`, covering persistent CPU samples and local Docker CI/CD; stages 5-6 remain in #9.
+
+The historical language migration is [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11), based on `main` at `f30f180`; the earlier documentation task is [#10](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10), and later runtime and operations work belongs to [#9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9).

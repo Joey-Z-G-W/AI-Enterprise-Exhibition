@@ -49,4 +49,6 @@
 
 在任务中记录真实角色活动和实际检查，标注历史结果，未完成的验收项保持待办。
 
-当前语言迁移为 [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11)，基于 `main` 的 `f30f180`；之前的文档任务是 [#10](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10)，后续运行与运维工作属于 [#9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9)。
+当前交付任务为 [#12](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12)，基于 `main` 的 `f9943c9`，覆盖持久化 CPU 样例与本机 Docker CI/CD；阶段 5–6 仍归 #9。
+
+历史语言迁移为 [#11](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/11)，基于 `main` 的 `f30f180`；之前的文档任务是 [#10](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/10)，后续运行与运维工作属于 [#9](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/9)。
