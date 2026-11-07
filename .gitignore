@@ -4,6 +4,7 @@
 
 # Credentials and runtime data
 /config/local.toml
+/config/opentalking.env
 .env
 .env.*
 !.env.example
@@ -19,6 +20,7 @@
 
 # Development environments
 .venv/
+.tools/
 node_modules/
 __pycache__/
 .pytest_cache/

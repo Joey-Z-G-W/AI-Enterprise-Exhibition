@@ -8,7 +8,7 @@ const { createRequire } = require('node:module');
 process.chdir(path.resolve(__dirname, '../..'));
 const { chromium } = createRequire(path.resolve('frontend/package.json'))('playwright-core');
 const { Fixture } = require('./speech-browser-integration.cjs');
-const task = path.resolve('docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图');
+const task = path.resolve(process.env.LANDSCAPE_TEST_TASK_DIR || 'docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图');
 const evidence = path.join(task, 'evidence', 'landscape-' + (process.argv.includes('--red') ? 'red-' : 'green-') + Date.now());
 const temp = path.join(task, 'tmp', 'landscape-' + Date.now());
 const sleep = ms => new Promise(r => setTimeout(r, ms));

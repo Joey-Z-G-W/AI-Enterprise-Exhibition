@@ -169,7 +169,7 @@ async function audioQuestion(text) {
 }
 (async () => {
   await fs.mkdir(evidence, { recursive: true }); await fs.mkdir(mediaRoot, { recursive: true });
-  speechInput = await fs.readFile(path.resolve(process.env.AUDIO_TEST_WAV || 'docs/dev/20261031-展厅AI导览-公开仓库初始化与演示范围界定/evidence/task03-fixed-zh.wav'));
+  speechInput = await fs.readFile(path.resolve(process.env.AUDIO_TEST_WAV || 'tests/fixtures/speech.wav'));
   for (const [url, mime] of [['/vad/silero_vad_v5.onnx', 'application/octet-stream'], ['/vad/vad.worklet.bundle.min.js', 'application/javascript'], ['/ort/ort-wasm-simd-threaded.mjs', 'application/javascript'], ['/ort/ort-wasm-simd-threaded.wasm', 'application/wasm']]) {
     const bytes = await fs.readFile(path.resolve('frontend/public' + url)); staticAssets.set(url, { bytes, mime, sha256: crypto.createHash('sha256').update(bytes).digest('hex') });
   }
@@ -190,9 +190,12 @@ async function audioQuestion(text) {
   }
   await fs.writeFile(path.join(mediaRoot, 'manifest.json'), JSON.stringify({ assets: records }));
   const ready = path.join(temp, 'backend-ready.json');
-  python = spawn(path.resolve('.venv/Scripts/python.exe'), ['tests/landscape_system_server.py', '--media-root', mediaRoot, '--ready', ready], { windowsHide: true, env: { ...process.env, NO_PROXY: 'localhost,127.0.0.1', PYTHONIOENCODING: 'utf-8' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  const pythonExecutable = process.env.GUIDE_PYTHON || path.resolve('.venv/bin/python');
+  let pythonError;
+  python = spawn(pythonExecutable, ['tests/landscape_system_server.py', '--media-root', mediaRoot, '--ready', ready], { env: { ...process.env, NO_PROXY: 'localhost,127.0.0.1', PYTHONIOENCODING: 'utf-8' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  python.on('error', error => { pythonError = error; });
   python.stdout.on('data', bytes => { pythonOutput += bytes.toString(); }); python.stderr.on('data', bytes => { pythonOutput += bytes.toString(); });
-  await until(async () => { if (python.exitCode !== null) throw Error('Python fixture exited: ' + pythonOutput); try { backend = JSON.parse(await fs.readFile(ready, 'utf8')).url; return (await fetch(backend + '/health')).ok; } catch { return false; } }, 'real backend startup');
+  await until(async () => { if (pythonError) throw Error('Cannot start Python; run tools/linux.sh setup or set GUIDE_PYTHON: ' + pythonError.message); if (python.exitCode !== null) throw Error('Python fixture exited: ' + pythonOutput); try { backend = JSON.parse(await fs.readFile(ready, 'utf8')).url; return (await fetch(backend + '/health')).ok; } catch { return false; } }, 'real backend startup');
   const { createServer } = await import(pathToFileURL(path.resolve('frontend/node_modules/vite/dist/node/index.js')).href);
   const react = (await import(pathToFileURL(path.resolve('frontend/node_modules/@vitejs/plugin-react/dist/index.js')).href)).default;
   vite = await createServer({ configFile: false, root: path.resolve('frontend'), plugins: [react()], cacheDir: path.join(temp, 'vite-cache'), server: { middlewareMode: true, hmr: false, watch: null } });
@@ -296,5 +299,5 @@ async function audioQuestion(text) {
   fixture?.dispose(); await browser?.close(); await vite?.close();
   if (server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
   if (backend) await control('shutdown', {}).catch(() => {});
-  if (python && python.exitCode === null) { await Promise.race([new Promise(resolve => python.once('exit', resolve)), delay(5000)]); if (python.exitCode === null) python.kill(); }
+  if (python?.pid && python.exitCode === null) { await Promise.race([new Promise(resolve => python.once('exit', resolve)), delay(5000)]); if (python.exitCode === null) python.kill(); }
 });
