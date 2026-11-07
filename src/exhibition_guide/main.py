@@ -46,8 +46,9 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
                     # Initialization errors can contain proxy URLs; never expose raw inputs.
                     raise RuntimeError("Answer service initialization failed") from None
                 application.state.answer_service = AnswerService(
-                    KnowledgeClient(http), ModelEvidenceEvaluator(model),
+                    KnowledgeClient(http), ModelEvidenceEvaluator(model, media),
                     kb_id=config.knowledge.kb_id, timeout=config.llm.timeout_seconds,
+                    narration_resolver=media.resolve_narration,
                 )
                 application.state.rewriter = ModelQuestionRewriter(model)
             try:
@@ -95,7 +96,7 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
             )
         presentation = await run_in_threadpool(media.presentation, result)
         # Explicitly serialize legacy defaults (sources/error_code) while keeping
-        # the new field absent unless a reviewed asset was actually selected.
+        # the sentence plan optional when the reviewed catalog is unavailable.
         payload = result.model_dump()
         if presentation is not None:
             payload["presentation"] = presentation

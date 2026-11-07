@@ -1,0 +1,31 @@
+# Copy to ignored config/local.toml. Empty keys and enabled=false mean unconfigured.
+# Set each service's independent credential locally before enabling it.
+[llm]
+enabled = false
+base_url = "https://api.deepseek.com"
+model = "deepseek-flash"
+api_key = ""
+timeout_seconds = 30.0
+
+[embedding]
+enabled = false
+# Example only: replace with the endpoint prepared for the local embedding service.
+base_url = "http://127.0.0.1:8220/v1"
+model = "BAAI/bge-small-zh-v1.5"
+api_key = ""
+dimensions = 512
+timeout_seconds = 30.0
+
+[knowledge]
+base_url = "http://127.0.0.1:8210"
+kb_id = ""
+
+[avatar]
+avatar_id = "companion"
+tts_voice = "zh-CN-XiaoxiaoNeural"
+
+[media]
+enabled = true
+# Ruika reviewed images already tracked in the repository archive.
+root = "."
+manifest = "config/ruika-media.json"

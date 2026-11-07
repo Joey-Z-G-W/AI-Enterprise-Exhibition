@@ -1,7 +1,7 @@
 export type MaterialAsset = { id: string; kind: "image"; url: string; mime: string; alt: string };
 export type Presentation = { sentences: { id: string; text: string; asset_id: string | null }[]; assets: MaterialAsset[] };
 export type PresentationIdentity = { visitorId: string; turnId: string; sessionId: string; generation: number };
-export type MaterialCommands = { prepare: (assets: MaterialAsset[]) => void; show: (id: string | null) => void; clear: () => void };
+export type MaterialCommands = { waitReady: (id: string, signal: AbortSignal) => Promise<boolean>; prepare: (assets: MaterialAsset[]) => void; show: (id: string | null) => void; clear: () => void };
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/;
 // Optional presentation metadata must never invalidate the underlying answer.
 export function readPresentation(value: unknown, text: string): Presentation | undefined {
@@ -26,12 +26,26 @@ export function readPresentation(value: unknown, text: string): Presentation | u
 }
 export function createPresentationCoordinator(player: () => MaterialCommands | null) {
   let epoch = 0;
-  let owner: { token: number; identity: PresentationIdentity; plan: Presentation } | undefined;
+  let owner: { token: number; identity: PresentationIdentity; plan: Presentation; ready: Map<number, string | null> } | undefined;
   return {
     begin(identity: PresentationIdentity, plan: Presentation) {
-      player()?.clear(); const token = ++epoch; owner = { token, identity, plan }; player()?.prepare(plan.assets); return token;
+      player()?.clear(); const token = ++epoch; owner = { token, identity, plan, ready: new Map() }; player()?.prepare(plan.assets); return token;
     },
-    cue(token: number, index: number) { if (owner?.token === token) player()?.show(owner.plan.sentences[index]?.asset_id ?? null); },
+    async prepareSentence(token: number, index: number, signal: AbortSignal) {
+      if (owner?.token !== token) return false;
+      const id = owner.plan.sentences[index]?.asset_id ?? null;
+      const ready = id ? await player()?.waitReady(id, signal) : false;
+      if (owner?.token !== token || signal.aborted) return false;
+      owner.ready.set(index, ready ? id : null);
+      if (!ready) player()?.show(null);
+      return !!ready;
+    },
+    cue(token: number, index: number) { if (owner?.token === token) player()?.show(owner.ready.get(index) ?? null); },
+    sentenceEnd(token: number, index: number) {
+      if (owner?.token !== token) return;
+      const shown = owner.ready.get(index);
+      if (!shown || shown !== owner.plan.sentences[index + 1]?.asset_id) player()?.show(null);
+    },
     end(token: number) { if (owner?.token === token) { owner = undefined; ++epoch; player()?.clear(); } },
     clear() { owner = undefined; ++epoch; player()?.clear(); },
   };

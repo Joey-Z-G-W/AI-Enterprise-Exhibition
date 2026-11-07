@@ -57,7 +57,8 @@ type Speech = {
   phase: "preparing" | "sent" | "playing" | "ended"; acknowledged: boolean;
   texts: string[]; index: number; future?: Promise<PreparedAudio>; timing: Timing;
   controller: AbortController; draining?: boolean; prepared?: Blob; mediaStarted: boolean;
-  presentation?: Presentation; presentationToken?: number; receiverEnded?: boolean;
+  presentation?: Presentation; presentationToken?: number; receiverEnded?: boolean; segmentId?: string;
+  audioOnlyFallback?: boolean; audioDuration?: number; serverEndedAt?: number; fallbackTimer?: number;
 };
 
 function recordTiming(timing: Timing, stage: string, segment = -1) {
@@ -76,17 +77,7 @@ function answerSegments(text: string): string[] {
   // Natural boundaries only: retain every character, including spaces and punctuation.
   if (typeof Intl.Segmenter !== "function") return [text];
   const sentences = Array.from(new Intl.Segmenter("zh", { granularity: "sentence" }).segment(text), item => item.segment);
-  if (sentences.length < 2) return [text];
-  const parts = [sentences[0]];
-  let tail = "";
-  for (const sentence of sentences.slice(1)) {
-    if (tail && Array.from(tail + sentence).length > 100 && parts.length < 7) {
-      parts.push(tail); tail = "";
-    }
-    tail += sentence;
-  }
-  if (tail) parts.push(tail);
-  return parts.join("") === text ? parts : [text];
+  return sentences.length && sentences.join("") === text ? sentences : [text];
 }
 const labels: Record<Connection, string> = {
   idle: "尚未连接", connecting: "正在准备数字人", ready: "媒体已连接，等待播放",
@@ -374,6 +365,13 @@ export default function App() {
     recordTiming(turn.timing, "answer_render_committed");
   }, [answer]);
 
+  function matchesSpeechEvent(item: Speech, event: Event) {
+    try {
+      const payload = JSON.parse((event as MessageEvent).data);
+      return !!item.segmentId && payload.session_id === item.session.mediaSessionId && payload.segment_id === item.segmentId;
+    } catch { return false; }
+  }
+
   function finishSpeech(item: Speech) {
     if (!currentSpeech(item) || item.phase !== "ended" || !item.acknowledged) return;
     if (!item.draining && !item.mediaStarted) {
@@ -391,8 +389,21 @@ export default function App() {
       return;
     }
     if (item.presentation && !item.receiverEnded) return;
+    if (!item.draining && item.audioOnlyFallback && item.serverEndedAt !== undefined) {
+      // No receiver clock can prove drain here. Stay black and allow a whole
+      // WAV plus margin after the server producer ended, for every fallback segment.
+      const remaining = item.serverEndedAt + Math.max(1500, (item.audioDuration ?? 0) * 1000 + 500) - performance.now();
+      if (remaining > 0) {
+        if (item.fallbackTimer === undefined) item.fallbackTimer = window.setTimeout(() => {
+          item.fallbackTimer = undefined; finishSpeech(item);
+        }, remaining);
+        return;
+      }
+      recordTiming(item.timing, "audio_only_completion_guard", item.index);
+    }
     window.clearTimeout(speechTimer.current);
     recordTiming(item.timing, "segment_complete", item.index);
+    if (item.presentationToken !== undefined) coordinator.current.sentenceEnd(item.presentationToken, item.index);
     if (!item.draining && item.index + 1 < item.texts.length) {
       const prepared = item.future;
       item.future = undefined;
@@ -692,9 +703,9 @@ export default function App() {
         await new Promise((resolve) => window.setTimeout(resolve, 750));
       }
       session.events = new EventSource(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/events`);
-      session.events.addEventListener("speech.media_started", () => {
+      session.events.addEventListener("speech.media_started", event => {
         const item = speech.current;
-        if (item && item.session === session && currentSpeech(item) && ["sent", "playing"].includes(item.phase)) {
+        if (item && item.session === session && currentSpeech(item) && matchesSpeechEvent(item, event) && ["sent", "playing"].includes(item.phase)) {
           if (item.mediaStarted) return;
           if (item.presentation) session.playback?.receiver?.signalStart();
           recordTiming(item.timing, "media_started", item.index);
@@ -704,9 +715,10 @@ export default function App() {
           setSpeechStatus(item, item.kind === "welcome" ? "欢迎语正在播报" : item.kind === "demo" ? "固定文本正在播报" : "回答正在播报");
         }
       });
-      session.events.addEventListener("speech.ended", () => {
+      session.events.addEventListener("speech.ended", event => {
         const item = speech.current;
-        if (!item || item.session !== session || !currentSpeech(item) || !["sent", "playing"].includes(item.phase)) return;
+        if (!item || item.session !== session || !currentSpeech(item) || !matchesSpeechEvent(item, event) || !["sent", "playing"].includes(item.phase)) return;
+        item.serverEndedAt = performance.now();
         recordTiming(item.timing, "ended_signal", item.index);
         if (item.presentation) session.playback?.receiver?.signalEnd();
         item.phase = "ended";
@@ -1000,6 +1012,10 @@ export default function App() {
       : { trace: crypto.randomUUID(), turnSeq: 0, kind, started: performance.now() };
     const item: Speech = { session, visitorId: session.visitorId, turnId, kind, phase: "preparing", acknowledged: false,
       texts: presentation ? presentation.sentences.map(s => s.text) : kind === "answer" ? answerSegments(text) : [text], index: 0, timing, controller: new AbortController(), mediaStarted: false, presentation };
+    item.controller.signal.addEventListener("abort", () => {
+      window.clearTimeout(item.fallbackTimer); item.fallbackTimer = undefined;
+      if (item.draining) finishSpeech(item);
+    }, { once: true });
     if (presentation && turnId) item.presentationToken = coordinator.current.begin({ visitorId: session.visitorId, turnId, sessionId, generation: generation.current }, presentation);
     if (!text.trim() || Array.from(text).length > 1000) {
       endTiming(timing, "failed");
@@ -1048,32 +1064,32 @@ export default function App() {
   async function playSpeechSegment(item: Speech, prepared?: Promise<PreparedAudio>) {
     const { session, kind } = item;
     const sessionId = session.mediaSessionId;
-    let index = item.index;
+    const index = item.index;
     try {
       if (!sessionId || !currentSpeech(item) || item.draining) return;
-      let audio = await (prepared ?? prepareSpeechAudio(item, index));
+      item.segmentId = crypto.randomUUID(); item.serverEndedAt = undefined; item.audioDuration = 0;
+      const audio = await (prepared ?? prepareSpeechAudio(item, index));
       if (!currentSpeech(item) || item.draining || item.index !== index) return;
       if ("error" in audio) throw audio.error;
+      if (item.presentation || item.audioOnlyFallback) {
+        try { item.audioDuration = await wavDuration(audio.blob); } catch { /* Observer will fail closed. */ }
+      }
+      if (item.presentationToken !== undefined) {
+        const ready = await coordinator.current.prepareSentence(item.presentationToken, index, item.controller.signal);
+        if (!currentSpeech(item) || item.draining || item.index !== index) return;
+        recordTiming(item.timing, ready ? "image_decoded" : "sentence_audio_only", index);
+      }
       if (item.presentation) {
         const receiver = session.playback?.receiver;
-        let duration = 0, ready = false;
-        try { duration = await wavDuration(audio.blob); ready = !!receiver && await receiver.waitForQuiet(item.controller.signal); }
+        const duration = item.audioDuration ?? 0; let ready = false;
+        try { ready = duration > 0 && !!receiver && await receiver.waitForQuiet(item.controller.signal); }
         catch { /* Presentation observation is optional; no upload has happened yet. */ }
         if (!currentSpeech(item) || item.draining || item.index !== index) return;
         if (!ready) {
-          // Only unsent audio is regrouped. An already uploaded segment still
-          // needs its existing ACK + receiver drain barrier before arriving here.
           if (item.presentationToken !== undefined) coordinator.current.end(item.presentationToken);
-          item.presentation = undefined; item.presentationToken = undefined;
+          item.presentation = undefined; item.presentationToken = undefined; item.audioOnlyFallback = true;
           receiver?.cancel();
-          const preparedText = item.texts[index];
-          item.texts = answerSegments(item.texts.slice(index).join(""));
-          item.index = index = 0; item.future = undefined;
-          if (item.texts[0] !== preparedText) {
-            audio = await prepareSpeechAudio(item, index);
-            if (!currentSpeech(item) || item.draining) return;
-            if ("error" in audio) throw audio.error;
-          }
+          recordTiming(item.timing, "receiver_unavailable_audio_only", index);
         } else {
         item.receiverEnded = false;
         receiver!.arm(duration, () => {
@@ -1083,6 +1099,7 @@ export default function App() {
         }, () => {
           if (!currentSpeech(item) || item.index !== index) return;
           recordTiming(item.timing, "receiver_audio_drained", index);
+          if (item.presentationToken !== undefined) coordinator.current.sentenceEnd(item.presentationToken, index);
           item.receiverEnded = true; finishSpeech(item);
         }, mayUseServerCompletion => {
           if (!currentSpeech(item) || item.index !== index) return;
@@ -1092,12 +1109,13 @@ export default function App() {
           // Optional visual observation failed. Retain ACK/media_started/ended
           // checks and queued WAVs; never report this as receiver_audio_drained.
           recordTiming(item.timing, "receiver_unobservable_server_fallback", index);
-          item.presentation = undefined;
+          item.presentation = undefined; item.audioOnlyFallback = true;
           finishSpeech(item);
         });
         }
       }
       const form = new FormData();
+      form.set("segment_id", item.segmentId);
       form.set("file", audio.blob, kind === "welcome" ? "welcome.wav" : kind === "demo" ? "fixed-demo.wav" : "answer.wav");
       item.phase = "sent";
       setSpeechStatus(item, kind === "welcome" ? "正在发送欢迎语" : kind === "demo" ? "正在发送演示语音" : "正在发送回答语音");
@@ -1106,15 +1124,15 @@ export default function App() {
           endTiming(item.timing, "failed", index);
           void disconnect("播报等待超时，文字已保留，媒体已关闭，请重新连接。");
         }
-      }, 90000);
+      }, Math.max(90000, ((item.audioDuration ?? 0) * 2 + 30) * 1000));
       recordTiming(item.timing, "upload_started", index);
       session.upload = (async () => {
         try {
-          const result = await jsonRequest<{ session_id: string; status: string }>(
+          const result = await jsonRequest<{ session_id: string; status: string; segment_id: string }>(
             `/opentalking/sessions/${encodeURIComponent(sessionId)}/speak_flashtalk_audio`,
             { method: "POST", body: form }, 30000,
           );
-          if (result.session_id !== sessionId || result.status !== "queued") throw new RequestError("response");
+          if (result.session_id !== sessionId || result.status !== "queued" || result.segment_id !== item.segmentId) throw new RequestError("response");
           return true;
         } catch {
           session.uploadUnknown = true;

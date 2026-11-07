@@ -1,0 +1,180 @@
+diff --git a/apps/api/routes/sessions.py b/apps/api/routes/sessions.py
+index 44a8a74..58baf96 100644
+--- a/apps/api/routes/sessions.py
++++ b/apps/api/routes/sessions.py
+@@ -1142,6 +1142,7 @@ async def speak_flashtalk_audio(
+     session_id: str,
+     request: Request,
+     file: UploadFile = File(...),
++    segment_id: str | None = Form(default=None, min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_-]+$"),
+ ) -> dict[str, str]:
+     """上传音频 → 解码为 16kHz mono PCM → 直接驱动兼容音频数字人（不经语音识别、LLM、TTS）。
+
+@@ -1184,8 +1185,8 @@ async def speak_flashtalk_audio(
+     if pcm.size == 0:
+         raise HTTPException(status_code=400, detail="解码后音频为空")
+
+-    await session_service.speak_flashtalk_uploaded_pcm(r, session_id, pcm.tobytes())
+-    return {"session_id": session_id, "status": "queued"}
++    await session_service.speak_flashtalk_uploaded_pcm(r, session_id, pcm.tobytes(), segment_id=segment_id)
++    return {"session_id": session_id, "status": "queued", **({"segment_id": segment_id} if segment_id else {})}
+
+
+ @router.websocket("/{session_id}/speak_audio_stream")
+diff --git a/apps/api/services/session_service.py b/apps/api/services/session_service.py
+index 174cc76..f8f034c 100644
+--- a/apps/api/services/session_service.py
++++ b/apps/api/services/session_service.py
+@@ -247,6 +247,8 @@ async def speak_flashtalk_uploaded_pcm(
+     r: redis.Redis,
+     sid: str,
+     pcm_bytes: bytes,
++    *,
++    segment_id: str | None = None,
+ ) -> None:
+     """将上传音频解码后的 PCM 送入 Worker，仅走 FlashTalk（不经 LLM/TTS）。
+
+@@ -263,6 +265,7 @@ async def speak_flashtalk_uploaded_pcm(
+             "session_id": sid,
+             "pcm_key": key,
+             "enqueue_unix": time.time(),
++            **({"segment_id": segment_id} if segment_id else {}),
+         },
+     )
+
+diff --git a/opentalking/pipeline/speak/synthesis_runner.py b/opentalking/pipeline/speak/synthesis_runner.py
+index 03c1d79..c5b5687 100644
+--- a/opentalking/pipeline/speak/synthesis_runner.py
++++ b/opentalking/pipeline/speak/synthesis_runner.py
+@@ -1927,9 +1927,10 @@ class FlashTalkRunner:
+         pcm_path: str,
+         *,
+         enqueue_unix: float | None = None,
++        segment_id: str | None = None,
+     ) -> asyncio.Task[None]:
+         task = asyncio.create_task(
+-            self._run_speak_uploaded_pcm_task(pcm_path, enqueue_unix)
++            self._run_speak_uploaded_pcm_task(pcm_path, enqueue_unix, segment_id)
+         )
+         self.speech_tasks.add(task)
+         task.add_done_callback(self.speech_tasks.discard)
+@@ -1939,6 +1940,7 @@ class FlashTalkRunner:
+         self,
+         pcm_path: str,
+         enqueue_unix: float | None = None,
++        segment_id: str | None = None,
+     ) -> None:
+         path = Path(pcm_path)
+         pcm: np.ndarray | None = None
+@@ -1967,7 +1969,7 @@ class FlashTalkRunner:
+         assert pcm is not None
+         log.info("speak_uploaded_pcm start: session=%s samples=%d", self.session_id, pcm.size)
+         try:
+-            await self.speak_uploaded_pcm(pcm, enqueue_unix=enqueue_unix)
++            await self.speak_uploaded_pcm(pcm, enqueue_unix=enqueue_unix, segment_id=segment_id)
+             log.info("speak_uploaded_pcm done: session=%s", self.session_id)
+         except asyncio.CancelledError:
+             log.info("speak_uploaded_pcm cancelled: session=%s", self.session_id)
+@@ -2001,11 +2003,13 @@ class FlashTalkRunner:
+             if not self._closed:
+                 await set_session_state(self.redis, self.session_id, "error")
+
+-    async def _publish_speech_ended(self, reply_text: str | None = None) -> None:
++    async def _publish_speech_ended(self, reply_text: str | None = None, *, segment_id: str | None = None) -> None:
+         if not self._speech_started:
+             return
+         self._speech_started = False
+         payload: dict[str, str] = {"session_id": self.session_id}
++        if segment_id:
++            payload["segment_id"] = segment_id
+         utterance_id = getattr(self, "_active_command_id", None)
+         if utterance_id:
+             payload["utterance_id"] = str(utterance_id)
+@@ -2749,6 +2753,7 @@ class FlashTalkRunner:
+         pcm: np.ndarray,
+         *,
+         enqueue_unix: float | None = None,
++        segment_id: str | None = None,
+     ) -> None:
+         """仅 FlashTalk：将用户上传解码后的 16 kHz mono int16 PCM 直接对口型，不经 LLM/TTS。"""
+         async with self._speak_lock:
+@@ -2775,6 +2780,7 @@ class FlashTalkRunner:
+                 {
+                     "session_id": self.session_id,
+                     "text": "[上传音频]",
++                    **({"segment_id": segment_id} if segment_id else {}),
+                     **({"utterance_id": str(getattr(self, "_active_command_id"))}
+                        if getattr(self, "_active_command_id", None) else {}),
+                 },
+@@ -2892,13 +2898,13 @@ class FlashTalkRunner:
+                         _start_pacing()
+                         if sub_tag:
+                             await _publish_subtitle_chunk(sub_tag)
+-                        await self._queue_av_chunk(pcm_chunk, frames)
++                        await self._queue_av_chunk(pcm_chunk, frames, segment_id=segment_id)
+                         continue
+
+                     if pacing_started:
+                         if sub_tag:
+                             await _publish_subtitle_chunk(sub_tag)
+-                        await self._queue_av_chunk(pcm_chunk, frames)
++                        await self._queue_av_chunk(pcm_chunk, frames, segment_id=segment_id)
+                         continue
+
+                     pending.append((pcm_chunk, frames, sub_tag))
+@@ -2914,7 +2920,7 @@ class FlashTalkRunner:
+                     for pc, bf, st in pending:
+                         if st:
+                             await _publish_subtitle_chunk(st)
+-                        await self._queue_av_chunk(pc, bf)
++                        await self._queue_av_chunk(pc, bf, segment_id=segment_id)
+                     pending.clear()
+
+                 if pending and not self._interrupt.is_set():
+@@ -2927,7 +2933,7 @@ class FlashTalkRunner:
+                     for pc, buffered_frames, st in pending:
+                         if st:
+                             await _publish_subtitle_chunk(st)
+-                        await self._queue_av_chunk(pc, buffered_frames)
++                        await self._queue_av_chunk(pc, buffered_frames, segment_id=segment_id)
+
+                 timing["flashtalk_generate_sum_ms"] = flashtalk_gen_sum_s * 1000.0
+                 timing["flashtalk_chunks"] = float(flashtalk_chunks)
+@@ -2984,7 +2990,7 @@ class FlashTalkRunner:
+                 ),
+             )
+
+-            await self._publish_speech_ended(None)
++            await self._publish_speech_ended(None, segment_id=segment_id)
+             if not self._closed:
+                 await set_session_state(self.redis, self.session_id, "ready")
+
+@@ -3157,7 +3163,7 @@ class FlashTalkRunner:
+                 waited, self.webrtc.video._queue.qsize(), self.webrtc.audio._queue.qsize(),
+             )
+
+-    async def _queue_av_chunk(self, pcm_chunk: np.ndarray, frames: list[Any]) -> None:
++    async def _queue_av_chunk(self, pcm_chunk: np.ndarray, frames: list[Any], *, segment_id: str | None = None) -> None:
+         """Queue generated video frames interleaved with matching audio.
+
+         Each video frame is paired with a proportional slice of the audio
+@@ -3193,6 +3199,7 @@ class FlashTalkRunner:
+                     "speech.media_started",
+                     {
+                         "session_id": self.session_id,
++                        **({"segment_id": segment_id} if segment_id else {}),
+                         **({"utterance_id": str(getattr(self, "_active_command_id"))}
+                            if getattr(self, "_active_command_id", None) else {}),
+                     },
+diff --git a/opentalking/runtime/task_consumer.py b/opentalking/runtime/task_consumer.py
+index 1f909b2..8e4610d 100644
+--- a/opentalking/runtime/task_consumer.py
++++ b/opentalking/runtime/task_consumer.py
+@@ -976,6 +976,7 @@ async def handle_worker_task(
+         fn(
+             pcm_path.strip(),
+             enqueue_unix=float(eu) if isinstance(eu, (int, float)) else None,
++            **({"segment_id": task["segment_id"]} if task.get("segment_id") else {}),
+         )
+     elif cmd == "flashtalk_offline_bundle":
+         job_id = task.get("job_id")

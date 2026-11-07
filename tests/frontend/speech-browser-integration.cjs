@@ -33,7 +33,7 @@ function wav() {
 }
 class Fixture {
   constructor() { this.calls = []; this.events = []; this.sessions = new Map(); this.sse = new Map(); this.tts = []; this.uploads = []; this.questions = []; this.closed = []; this.errors = []; this.serial = 0; this.text = answer; this.status = 'answer'; this.holdTTS = new Set(); this.holdUploads = false; this.responses = []; }
-  emit(sid, event) { const stream = this.sse.get(sid); assert.ok(stream, 'SSE connected'); this.events.push({ sid, event, at: Date.now() }); stream.write('event: ' + event + '\ndata: ' + JSON.stringify({ session_id: sid }) + '\n\n'); }
+  emit(sid, event, data = {}) { const segment_id = this.uploads.filter(x => x.sid === sid).at(-1)?.segment_id; const stream = this.sse.get(sid); assert.ok(stream, 'SSE connected'); this.events.push({ sid, event, at: Date.now() }); stream.write('event: ' + event + '\ndata: ' + JSON.stringify({ session_id: sid, segment_id, ...data }) + '\n\n'); }
   sid(index) { return 'fixture-' + this.scenario + '-session-' + index; }
   dispose() { for (const s of this.sse.values()) s.end(); for (const r of [...this.tts, ...this.uploads, ...this.responses]) if (!r.done) r.res.destroy(); }
   async handle(req, res) {
@@ -73,7 +73,8 @@ class Fixture {
       if (suffix === '/speak_flashtalk_audio') {
         const welcome = body.includes(Buffer.from('welcome.wav')), demo = body.includes(Buffer.from('fixed-demo.wav'));
         const riff = body.indexOf(Buffer.from('RIFF'));
-        const entry = { sid, welcome, demo, marker: riff >= 0 ? body.readInt16LE(riff + 44) : null, res, done: false, release: () => { if (entry.done || res.destroyed) return; entry.done = true; json({ session_id: sid, status: 'queued' }, this.failUpload && !welcome ? 502 : 200); } };
+        const segment_id = body.toString('latin1').match(/name="segment_id"\r\n\r\n([^\r]+)/)?.[1];
+        const entry = { sid, welcome, demo, segment_id, marker: riff >= 0 ? body.readInt16LE(riff + 44) : null, res, done: false, release: () => { if (entry.done || res.destroyed) return; entry.done = true; json({ session_id: sid, status: 'queued', segment_id }, this.failUpload && !welcome ? 502 : 200); } };
         this.uploads.push(entry); if (welcome ? !this.holdWelcomeUpload : demo || !this.holdUploads) entry.release(); return true;
       }
       if (!suffix && req.method === 'DELETE') { this.closed.push(sid); this.sessions.set(sid, 'closed'); json({ status: 'closed' }); return true; }
@@ -155,7 +156,7 @@ async function finishWelcome(f, sid) {
 }
 async function finishAnswer(f, sid, start = 0) {
   let index = start;
-  while (index < start + 8) {
+  while (index < start + 128) {
     await until(() => workUploads(f).length > index, 'answer segment upload');
     workUploads(f)[index].release(); f.emit(sid, 'speech.media_started'); f.emit(sid, 'speech.ended');
     const latest = page.locator('.conversation-turn').last();
@@ -163,7 +164,7 @@ async function finishAnswer(f, sid, start = 0) {
     if (await latest.getByText('回答播报结束', { exact: true }).count()) return index + 1 - start;
     index++;
   }
-  throw Error('More than eight uploads for one answer');
+  throw Error('More than 128 uploads for one answer');
 }
 async function suite() {
   await scenario('first sentence, one future and ACK/ended ordering', async (f, sid, timing) => {
@@ -181,7 +182,7 @@ async function suite() {
     workUploads(f)[1].release(); await sleep(100); assert.equal(workUploads(f).length, 2, 'ACK alone cannot advance');
     f.emit(sid, 'speech.media_started'); f.emit(sid, 'speech.ended');
     await until(() => workUploads(f).length === 3, 'third upload');
-    workUploads(f)[2].release(); f.emit(sid, 'speech.media_started'); f.emit(sid, 'speech.ended');
+    await finishAnswer(f, sid, 2);
     await page.getByText('回答播报结束', { exact: true }).waitFor();
     assert.equal(workTTS(f).map(x => x.text).join(''), answer);
     assert.equal(f.questions.length, 1); assert.equal(f.serial, 1); assert.equal(await page.locator('.conversation-turn').count(), 1);
@@ -204,7 +205,7 @@ async function suite() {
   });
   for (const [name, text, expected] of [
     ['no sentence boundary stays intact', '完整且没有句末标点的回答', 1],
-    ['tail merged at eight segments', '首句。' + ('完整条件不能丢失'.repeat(10) + '。').repeat(11), 8],
+    ['every full sentence keeps its own segment', '首句。' + ('完整条件不能丢失'.repeat(10) + '。').repeat(11), 12],
   ]) await scenario(name, async (f, sid) => {
     f.text = text;
     await page.getByRole('button', { name: Q, exact: true }).click();

@@ -25,7 +25,6 @@ avatar_id = "companion"
 tts_voice = "zh-CN-XiaoxiaoNeural"
 
 [media]
-enabled = true
-# Ruika reviewed images already tracked in the repository archive.
-root = "."
-manifest = "config/ruika-media.json"
+enabled = false
+root = "media"
+manifest = "manifest.json"

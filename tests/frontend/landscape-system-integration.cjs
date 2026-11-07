@@ -186,7 +186,7 @@ async function audioQuestion(text) {
   const records = [];
   for (const [id, kind, relative, mime, bytes, keyword] of [['robot', 'image', imagePath, imagePath.endsWith('.jpg') ? 'image/jpeg' : 'image/png', image, '机器人'], ['broken', 'image', 'broken.png', 'image/png', png, '失效素材'], ['hall', 'image', 'hall.png', 'image/png', png, '展厅图片']]) {
     await fs.writeFile(path.join(mediaRoot, relative), bytes);
-    records.push({ id, kind, relative_path: relative, mime, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), source_filename: 'opening.md', source_url: 'https://fixture.example/reviewed', alt: keyword, keywords: [keyword], reviewed: true });
+    records.push({ id, kind, relative_path: relative, mime, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), source_filename: 'opening.md', source_url: 'https://fixture.example/reviewed', alt: keyword, keywords: [keyword], reviewed: true, narrations: (id === 'robot' ? ['机器人介绍。', '机器人恢复说明。', '机器人正在介绍。', '机器人完成恢复。', '机器人继续说明。'] : id === 'broken' ? ['失效素材介绍。'] : ['展厅图片说明。']).map(text => ({ text, evidence: [text] })) });
   }
   await fs.writeFile(path.join(mediaRoot, 'manifest.json'), JSON.stringify({ assets: records }));
   const ready = path.join(temp, 'backend-ready.json');

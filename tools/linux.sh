@@ -53,7 +53,9 @@ case "${1:-help}" in
     npm --prefix tools/voice-experience ci --no-audit --no-fund
     npm --prefix frontend run prepare-vad-assets
     if [[ ! -e config/local.toml ]]; then
-      (umask 077; cp config/example.toml config/local.toml)
+      template=config/example.toml
+      if [[ -f config/ruika.example.toml ]]; then template=config/ruika.example.toml; fi
+      (umask 077; cp "$template" config/local.toml)
     fi
     echo '安装完成。运行 ./tools/linux.sh dev'
     ;;
