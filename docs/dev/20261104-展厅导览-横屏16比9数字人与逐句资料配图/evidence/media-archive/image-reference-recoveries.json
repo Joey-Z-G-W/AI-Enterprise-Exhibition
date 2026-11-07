@@ -1,0 +1,32 @@
+{
+  "references": [
+    {
+      "original_broken_url": "https://www.ruika.hk/2021/0107/20210107055706909.jpg",
+      "original_http_status": 404,
+      "source_page": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=234&m=content",
+      "source_html": "C:\\Users\\Joey\\code\\AI-Enterprise-Exhibition\\docs\\dev\\20261104-展厅导览-横屏16比9数字人与逐句资料配图\\evidence\\media-archive\\pages\\65311fd3f12e6e290e47.html",
+      "source_html_sha256": "79e6272929615df5f687a008259c46f43f13ee2f9f4bd72de310e2d86d6dd4ab",
+      "candidate_url": "https://www.ruika.hk/uploadfile/2021/0107/20210107055706909.jpg",
+      "evidence": "Same page has explicit absolute uploadfile/2021/0107 image references; original malformed relative references remain recorded as 404.",
+      "candidate_literal_in_same_html": false,
+      "http_status": 200,
+      "final_url": "https://www.ruika.hk/uploadfile/2021/0107/20210107055706909.jpg",
+      "mime": "image/jpeg",
+      "status": "empty_image_response",
+      "bytes": 0,
+      "error": "HTTP 200 image/jpeg returned zero body bytes; not a downloaded image"
+    },
+    {
+      "original_broken_url": "https://www.ruika.hk/2021/0107/20210107055730749.jpg",
+      "original_http_status": 404,
+      "source_page": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=234&m=content",
+      "source_html": "C:\\Users\\Joey\\code\\AI-Enterprise-Exhibition\\docs\\dev\\20261104-展厅导览-横屏16比9数字人与逐句资料配图\\evidence\\media-archive\\pages\\65311fd3f12e6e290e47.html",
+      "source_html_sha256": "79e6272929615df5f687a008259c46f43f13ee2f9f4bd72de310e2d86d6dd4ab",
+      "candidate_url": "https://www.ruika.hk/uploadfile/2021/0107/20210107055730749.jpg",
+      "evidence": "Same page has explicit absolute uploadfile/2021/0107 image references; original malformed relative references remain recorded as 404.",
+      "candidate_literal_in_same_html": true,
+      "status": "pending_existing_image",
+      "existing_status": "failed"
+    }
+  ]
+}

@@ -1,0 +1,409 @@
+{
+  "schema_version": 1,
+  "purpose": "Offline acceptance criteria only; not production fixed answers, not knowledge-index input.",
+  "manifest_sha256": "dab4c31ea53128cd5a0d8a9cbfb0882d020d44cc1ddde3c0f562e28c4c658d2e",
+  "evaluation_status": "fixtures_prepared_no_LLM_evaluation",
+  "supported": [
+    {
+      "id": "grounded-01",
+      "question": "官网介绍锐伽联创广告公司何时在厦门成立？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "2014年",
+        "厦门"
+      ],
+      "evidence": [
+        {
+          "doc_id": "02-about-services",
+          "section_id": "s01",
+          "quote": "2014年在厦门成立锐伽联创广告公司",
+          "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=54&m=content",
+          "raw_path": "raw/02-about-services.html",
+          "raw_sha256": "49b100e9dc5ff2f5ed04c073d5264b80e95f756900c66d9a70dda6e40826ab28",
+          "locator": {
+            "css_selector": ".guanyu-box1",
+            "element_index": 0,
+            "source_line_start": 197,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-02",
+      "question": "官网将服务分为哪三个方向？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "定位",
+        "视觉",
+        "传播"
+      ],
+      "evidence": [
+        {
+          "doc_id": "02-about-services",
+          "section_id": "s02",
+          "quote": "定位 ： 品牌核心价值 / 品牌架构 / 品牌个性 / 品牌联想 / 品牌命名等 视觉： 标志&VI设计 / 产品包装设计 / 品牌展览 展厅和店铺，以及企业办公室统一化视觉识别调性 传播： 以广告片／企业宣传片／短视频／为创意核心，结合新媒资源传播",
+          "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=54&m=content",
+          "raw_path": "raw/02-about-services.html",
+          "raw_sha256": "49b100e9dc5ff2f5ed04c073d5264b80e95f756900c66d9a70dda6e40826ab28",
+          "locator": {
+            "css_selector": ".guanyu-box2",
+            "element_index": 0,
+            "source_line_start": 217,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-03",
+      "question": "延江2019年美国展位的尺寸和开放形式是什么？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "12.2米乘9.6米",
+        "高度4.88米",
+        "四面开放"
+      ],
+      "evidence": [
+        {
+          "doc_id": "07-yanjan-exhibition",
+          "section_id": "s01",
+          "quote": "展位尺寸12.2米乘9.6米，高度4.88米，四面开放",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+          "raw_path": "raw/07-yanjan-exhibition.html",
+          "raw_sha256": "aca8bb5aae39a2f7b750d23f2a9237ad0250f797ab1b6d656016cc94df5faa11",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-04",
+      "question": "延江美国展厅案例列了哪些主要材料？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "烤漆墙板",
+        "钢化玻璃",
+        "地毯",
+        "透明绷布"
+      ],
+      "evidence": [
+        {
+          "doc_id": "07-yanjan-exhibition",
+          "section_id": "s01",
+          "quote": "展会主要材料为烤漆墙板、钢化玻璃、地毯以及透明绷布。",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+          "raw_path": "raw/07-yanjan-exhibition.html",
+          "raw_sha256": "aca8bb5aae39a2f7b750d23f2a9237ad0250f797ab1b6d656016cc94df5faa11",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-05",
+      "question": "SOLAR咖啡店如何调整楼梯和楼板？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "楼梯从最里头移到前区",
+        "打通楼板做成挑高"
+      ],
+      "evidence": [
+        {
+          "doc_id": "08-solar-cafe",
+          "section_id": "s01",
+          "quote": "我们把室内两层的空间做成了挑高的复式，把原来设在最里头的楼梯移到前区，并打通了楼板做成挑高",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=207&m=content",
+          "raw_path": "raw/08-solar-cafe.html",
+          "raw_sha256": "2c4cb48933961c23f259a85bf75780da181b78f2e4e4d0466437f0a2a74c5d3d",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-06",
+      "question": "华地投资案例是哪里的什么项目？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "广州分公司",
+        "办公室改造"
+      ],
+      "evidence": [
+        {
+          "doc_id": "09-huadi-office",
+          "section_id": "s01",
+          "quote": "本次案例是华地投资在广州分公司的办公室改造项目",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=84&m=content",
+          "raw_path": "raw/09-huadi-office.html",
+          "raw_sha256": "c3fda8317885acdbce19b9a2b000a915380bf1976ed84a9ab1736481ac28b7c2",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-07",
+      "question": "咕叽咕叽的标志创意采用了什么原型和元素？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "咕叽咕叽英文名",
+        "多彩七巧板拼接"
+      ],
+      "evidence": [
+        {
+          "doc_id": "11-gujiguji-brand",
+          "section_id": "s01",
+          "quote": "锐伽以咕叽咕叽英文名为品牌标志设计原型，通过多彩的七巧板拼接进行创意解构",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=104&m=content",
+          "raw_path": "raw/11-gujiguji-brand.html",
+          "raw_sha256": "42389077d1eefd8bc168db3126e028e0d76079e845d6648d894b6aada72960a1",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-08",
+      "question": "千纸鹤《有态度的服装》是哪种广告、用于哪里？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "院线广告片",
+        "影院电影播放前广告展示"
+      ],
+      "evidence": [
+        {
+          "doc_id": "03-video-cases",
+          "section_id": "s01",
+          "quote": "类型：院线广告片 用途：影院电影播放前的广告展示，提升品牌价值",
+          "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=30&m=content",
+          "raw_path": "raw/03-video-cases.html",
+          "raw_sha256": "0cf86b9d4fc1bc714a968029d80e6023bfbac5f7c083186b548ae42bb6dead49",
+          "locator": {
+            "css_selector": ".shipin-box",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-09",
+      "question": "官网记载ARNO哪年委托锐伽重塑品牌？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "2018年"
+      ],
+      "evidence": [
+        {
+          "doc_id": "05-arno-brand",
+          "section_id": "s01",
+          "quote": "ARNO 于2018年委托锐伽对其品牌进行重塑",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=224&m=content",
+          "raw_path": "raw/05-arno-brand.html",
+          "raw_sha256": "2499a27e7568ce812224ba29bb0a9518f3dc7346e3220d0a8e3e9424040bda94",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    },
+    {
+      "id": "grounded-10",
+      "question": "薇茉丽案例的品牌视觉采用什么色系和风格？",
+      "expected_behavior": "answer_from_cited_source",
+      "expected_facts": [
+        "粉色系",
+        "简约设计"
+      ],
+      "evidence": [
+        {
+          "doc_id": "12-vemolly-brand",
+          "section_id": "s01",
+          "quote": "粉色系色调、简约设计贯穿品牌形象",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=110&m=content",
+          "raw_path": "raw/12-vemolly-brand.html",
+          "raw_sha256": "f34a1d6a6bb0db8bccb8a45a413b7ff3a379cdc55cbe930d9d1f539769f351fc",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ]
+    }
+  ],
+  "unsupported_or_ambiguous": [
+    {
+      "id": "boundary-01",
+      "question": "做一套品牌VI现在固定报价多少钱？",
+      "expected_behavior": "state_not_in_sources",
+      "reason": "所下载正文未给出当前报价或价格表；服务类别不能推导价格。",
+      "related_doc_ids": [],
+      "related_evidence": [],
+      "checked_doc_ids": [
+        "01-home",
+        "02-about-services",
+        "03-video-cases",
+        "05-arno-brand",
+        "06-ap-technologies",
+        "07-yanjan-exhibition",
+        "08-solar-cafe",
+        "09-huadi-office",
+        "10-bolon-shop",
+        "11-gujiguji-brand",
+        "12-vemolly-brand"
+      ],
+      "absence_scope": "Only this frozen sample, not a claim about the entire website or company."
+    },
+    {
+      "id": "boundary-02",
+      "question": "锐伽保证做完宣传片后销售额增长多少？",
+      "expected_behavior": "state_not_in_sources",
+      "reason": "资料含品牌传播目的和宣传措辞，没有销售增长保证或可核实百分比，不能编造承诺。",
+      "related_doc_ids": [],
+      "related_evidence": [],
+      "checked_doc_ids": [
+        "01-home",
+        "02-about-services",
+        "03-video-cases",
+        "05-arno-brand",
+        "06-ap-technologies",
+        "07-yanjan-exhibition",
+        "08-solar-cafe",
+        "09-huadi-office",
+        "10-bolon-shop",
+        "11-gujiguji-brand",
+        "12-vemolly-brand"
+      ],
+      "absence_scope": "Only this frozen sample, not a claim about the entire website or company."
+    },
+    {
+      "id": "boundary-03",
+      "question": "那个展厅多大？",
+      "expected_behavior": "ask_clarification",
+      "reason": "未明确客户或展厅，不能默认指延江美国展；先澄清项目。",
+      "related_doc_ids": [
+        "07-yanjan-exhibition"
+      ],
+      "related_evidence": [
+        {
+          "doc_id": "07-yanjan-exhibition",
+          "section_id": "s01",
+          "quote": "延江股份（美国展）",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+          "raw_path": "raw/07-yanjan-exhibition.html",
+          "raw_sha256": "aca8bb5aae39a2f7b750d23f2a9237ad0250f797ab1b6d656016cc94df5faa11",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ],
+      "checked_doc_ids": [
+        "01-home",
+        "02-about-services",
+        "03-video-cases",
+        "05-arno-brand",
+        "06-ap-technologies",
+        "07-yanjan-exhibition",
+        "08-solar-cafe",
+        "09-huadi-office",
+        "10-bolon-shop",
+        "11-gujiguji-brand",
+        "12-vemolly-brand"
+      ],
+      "absence_scope": "Only this frozen sample, not a claim about the entire website or company."
+    },
+    {
+      "id": "boundary-04",
+      "question": "暴龙日本店实际竣工验收是哪一天？",
+      "expected_behavior": "state_not_in_sources",
+      "reason": "页面只有2019年中期呈现的计划，不是实际竣工验收记录。",
+      "related_doc_ids": [
+        "10-bolon-shop"
+      ],
+      "related_evidence": [
+        {
+          "doc_id": "10-bolon-shop",
+          "section_id": "s01",
+          "quote": "店铺设计新形象将于2019年中期呈现",
+          "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=211&m=content",
+          "raw_path": "raw/10-bolon-shop.html",
+          "raw_sha256": "5097c9187f348a48a92cfc4a7bc6144d097d34953b4af44ba2e57b5eb81d7115",
+          "locator": {
+            "css_selector": ".neirong-r",
+            "element_index": 0,
+            "source_line_start": 173,
+            "normalization": "HTML entities decoded; non-content nodes/comments removed; whitespace collapsed to single spaces"
+          }
+        }
+      ],
+      "checked_doc_ids": [
+        "01-home",
+        "02-about-services",
+        "03-video-cases",
+        "05-arno-brand",
+        "06-ap-technologies",
+        "07-yanjan-exhibition",
+        "08-solar-cafe",
+        "09-huadi-office",
+        "10-bolon-shop",
+        "11-gujiguji-brand",
+        "12-vemolly-brand"
+      ],
+      "absence_scope": "Only this frozen sample, not a claim about the entire website or company."
+    },
+    {
+      "id": "boundary-05",
+      "question": "安平科技站台搭建使用什么材料、预算多少？",
+      "expected_behavior": "state_not_in_sources",
+      "reason": "安平页仅列名称与品牌/网站/站台服务，图片未OCR；没有材料或预算正文，且该短页不进入索引。",
+      "related_doc_ids": [
+        "06-ap-technologies"
+      ],
+      "related_evidence": [],
+      "checked_doc_ids": [
+        "01-home",
+        "02-about-services",
+        "03-video-cases",
+        "05-arno-brand",
+        "06-ap-technologies",
+        "07-yanjan-exhibition",
+        "08-solar-cafe",
+        "09-huadi-office",
+        "10-bolon-shop",
+        "11-gujiguji-brand",
+        "12-vemolly-brand"
+      ],
+      "absence_scope": "Only this frozen sample, not a claim about the entire website or company."
+    }
+  ]
+}

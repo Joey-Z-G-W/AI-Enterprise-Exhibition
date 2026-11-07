@@ -1,0 +1,488 @@
+{
+  "schema_version": 1,
+  "kb_id": "kb_4b2d0328c609440f",
+  "api_base_url": "http://127.0.0.1:8211",
+  "documents": [
+    {
+      "doc_id": "doc_52903e579c6b43ce",
+      "filename": "12-vemolly-brand.md",
+      "clean_path": "data/ruika/clean/12-vemolly-brand.md",
+      "clean_sha256": "1161c70c9855847988d200931574eb6cb799a7c0e8ac185e0e1b831fe7c990ee",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=110&m=content",
+      "original_raw_sha256": "f34a1d6a6bb0db8bccb8a45a413b7ff3a379cdc55cbe930d9d1f539769f351fc",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-2c7c8808a011af49647daa078ae9ec48",
+          "full_doc_id": "doc_52903e579c6b43ce",
+          "content": "# 薇茉丽 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖\n\n来源：https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=110&m=content\n\n原件：raw/12-vemolly-brand.html；SHA256：f34a1d6a6bb0db8bccb8a45a413b7ff3a379cdc55cbe930d9d1f539769f351fc\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。化妆品品牌定位与视觉说明；营销功效描述不作为医学事实。\n\n## 案例正文\n\n合作内容 Cooperative Con",
+          "sha256_utf8": "9056cc8bed7997360876a8792e2c04ddb5af5c539e5e9ecf0eb803ad406ae1c3",
+          "bge_tokens": 195,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-295fbe70017265ab1a64e86edadd7567",
+          "full_doc_id": "doc_52903e579c6b43ce",
+          "content": "## 案例正文\n\n合作内容 Cooperative Contents +++ 品牌策划定位／品牌文化／品牌logo/vi设计／推广物料／网站／平面摄影／影视拍摄制作／传播 品牌背景 Brand History +++ 中国护肤的概念早已形成，消费者从崇尚日韩、欧美护肤的痴迷中逐渐清醒，对于本土优质的护肤品牌，呈现日益良好的接受态度。薇茉丽正是崛起中优质国产面膜品牌。 服务要记 Service To Remember +++ 以“自然植物成分”、“细胞修复”、“持久保湿”为产品的主要价值点输出，为崇尚自然护肤的年轻女性提供专业级别的保养面膜。粉色系色调、简约设计贯穿品牌形象，极具少女感的产品和",
+          "sha256_utf8": "083350c5fd8ee5e31956c4852f4db356687c947fffc5546c3604c0bb7b70e33c",
+          "bge_tokens": 238,
+          "source_character_start": 271,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-9260d289785281dc81ecfc30988fd96b",
+          "full_doc_id": "doc_52903e579c6b43ce",
+          "content": "养面膜。粉色系色调、简约设计贯穿品牌形象，极具少女感的产品和界视觉传达，迎合年轻少女们的心动偏好，引发情感共鸣，塑造一个青春、有质感的形象。\n\n原文定位：s01；CSS .neirong-r；节点序号（从0起）0；HTML起始行 173",
+          "sha256_utf8": "a89e6e50fe131307ec228ba2afb96697457869e1160b68e34df67836ec7801a7",
+          "bge_tokens": 104,
+          "source_character_start": 540,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_a25673bcc4704820",
+      "filename": "11-gujiguji-brand.md",
+      "clean_path": "data/ruika/clean/11-gujiguji-brand.md",
+      "clean_sha256": "70e6a3f33b670cd99291509db61e69aaa311d17e1141e53b0e79ae3366438407",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=104&m=content",
+      "original_raw_sha256": "42389077d1eefd8bc168db3126e028e0d76079e845d6648d894b6aada72960a1",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-9e90f377d3baf38c397111088f07ba69",
+          "full_doc_id": "doc_a25673bcc4704820",
+          "content": "# 咕叽咕叽创意童话馆 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖\n\n来源：https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=104&m=content\n\n原件：raw/11-gujiguji-brand.html；SHA256：42389077d1eefd8bc168db3126e028e0d76079e845d6648d894b6aada72960a1\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。教育品牌标志创意、配色与空间说明。\n\n## 案例正文\n\n合作内容 Cooperative Conten",
+          "sha256_utf8": "c2e9728a8d6d839f8d383a16ccc6697eb66542f144670e7cc91764005ba28905",
+          "bge_tokens": 189,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-e6348324cdca41c3bc6d143f22280790",
+          "full_doc_id": "doc_a25673bcc4704820",
+          "content": "案例正文\n\n合作内容 Cooperative Contents +++ 品牌策划定位／品牌文化／品牌logo/ VI设计 /包装设计／推广物料／网站／平面摄影／影视拍摄制作／传播 品牌背景 Brand History +++ 是福建省颇具特色、广受好评的一家儿童早教和艺术启蒙综合性儿童教育机构。为家长和孩子提供丰富多彩的亲子活动，个性化教学帮助孩子培养良好的生活习惯和社交能力、陶冶情操，激发创造力，为宝宝全面发展奠定良好的基础。 服务要记 Service To Remember +++ 客户诉求于一个亲和力和创意契合共生的品牌形象。锐伽以咕叽咕叽英文名为品牌标志设计原型，通过多彩的七巧板拼接",
+          "sha256_utf8": "66193d7d422757dc2d7187616c535f3f37e213c8033b798c064788c1bc0d5a2b",
+          "bge_tokens": 237,
+          "source_character_start": 271,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-214ce2bbda99e31235684ae58ea9391c",
+          "full_doc_id": "doc_a25673bcc4704820",
+          "content": "锐伽以咕叽咕叽英文名为品牌标志设计原型，通过多彩的七巧板拼接进行创意解构，展示咕叽咕叽创意童话馆童真又有创造力的一面。以流畅整洁的布局和细节设置，加之活泼的配色，打造兼备美好感受和使用价值的教学空间。\n\n原文定位：s01；CSS .neirong-r；节点序号（从0起）0；HTML起始行 173",
+          "sha256_utf8": "5ef9c2c23336a17821e4ecf94ddce957ddcc44348ecf99f1634c63b51ebd29f9",
+          "bge_tokens": 134,
+          "source_character_start": 540,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_76d93d8c990443af",
+      "filename": "10-bolon-shop.md",
+      "clean_path": "data/ruika/clean/10-bolon-shop.md",
+      "clean_sha256": "5612227ea6d9806cad47378853d833682b270b770da00112b8c4c7cca2b2fb7a",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=211&m=content",
+      "original_raw_sha256": "5097c9187f348a48a92cfc4a7bc6144d097d34953b4af44ba2e57b5eb81d7115",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-2db29c26ec9294af0ecd260323b24aa6",
+          "full_doc_id": "doc_76d93d8c990443af",
+          "content": "# 暴龙眼镜（BOLON）店面设计 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖\n\n来源：https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=211&m=content\n\n原件：raw/10-bolon-shop.html；SHA256：5097c9187f348a48a92cfc4a7bc6144d097d34953b4af44ba2e57b5eb81d7115\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。店铺设计方案说明；页面提及2019年中期计划，不能据此确认最终落地。\n\n## 案例正文\n\nBO",
+          "sha256_utf8": "4291c454066a3c2ce96ab7b847e3d3fee5aa6594386d014c28383f4b391835ad",
+          "bge_tokens": 204,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-42afdc11c2d74959414c4632a1e6ab16",
+          "full_doc_id": "doc_76d93d8c990443af",
+          "content": "年中期计划，不能据此确认最终落地。\n\n## 案例正文\n\nBOLON暴龙眼镜(店面设计) +++合作内容+++ 品牌策划定位／品牌文化／品牌logo / vis／推广物料／网站／平面摄影／商业空间 / 影视拍摄制作／传播 +++品牌背景+++ 暴龙概念形象设计是为暴龙在日本的一家分店做的形象提升设计，结合其现场不可拆除部分，摒弃复杂的识别元素，加入了一些符号性的设计元素，点线面有机的结合， 瞬间让空间简单起来，但同时对品质提出了新的要求，日本本身就是一阁重视品质的民族，当我们把花里花哨的表层剥离后，就仅剩下实实在在的质感和结构了，地和墙干净利索一个满铺大理石，一个纯白墙面漆，而货架和装置清一色的",
+          "sha256_utf8": "79190744d26f743fd455d619d927fa973a27a3096ff7f88f1ad7ca3495c976dd",
+          "bge_tokens": 280,
+          "source_character_start": 270,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-ec7d08007449360771db8d9373634d90",
+          "full_doc_id": "doc_76d93d8c990443af",
+          "content": "干净利索一个满铺大理石，一个纯白墙面漆，而货架和装置清一色的金色钛金不锈钢，一方面不锈钢的反射增加了空间的层次，另一方面不锈钢的切割、弯折、焊接细节会给与我们非常多的工艺美感，所以说虽然是非常简单的空间，却不显得空荡和单调。 店铺设计新形象将于2019年中期呈现，欢迎继续关注，见证实景效果。\n\n原文定位：s01；CSS .neirong-r；节点序号（从0起）0；HTML起始行 173",
+          "sha256_utf8": "4342118f1b24da52a81c1d18684b36937e6f835b3bbd182647e96d08b46be35e",
+          "bge_tokens": 176,
+          "source_character_start": 540,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_a16e8a616c464301",
+      "filename": "09-huadi-office.md",
+      "clean_path": "data/ruika/clean/09-huadi-office.md",
+      "clean_sha256": "649b0c8ecbbe6e801b4e030b2efc06381a1a72e9ce7bf93f8cc0b4e5f3dce73f",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=84&m=content",
+      "original_raw_sha256": "c3fda8317885acdbce19b9a2b000a915380bf1976ed84a9ab1736481ac28b7c2",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-17ca2d4657054a66a4a8662623264d11",
+          "full_doc_id": "doc_a16e8a616c464301",
+          "content": "# 华地投资 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖\n\n来源：https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=84&m=content\n\n原件：raw/09-huadi-office.html；SHA256：c3fda8317885acdbce19b9a2b000a915380bf1976ed84a9ab1736481ac28b7c2\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。办公室改造需求和设计方向；后段有通用品牌定位文字。\n\n## 案例正文\n\n华地投资（办公室设计） +++合作内容++",
+          "sha256_utf8": "3bcf0932e3d4a34438e116369348617993e76085492fe1182a2936ed2b86f99d",
+          "bge_tokens": 207,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-ea17534f7900cdb4b67751cd8d69c0fe",
+          "full_doc_id": "doc_a16e8a616c464301",
+          "content": "## 案例正文\n\n华地投资（办公室设计） +++合作内容+++ 品牌策划定位／品牌文化／品牌logo / vis／推广物料／网站／平面摄影／商业空间 / 影视拍摄制作／传播 +++品牌背景+++ 本次案例是华地投资在广州分公司的办公室改造项目，华地投资对于办公室设计的改造需求是大方干脆，考虑到客户所处的行业特性与工作模式，设计的方向是在空间里做减法，用一种类似家庭社区的形式对传统的幽闭分隔的格子间式环境进行改善，以此增进团队成员之间的交流与沟通。 在设计方案中，极简的框架，温文的肌理，硬朗的墙面材料，无论是色调还是家居软装，都呈现出了一种和谐统一，简洁硬朗，非常利落的风格。 +++品牌定位++",
+          "sha256_utf8": "36c86e49e754b03f6d5162e37526a81dde26198a6197a194f16c5366f893e7f1",
+          "bge_tokens": 285,
+          "source_character_start": 270,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-47685add6f84f8dd097326d3b9641b5c",
+          "full_doc_id": "doc_a16e8a616c464301",
+          "content": "一种和谐统一，简洁硬朗，非常利落的风格。 +++品牌定位+++ 品牌定位是企业在市场定位和产品定位的基础上，对特定的品牌在文化取向及个性差异上的商业性决策，它是建立一个与目标市场有关的品牌形象的过程和结果。 品牌定位是市场定位的核心和集中表现。企业一旦选定了目标市场，就要设计并塑造自己相应的产品，品牌及企业形象，以争取目标消费者的认同。\n\n原文定位：s01；CSS .neirong-r；节点序号（从0起）0；HTML起始行 173",
+          "sha256_utf8": "90e2dd273c05fb8c8d03511e9a80a3461a48515b5a114daff99ad8b865f67c94",
+          "bge_tokens": 200,
+          "source_character_start": 540,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_4a6ce34d09ba4afe",
+      "filename": "08-solar-cafe.md",
+      "clean_path": "data/ruika/clean/08-solar-cafe.md",
+      "clean_sha256": "2ce05cdd3749098f2b2613009d1fc4bce8b82218d5b575bfd1589e19228153e7",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=207&m=content",
+      "original_raw_sha256": "2c4cb48933961c23f259a85bf75780da181b78f2e4e4d0466437f0a2a74c5d3d",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-9569749c2e25644e0290ed613713a9d3",
+          "full_doc_id": "doc_4a6ce34d09ba4afe",
+          "content": "# SOLAR（咖啡店店铺设计） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖\n\n来源：https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=207&m=content\n\n原件：raw/08-solar-cafe.html；SHA256：2c4cb48933961c23f259a85bf75780da181b78f2e4e4d0466437f0a2a74c5d3d\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。咖啡店设计理念、布局与材料说明。\n\n## 案例正文\n\nSOLAR(店面设计) +++合作内容++",
+          "sha256_utf8": "98ef77a9cadaea363cc0df03dc9b3e48b1b5b71d00b33e4613eeba800298b064",
+          "bge_tokens": 206,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-66a2beb06125c43d7fd5e45b07ec344a",
+          "full_doc_id": "doc_4a6ce34d09ba4afe",
+          "content": "## 案例正文\n\nSOLAR(店面设计) +++合作内容+++ 品牌策划定位／品牌文化／品牌logo / vis／推广物料／网站／平面摄影／商业空间 / 影视拍摄制作／传播 +++品牌背景+++ SOLAR是三位澳洲海归创立的咖啡、烘培品牌，我们有幸参与了品牌的创立和 店铺设计 落地，很有意思的是创设人HANCE与另外两位创始人不仅是性别上的不同，而且从品牌的设计到空间形象的设计一直都有着很大的意见分歧，导致了项目走了非常多的弯路，好在两位女创始人一直与我们的想法一致并极力说服了HANCE，让项目得以顺利进行。 三个有故事的人有着同样的的梦想，那就是把他们从海外品尝过的美食，制作分享给厦门以及",
+          "sha256_utf8": "25a5c9e6163700bbd555b564daf17f4f15d823d834750881ffba737b3cf7bbde",
+          "bge_tokens": 268,
+          "source_character_start": 270,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-e8d5d350085526ed943b6ed19e340e2e",
+          "full_doc_id": "doc_4a6ce34d09ba4afe",
+          "content": "的的梦想，那就是把他们从海外品尝过的美食，制作分享给厦门以及来厦门的朋友。 离开家离开祖国的人对家有着不一样的理解，在海外的时间里，他们一直特别珍惜“家”这样的感情，所以我们想把他们的小愿望在厦门实现出来，打造一个有家庭温馨感的场所，在这里来的的客人都是“家人”，一起冲咖啡，做烘培，一起说说笑笑。 SOLAR门头造型是一个“大家”呵护着“小家”，极具亲和里的木饰面和暖黄色的灯光，在繁杂的街边让人心里一暖，不自觉的会放慢脚步。 我们把室内两层的空间做成了挑高的复式，把原来设在最里头的楼梯移到前区，并打通了楼板做成挑高，一进来通透明亮，同时几个层次层叠交错在一起，让原来狭小单调的空间顿时丰富了起来",
+          "sha256_utf8": "525f29fc3a16a551a8338939e6e755c0727fbafd5e7f010d44cbd4c9b24b9078",
+          "bge_tokens": 295,
+          "source_character_start": 540,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-02936410f03621b2ca262ef56f0ea69d",
+          "full_doc_id": "doc_4a6ce34d09ba4afe",
+          "content": "时几个层次层叠交错在一起，让原来狭小单调的空间顿时丰富了起来。 内部的材料跟门头一样简单清爽——清水泥地砖、灰度木饰面、不锈钢台面，整个风格既有北欧的小清新又带着点和风的味道。 店铺一层布置了主要的功能区域：收银、咖啡、展示、烘培间、卫生间……空间虽然小，却井然有序，反倒温馨了起来，坐在吧台面前听客人讲故事或讲故事给客人听变得没有任何陌生感。 阁楼为客座区，沿着转角的木作楼梯一路向上的墙面挂满了三位海归在海外的珍贵瞬间，非常有纪念意义同时也装点着整个空间。 客座区为不同需求的客人设计了不同的座椅：适合家庭或闺蜜聚会的组合沙发，适合朋友或恋人聊天的双人沙发和可以办公聚会的长桌，蓝色的装饰高架分隔",
+          "sha256_utf8": "78d2a0690c706e72f7cd6c18dd795fc15e8111e8d96995d2f00e94ea998619b3",
+          "bge_tokens": 298,
+          "source_character_start": 810,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-581e6980c3cea43132e6cc498a07afa6",
+          "full_doc_id": "doc_4a6ce34d09ba4afe",
+          "content": "或恋人聊天的双人沙发和可以办公聚会的长桌，蓝色的装饰高架分隔了两个区，外区喝着咖啡观街上人来人往，内区就这甜点看书中春夏秋冬，各取所需，组成一个和谐温馨的画面。\n\n原文定位：s01；CSS .neirong-r；节点序号（从0起）0；HTML起始行 173",
+          "sha256_utf8": "306fe1387bc926d1c7cd12b146a7bb3c48e291cf15aa51b29ede45e4a01086f1",
+          "bge_tokens": 114,
+          "source_character_start": 1080,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_a592c5c86c2a4b98",
+      "filename": "07-yanjan-exhibition.md",
+      "clean_path": "data/ruika/clean/07-yanjan-exhibition.md",
+      "clean_sha256": "310b9429be072d716174ba720ee7338fcf5fe45dd4e9029053175b63460a16ec",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+      "original_raw_sha256": "aca8bb5aae39a2f7b750d23f2a9237ad0250f797ab1b6d656016cc94df5faa11",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-f6b7b9fab08e3ffb58da59417f34cf0a",
+          "full_doc_id": "doc_a592c5c86c2a4b98",
+          "content": "# 延江股份（美国展厅设计） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖\n\n来源：https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content\n\n原件：raw/07-yanjan-exhibition.html；SHA256：aca8bb5aae39a2f7b750d23f2a9237ad0250f797ab1b6d656016cc94df5faa11\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。2019美国展厅布局、尺寸与材料说明。\n\n## 案例正文\n\n延江股份（美国展） +++",
+          "sha256_utf8": "5b59285a20d281f6712d4f7ad9d36127890649dddf5befbe82f1458a66c94d0d",
+          "bge_tokens": 202,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-95c5eade1792c07160855aeec980fb07",
+          "full_doc_id": "doc_a592c5c86c2a4b98",
+          "content": "与材料说明。\n\n## 案例正文\n\n延江股份（美国展） +++合作内容+++ 品牌策划定位／品牌文化／品牌logo / vis／推广物料／网站／平面摄影／商业空间 / 影视拍摄制作／传播 +++品牌背景+++ 2019年美国展是延江非常重要的一次展会设计，因为同期美国工厂开业，所以这次展会不管实在规模和设计上都比往届展览来的更加隆重。 展位尺寸12.2米乘9.6米，高度4.88米，四面开放，比较遗憾的是展位坐落在大会的角落，远离主入口和人流动线，给设计以及展会效果带来了不小的影响。 相较于国内展海外展在操作起来难度更大，一方面我们没办法跟踪制作安装过程，另一方面，海外的制作搭建没有像国内这么细致",
+          "sha256_utf8": "d404d4fd62e1adfe6816437170f1a576e375dcee4fa40ce649a7c727e72f86c0",
+          "bge_tokens": 278,
+          "source_character_start": 270,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-c183c0230309f3d3b844d3a9072b5c47",
+          "full_doc_id": "doc_a592c5c86c2a4b98",
+          "content": "跟踪制作安装过程，另一方面，海外的制作搭建没有像国内这么细致认真，所以设计的时候我们希望能尽力避开这些因素，整体造型相对来说会比较简约，也减少很多需要现场完成 的细节，主要呈现都集中在布局和海报方面，大体块加上大海报，给人以恢弘大气的体验，几个功能分区隔墙，然后是一个大型的吊楣，不仅增加了展位的通透感同时能让远处的客人可以很快的识别到品牌。 展会主要材料为烤漆墙板、钢化玻璃、地毯以及透明绷布。 +++品牌定位+++ 品牌定位是企业在市场定位和产品定位的基础上，对特定的品牌在文化取向及个性差异上的商业性决策，它是建立一个与目标市场有关的品牌形象的过程和结果。 品牌定位是市场定位的核心和集中表现。",
+          "sha256_utf8": "f87153cda3e00fcad0c69907475699e0142ca7431bdc53a2f940b3667e83d4ab",
+          "bge_tokens": 297,
+          "source_character_start": 540,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-88a6ab3941b425bd5c8dd1c23c11c0fb",
+          "full_doc_id": "doc_a592c5c86c2a4b98",
+          "content": "品牌形象的过程和结果。 品牌定位是市场定位的核心和集中表现。企业一旦选定了目标市场，就要设计并塑造自己相应的产品，品牌及企业形象，以争取目标消费者的认同。\n\n原文定位：s01；CSS .neirong-r；节点序号（从0起）0；HTML起始行 173",
+          "sha256_utf8": "5c0cd8b94bcb717abb58c38712be2706642f6226e3e26bbf21c29febdba27d1d",
+          "bge_tokens": 110,
+          "source_character_start": 810,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_f318d2246558493a",
+      "filename": "05-arno-brand.md",
+      "clean_path": "data/ruika/clean/05-arno-brand.md",
+      "clean_sha256": "fa67bebf0c7a62ff3a3b001d29086b31f3996743e473af15fbc2d41eac32e59e",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=224&m=content",
+      "original_raw_sha256": "2499a27e7568ce812224ba29bb0a9518f3dc7346e3220d0a8e3e9424040bda94",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-0fe8defa039ee4698cd898ce0fbde8e9",
+          "full_doc_id": "doc_f318d2246558493a",
+          "content": "# 亚诺阿格斯 老花镜品牌 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖\n\n来源：https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=224&m=content\n\n原件：raw/05-arno-brand.html；SHA256：2499a27e7568ce812224ba29bb0a9518f3dc7346e3220d0a8e3e9424040bda94\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。合作内容与品牌重塑说明；销量排名等为网页历史自述，不作为独立验证结论。\n\n## 案例正文\n\n合作内容 Co",
+          "sha256_utf8": "5d041e66db8026994a9b18258deeaf5c213c8199bb15ac04ac530bfa73a47259",
+          "bge_tokens": 202,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-0a0ce79433aaa5173719f421d1d07963",
+          "full_doc_id": "doc_f318d2246558493a",
+          "content": "述，不作为独立验证结论。\n\n## 案例正文\n\n合作内容 Cooperative Contents +++ 品牌策划定位+品牌logo+VI设计+空间设计+产品宣传片+包装设计+画册设计 品牌背景 Brand History +++ 厦门金奕天创网络科技有限公司旗下“睛彩视界”眼镜商城，唯一的专业授权销售“夕阳红”老花镜的B2C大型网上商城。专业致力于解决中老年人视力健康的烦恼，是当之无愧的中老年人视力专家。 品牌优势 全国首批获得生产许可证 全国唯一连续8年老花镜品牌排名第一 全国唯一连续13年国家抽检100%合格品牌 全国销量第一 全国10000家零售店的选择 中国老花镜市场上的消费者使用率",
+          "sha256_utf8": "d7acca2045cbdff4bb4782b8a01ba6e45e1bd79e553066664bae9b6aa00da749",
+          "bge_tokens": 241,
+          "source_character_start": 270,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-abcb6f02154c86602465de1e75a05d0d",
+          "full_doc_id": "doc_f318d2246558493a",
+          "content": "全国10000家零售店的选择 中国老花镜市场上的消费者使用率、占有率、知名度和影响力位居同类产品第一 服务要记 Service To Remember +++ ARNO于2010年成立的原创品牌，由一群不甘平凡，极具品味、热衷时尚且关注中老年视力的有识之士孕育而生。 眼里若有光，便能聚焦生活，洞悉人生。 心中若有光，方能触摸世界，探究未来。 ARNO 于2018年委托锐伽对其品牌进行重塑，针对行业市场趋势洞悉与ARNO现状的诊断，锐伽全面介入调整品牌、定价等重要策略，区隔竞争对手，凝练高纬度的品牌价值。面对40-55岁中老年消费群，提出“老花镜更是时尚单品”的概念，全新定位时尚、轻奢、品位，让",
+          "sha256_utf8": "befee00223660b03099f5d1f53a4a5e2e15177cc419202c71fd506d26096f243",
+          "bge_tokens": 256,
+          "source_character_start": 540,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-7b9f771dce178fc2b6ba6edc9dc2cd58",
+          "full_doc_id": "doc_f318d2246558493a",
+          "content": "出“老花镜更是时尚单品”的概念，全新定位时尚、轻奢、品位，让ARNO在自身强大的研发生产线、26道出厂检测保障的硬指标背书下，突破市场对传统老花镜的认知，快速从跌破状态翻身至老花镜全国销量排名第三（母品牌夕阳红排名第一）。\n\n原文定位：s01；CSS .neirong-r；节点序号（从0起）0；HTML起始行 173",
+          "sha256_utf8": "e4af148432842ccf43b61621a31acdfe62c8e33dd4c3970b88ff51f539f48c9b",
+          "bge_tokens": 141,
+          "source_character_start": 810,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_79f71e6483b94473",
+      "filename": "03-video-cases.md",
+      "clean_path": "data/ruika/clean/03-video-cases.md",
+      "clean_sha256": "ce580d6f052514df7a7dff9a9dfaebf7f33fb09f162a9560a9177ebabbc1468d",
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=30&m=content",
+      "original_raw_sha256": "0cf86b9d4fc1bc714a968029d80e6023bfbac5f7c083186b548ae42bb6dead49",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-f8d621a55252b6091c4f23e74f043d84",
+          "full_doc_id": "doc_79f71e6483b94473",
+          "content": "# 厦门企业宣传片拍摄-产品宣传片-微电影-宣传视频制作 - 锐咖\n\n来源：https://www.ruika.hk/index.php?a=lists&c=index&catid=30&m=content\n\n原件：raw/03-video-cases.html；SHA256：0cf86b9d4fc1bc714a968029d80e6023bfbac5f7c083186b548ae42bb6dead49\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。视频案例列表有客户、类型、用途及文字介绍；未下载或观看视频，未翻页加载更多。\n\n## 千纸鹤男装\n\n千纸鹤男装 | QIAN ZHI HE",
+          "sha256_utf8": "837a088bf277b5445652f1723b29f7312398bd3012053314790d7f711a0bc8f5",
+          "bge_tokens": 205,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-e551002d7124d6cee8ee4bb2b7d7da27",
+          "full_doc_id": "doc_79f71e6483b94473",
+          "content": "## 千纸鹤男装\n\n千纸鹤男装 | QIAN ZHI HE 《有态度的服装》 客户：千纸鹤男装 类型：院线广告片 用途：影院电影播放前的广告展示，提升品牌价值 “有态度的服装，能把人内在的情怀和修养正确的表达，由外至内，贯穿始终，这就是服装带给人的幸福骄傲”\n\n原文定位：s01；CSS .shipin-box；节点序号（从0起）0；HTML起始行 173\n\n## 柒牌SVNMDN\n\n柒牌广告片 | SVNMDN 类型：广告片 svnmdn是柒牌男装旗下的子品牌，它的风格是有型有品，酷雅潮趣。因为svnmdn品牌的诞生是在纽约， 所以片头的航拍取景专门选在了纽约地标布鲁克林大桥，同时也为品牌加持",
+          "sha256_utf8": "225a8c2df659f90f1a81dc229bb6e0175d29f4d2a0205cc2d10966fafa882108",
+          "bge_tokens": 242,
+          "source_character_start": 270,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-fecc7f556a24cb5ca8ffc1c104b20602",
+          "full_doc_id": "doc_79f71e6483b94473",
+          "content": "头的航拍取景专门选在了纽约地标布鲁克林大桥，同时也为品牌加持国际时尚感。\n\n原文定位：s02；CSS .shipin-box；节点序号（从0起）1；HTML起始行 194\n\n## 暴龙眼镜\n\n暴龙眼镜 | BOLON 《为卓越而生》 客户：暴龙眼镜 类型：企业宣传片 用途：店铺展示，教育顾客，提升产品附加价值 为卓越而生，是暴龙的使命，我们提出将产品的创意设计图纸与最后的成品通过镜头特写 传递给看到这支宣传片的每一个人，因为工艺的匠心和严格的品质把控，要交给大家去评判，而 暴龙要做好的，只有一件事，把今日的成就当成明日的起点，为卓越努力，为典范定义。\n\n原文定位：s03；CSS .shipin",
+          "sha256_utf8": "00ff4184039cb9ce813606d372dc4a8c6339bbaa87fc82bf1694ee02193349f1",
+          "bge_tokens": 256,
+          "source_character_start": 540,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-bab11a85cd1e9c5901fe924cb55dd177",
+          "full_doc_id": "doc_79f71e6483b94473",
+          "content": "力，为典范定义。\n\n原文定位：s03；CSS .shipin-box；节点序号（从0起）2；HTML起始行 210\n\n## 特步三维动画\n\n特步三维动画宣传片 | 客户：特步 类型：三维动画片 用途：广告投放、店铺展示、功能说明 “动力巢科技，跑步新动力，动力巢向前，特步非一般的感觉。” 这支三维动画片展示的是特步跑鞋内置动力巢科技，蜂巢结构，搭载高弹性体，聚能回弹。透过高科技的技术与美学的结合，真实的将跑鞋的内部结构完美呈现。\n\n原文定位：s04；CSS .shipin-box；节点序号（从0起）3；HTML起始行 228\n\n## 朵拉舞蹈\n\n朵拉舞蹈广告片 | DORA DANCE 《美而",
+          "sha256_utf8": "757cd14706c575929e034105a5aa535f60da601c025d9eca7d03ef921054ce49",
+          "bge_tokens": 239,
+          "source_character_start": 810,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-8262f0ee161aa68bc12f7e2adfbf1d3d",
+          "full_doc_id": "doc_79f71e6483b94473",
+          "content": "朵拉舞蹈\n\n朵拉舞蹈广告片 | DORA DANCE 《美而无疆》 客户：朵拉舞蹈 类型：广告片 用途：店铺展示，提升舞蹈培训机构签单率 “舞蹈之美，行云流水。一身段，一回眸，一转身，皆是故事。” 这是关于美的探索，美无边界。\n\n原文定位：s05；CSS .shipin-box；节点序号（从0起）4；HTML起始行 244\n\n## 特步广告片\n\n特步广告片 | XTEP 我.真跑者 客户：特步 类型：广告片 用途：特步马拉松系列宣传视频 “为自己而跑，我.真跑者”\n\n原文定位：s06；CSS .shipin-box；节点序号（从0起）5；HTML起始行 262\n\n## 延江宣传片\n\n延江股份宣",
+          "sha256_utf8": "3c1c016973c89d5f004e030936f2ed9a1efe4683e72b3f698c33c9b1d47ebe51",
+          "bge_tokens": 228,
+          "source_character_start": 1080,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-450c5cccae4226916848fe9bdb41b55b",
+          "full_doc_id": "doc_79f71e6483b94473",
+          "content": "5；HTML起始行 262\n\n## 延江宣传片\n\n延江股份宣传片 | YANJAN 《延江股份企业宣传片》 客户：延江股份 类型：企业宣传片 用途：国内外展览展示，洽谈合作时公司简介 “在每一个追求卓越品质和持续创新的客户严重，科技与创新的完美结合，正是我们的价值所在” 延江是我们服务超过五年的全案客户，到现在不仅是一家上市企业，更是成为卫生用品行 业的企业龙头。面层材料核心技术的研发使延江走向全球，近几年也在瑞士，日本等国家做展会\n\n原文定位：s07；CSS .shipin-box；节点序号（从0起）6；HTML起始行 279",
+          "sha256_utf8": "09a618babb41aa5b4034d90442a92e607999320d2962e692d6f577ed0a636e8b",
+          "bge_tokens": 226,
+          "source_character_start": 1350,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_e38131920f4d4860",
+      "filename": "01-home.md",
+      "clean_path": "data/ruika/clean/01-home.md",
+      "clean_sha256": "b0d68ec7edfd39ceccea71b25cf6de7859b121115e5b4e2b888de62cdf65b245",
+      "source_url": "https://www.ruika.hk/",
+      "original_raw_sha256": "87ba86f12bcd81d23f32ce42bd55a8cd32eff1963fb177e5d59469fae7bc519a",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-3bb710a21d00367a2146f469ebf3933f",
+          "full_doc_id": "doc_e38131920f4d4860",
+          "content": "# 锐伽联创|厦门品牌设计|厦门vi设计|厦门科技企业vi设计|厦门展览展厅设计|厦门餐饮店铺设计|厦门奶茶店铺设计|厦门企业宣传片拍摄|厦门广告片拍摄|厦门产品宣传片拍摄包装设计|画册设计|空间设计|企业宣传片制作公司-厦门锐伽联创广告有限公司\n\n来源：https://www.ruika.hk/\n\n原件：raw/01-home.html；SHA256：87ba86f12bcd81d23f32ce42bd55a8cd32eff1963fb177e5d59469fae7bc519a\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。首页含三类服务和案例摘要；存在重复卡片，不等同全部案例详情。",
+          "sha256_utf8": "f5348c2f4975f5fd9ae7ab97eeae99bb24f9e6d6916978f3a63a1c663c222981",
+          "bge_tokens": 246,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-a06a066b36a34a070c6050ce40391372",
+          "full_doc_id": "doc_e38131920f4d4860",
+          "content": "页含三类服务和案例摘要；存在重复卡片，不等同全部案例详情。\n\n## 品牌策划设计\n\nAll The Planning Execution 品牌策划设计 品牌定位 + 文化铸造 + 形象包装设计 + 品牌落地执行\n\n原文定位：s01；CSS .dcpgm11；节点序号（从0起）0；HTML起始行 222\n\n## 商业空间设计\n\nDesign Of Commercial Space 商业空间设计 国际&国内展览 + 办公空间 + 商业店铺 + 会所酒店 + 建筑改造\n\n原文定位：s02；CSS .dcpgm11；节点序号（从0起）1；HTML起始行 941\n\n## 视频广告制作\n\nTELEVISI",
+          "sha256_utf8": "9379e6cd212539a73273efc0446cdc6667c1674e7282a6f07bfeb5d73d7f3e01",
+          "bge_tokens": 189,
+          "source_character_start": 270,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-124847effd50dce1abf6051246bc3a84",
+          "full_doc_id": "doc_e38131920f4d4860",
+          "content": "ML起始行 941\n\n## 视频广告制作\n\nTELEVISION ADS 视频广告制作 企业宣传片 + 广告片制作 + 三维动画 + 自媒体视频及IP打造 + 影视制作\n\n原文定位：s03；CSS .dcpgm11；节点序号（从0起）2；HTML起始行 1124",
+          "sha256_utf8": "dd66da5e1babd7a654b2a16ef4c6c7d49cdb5c37730d2f9893451392d9aa7302",
+          "bge_tokens": 87,
+          "source_character_start": 540,
+          "unique_in_source": true
+        }
+      ]
+    },
+    {
+      "doc_id": "doc_09e87d410c7b4199",
+      "filename": "02-about-services.md",
+      "clean_path": "data/ruika/clean/02-about-services.md",
+      "clean_sha256": "ef129489f7f92b92985ae17c169d1afe1b5f34ece290c94725e8f0275ada0152",
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=54&m=content",
+      "original_raw_sha256": "49b100e9dc5ff2f5ed04c073d5264b80e95f756900c66d9a70dda6e40826ab28",
+      "status": "ready",
+      "index_phase": "complete",
+      "generation": 0,
+      "chunks": [
+        {
+          "chunk_id": "chunk-9a4f92389ca47dd6f16d60ff8be1d480",
+          "full_doc_id": "doc_09e87d410c7b4199",
+          "content": "# 锐咖\n\n来源：https://www.ruika.hk/index.php?a=lists&c=index&catid=54&m=content\n\n原件：raw/02-about-services.html；SHA256：49b100e9dc5ff2f5ed04c073d5264b80e95f756900c66d9a70dda6e40826ab28\n\n资料边界：官网发布者陈述，未独立验证其现时有效性。公司沿革、定位/视觉/传播服务与团队介绍。\n\n## 关于公司\n\n2008年创办了智迅工作室，2009年初与香港lee sir共同创办了香港智迅 2014年在厦门成立锐伽联创广告公司 2021年",
+          "sha256_utf8": "9f6b9b022d8e84d6c0dece5e9d3289b21cd5865479005024137fb7c1e7c314e8",
+          "bge_tokens": 192,
+          "source_character_start": 0,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-53ce123ae2a9a0c563ce14b419eb5311",
+          "full_doc_id": "doc_09e87d410c7b4199",
+          "content": "了香港智迅 2014年在厦门成立锐伽联创广告公司 2021年与风杨三火传媒相互持股组建更完善的服务团队 （从品牌定位设计/商业空间/视频广告到直播推广带货） 我们的服务是研究定位（消费者心理动向）为核心的一家品牌综合服务公司。\n\n原文定位：s01；CSS .guanyu-box1；节点序号（从0起）0；HTML起始行 197\n\n## 关于服务\n\n定位 ： 品牌核心价值 / 品牌架构 / 品牌个性 / 品牌联想 / 品牌命名等 视觉： 标志&VI设计 / 产品包装设计 / 品牌展览 展厅和店铺，以及企业办公室统一化视觉识别调性 传播： 以广告片／企业宣传片／短视频／为创意核心，结合新媒资源传播",
+          "sha256_utf8": "2771c988c0bfc9e369a97d8d129fca3874b6c2881274170eca03a09c1ac5e4c5",
+          "bge_tokens": 249,
+          "source_character_start": 270,
+          "unique_in_source": true
+        },
+        {
+          "chunk_id": "chunk-3e93678b7d9812f6948533291844c58f",
+          "full_doc_id": "doc_09e87d410c7b4199",
+          "content": "以广告片／企业宣传片／短视频／为创意核心，结合新媒资源传播\n\n原文定位：s02；CSS .guanyu-box2；节点序号（从0起）0；HTML起始行 217",
+          "sha256_utf8": "41a2ad223c7790186a30f67c5a16abdbea0abf744efe265235fc836a485dc6dc",
+          "bge_tokens": 64,
+          "source_character_start": 540,
+          "unique_in_source": true
+        }
+      ]
+    }
+  ],
+  "original_chunk_count": 37,
+  "generated_summary_statistics": {
+    "entities": {
+      "rows": 503,
+      "max_original_summary_tokens": 386,
+      "inputs_over512": 0,
+      "truncation_policy": "Infinity512 truncation accepted for generated retrieval hints only; not full semantic representation, never answer evidence"
+    },
+    "relationships": {
+      "rows": 706,
+      "max_original_summary_tokens": 152,
+      "inputs_over512": 0,
+      "truncation_policy": "Infinity512 truncation accepted for generated retrieval hints only; not full semantic representation, never answer evidence"
+    }
+  },
+  "api_query_doc_id_policy": "Original query result doc_id remains empty/unknown; do not synthesize it from graph summaries or filename text. Mapping uses actual document list + stored full_doc_id + exact clean content/hash.",
+  "acceptance_uploaded": false,
+  "updated_at_epoch": 1793508799.2731583
+}

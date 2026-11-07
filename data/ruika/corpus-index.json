@@ -1,0 +1,1924 @@
+{
+  "schema_version": 1,
+  "path_base": "repository root",
+  "clean_rag_documents": [
+    "data/ruika/clean/01-home.md",
+    "data/ruika/clean/02-about-services.md",
+    "data/ruika/clean/03-video-cases.md",
+    "data/ruika/clean/05-arno-brand.md",
+    "data/ruika/clean/07-yanjan-exhibition.md",
+    "data/ruika/clean/08-solar-cafe.md",
+    "data/ruika/clean/09-huadi-office.md",
+    "data/ruika/clean/10-bolon-shop.md",
+    "data/ruika/clean/11-gujiguji-brand.md",
+    "data/ruika/clean/12-vemolly-brand.md"
+  ],
+  "rag_mapping": "data/ruika/index-mapping.json",
+  "rag_mapping_note": "Historical document/chunk mapping, not a portable vector database. Re-index clean documents for a new service.",
+  "acceptance_questions": "data/ruika/acceptance.json",
+  "acceptance_note": "Evaluation data; do not ingest as factual knowledge.",
+  "media_manifest": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/manifest.json",
+  "embedded_images": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/embedded-images.json",
+  "pages": [
+    {
+      "source_url": "https://www.ruika.hk/",
+      "title": "锐伽联创|厦门品牌设计|厦门vi设计|厦门科技企业vi设计|厦门展览展厅设计|厦门餐饮店铺设计|厦门奶茶店铺设计|厦门企业宣传片拍摄|厦门广告片拍摄|厦门产品宣传片拍摄包装设计|画册设计|空间设计|企业宣传片制作公司-厦门锐伽联创广告有限公司",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/d8a64ab6c52120187c3a.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d8a64ab6c52120187c3a.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d8a64ab6c52120187c3a.json",
+      "html_sha256": "87ba86f12bcd81d23f32ce42bd55a8cd32eff1963fb177e5d59469fae7bc519a",
+      "body_sha256": "cf2d006ba5e69a670f3445d82850ac30e250a3ec839f018cae6c64a4435d7c59"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=33&m=content",
+      "title": "品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/59250ab64ab26a426788.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/59250ab64ab26a426788.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/59250ab64ab26a426788.json",
+      "html_sha256": "4a6d13658fe9687213f5d15ca2f4a241663339df43052112fe4e916c1ed45fa8",
+      "body_sha256": "cf146f922b9bb9619660b4e9ff3d2e5382f0ee400d175bf0fc2630c15f0462e5"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=34&m=content",
+      "title": "创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/eb8adab5a393fabdae10.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/eb8adab5a393fabdae10.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/eb8adab5a393fabdae10.json",
+      "html_sha256": "698071bc6968857ebc60b4813c450843455366a6f3972172c00a3cd3ccdf706b",
+      "body_sha256": "da1432a9729b2710eb84dc145daea92f950b4b75b4ef6e96203cb60daf78eb90"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=35&m=content",
+      "title": "导视设计案例-导视设计报价-厦门导视设计制作公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/fcb7257129e8b4641aad.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fcb7257129e8b4641aad.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fcb7257129e8b4641aad.json",
+      "html_sha256": "256e3a6216afe50cf23fd954c65bc758c8193d10eae2aa208071cbeec941a2d2",
+      "body_sha256": "1a59692255b0ed3cd2fc61f11d8bb5ed50cc131c796a5896a4a9a07d470fbeea"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=36&m=content",
+      "title": "厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ed16de4bd21045d376d5.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ed16de4bd21045d376d5.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ed16de4bd21045d376d5.json",
+      "html_sha256": "7d6965e97fa8c0fd10f16d58240c2a106139d5f77877d2979a31b775bababbfe",
+      "body_sha256": "73c5391356112d6449b6cc2c7c1ef531b07b4e3127713415fca3fd18a2a2274d"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=37&m=content",
+      "title": "厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/e30640a66bfa08fc5773.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e30640a66bfa08fc5773.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e30640a66bfa08fc5773.json",
+      "html_sha256": "271d22e698f0b4ff3156056ed5381ef161ed8b8d6f0181d8e53fc1b0ed338c48",
+      "body_sha256": "1c61d700b675a8e160724d0e73af1698ee280eef3bb9c59e605bc6b94ae69348"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=38&m=content",
+      "title": "厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/fd27d1aaf797aa1218cd.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fd27d1aaf797aa1218cd.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fd27d1aaf797aa1218cd.json",
+      "html_sha256": "861faddb17ddef11504ec6d58a68979a27e70ebc968b4f05d8a1b4597d1da2ff",
+      "body_sha256": "abee65882af11e5d6a68ed2f16dfd299eacb36891d3b0e253a734f180b0e8fc0"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=29&m=content",
+      "title": "厦门商业空间设计-展厅设计-展览设计公司-店面设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/150699cd2d99b1e4a269.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/150699cd2d99b1e4a269.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/150699cd2d99b1e4a269.json",
+      "html_sha256": "e4b73ab9f210f939e46c696bd6e32b610cba094309b7f863cd217aad3b344399",
+      "body_sha256": "8298612a8d76507208c233909aef402fbd1d4a3527a38c0c5604a3b4aee6d69a"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=30&m=content",
+      "title": "厦门企业宣传片拍摄-产品宣传片-微电影-宣传视频制作 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/d3a2b5fd9c33b5c02884.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d3a2b5fd9c33b5c02884.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d3a2b5fd9c33b5c02884.json",
+      "html_sha256": "0cf86b9d4fc1bc714a968029d80e6023bfbac5f7c083186b548ae42bb6dead49",
+      "body_sha256": "f5aab314fba77e2a9373e942ef445bdde8ae3f83014d8258806bf138864d6578"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=54&m=content",
+      "title": "锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/da0eb758006c27e7baff.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/da0eb758006c27e7baff.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/da0eb758006c27e7baff.json",
+      "html_sha256": "49b100e9dc5ff2f5ed04c073d5264b80e95f756900c66d9a70dda6e40826ab28",
+      "body_sha256": "dd1d1cfa35463097bce281eabaac7dd15f3883c87d82c6bc449f4ce34c4b5fbc"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=32&m=content",
+      "title": "联系我们 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1f8dd1e2acd75a0f59a2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1f8dd1e2acd75a0f59a2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1f8dd1e2acd75a0f59a2.json",
+      "html_sha256": "599e9f12ceaa3da240c9fe00d3b9f47a7cb8a5ee8685134891c30c76e4cfc236",
+      "body_sha256": "d559c239e716c840c86d1de4ef16d1abf80b0ad9e398e46e1d592e77ee522308"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=28&m=content",
+      "title": "厦门品牌策划全案-VI设计-logo设计-包装设计-海报设计 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/61b437719aec849cda0f.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/61b437719aec849cda0f.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/61b437719aec849cda0f.json",
+      "html_sha256": "cf7f0ea160a81b7c068598f35931a126913a1b5ff6fd424ada8bae17f0095e53",
+      "body_sha256": "017297a50c95dee0819b425461722d4c2229adf07852d6d1c6003d659a72c7d0"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=49&m=content",
+      "title": "锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/4a7ad280f4d7c164c02f.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4a7ad280f4d7c164c02f.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4a7ad280f4d7c164c02f.json",
+      "html_sha256": "bc0d8b33adc7eee684cda50892862eabc4f0da36dd5a277edd86cd787886d21f",
+      "body_sha256": "541f82a75212db213e95f7b82baab5f8c77c455fe463e279ed2c435abbe8c79a"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=215&m=content",
+      "title": "西人马科技 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/dc24b2ce20c4d6ae37ed.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/dc24b2ce20c4d6ae37ed.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/dc24b2ce20c4d6ae37ed.json",
+      "html_sha256": "c9ab99afe5d122ce6d80d0eb0e766b5639772185852af71b65ab842eae0bf696",
+      "body_sha256": "3f8adb1ecd87911e0d6b249d570b5127900c26aedce967feba16b918dace6ea6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=244&m=content",
+      "title": "安平科技 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/e7c46e5d01bd3675f1e2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e7c46e5d01bd3675f1e2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e7c46e5d01bd3675f1e2.json",
+      "html_sha256": "4f3a1ba237be468c4cdbdbc2d46c3847c858991b969d7ba684c6f036bf399a68",
+      "body_sha256": "608e4fb2a6ba0304f1e03a2b5a5bad861d1bf1e58b9059c1682b77f47e081e99"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=243&m=content",
+      "title": "御风驰 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a5df1955ad9565e4ffce.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a5df1955ad9565e4ffce.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a5df1955ad9565e4ffce.json",
+      "html_sha256": "64c8c81177032517c6b04666caff5d77d9693246f353815fa073f0cd2e79cc9a",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=242&m=content",
+      "title": "厦门科华（深圳） - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/b8a1379f5f825ecdc2d7.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b8a1379f5f825ecdc2d7.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b8a1379f5f825ecdc2d7.json",
+      "html_sha256": "2148636bf01c7dccc102f7ae39dbbae03c41a63bad25c6a11b1d938f2fefa691",
+      "body_sha256": "986e7c8050ef8554cf72a5495b32de2d04d899ef273ad25ba9173b96f3dcd084"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=241&m=content",
+      "title": "两张票 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/6342d2e0e6f93139708d.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6342d2e0e6f93139708d.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6342d2e0e6f93139708d.json",
+      "html_sha256": "6a623fed6ca1442d81b4dce020c38cf0c73dac47c2d41a15ac49a83457aef3ce",
+      "body_sha256": "7d5f48d51b19ee1eea032893efd1e69463338f193eec7ed586e8490c1e9426ac"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=240&m=content",
+      "title": "鸿弘宠物 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/c6224566ba2382e5fa1b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/c6224566ba2382e5fa1b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/c6224566ba2382e5fa1b.json",
+      "html_sha256": "805bdaeae2f8d48ba8b2002cfe82140b67ea69c7dae47d9bd8a4bc89fea1ae80",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=235&m=content",
+      "title": "时尚潮饮品牌 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a1e37bf5ef744dc58d75.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a1e37bf5ef744dc58d75.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a1e37bf5ef744dc58d75.json",
+      "html_sha256": "b35c288fb79348ffc8fd7f299cee88f8c7625026f1b3daa9249ef360d87597f5",
+      "body_sha256": "7d5f48d51b19ee1eea032893efd1e69463338f193eec7ed586e8490c1e9426ac"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=111&m=content",
+      "title": "延江股份 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/46ef8c9b0d3ccd84395c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/46ef8c9b0d3ccd84395c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/46ef8c9b0d3ccd84395c.json",
+      "html_sha256": "84636f0c8e0f94423a694e9448944ed3d750418048d39329cbc8113688c72435",
+      "body_sha256": "052a37d46ae9c707be4f6221abe22cb140cd0354db72afc906d601bc9bb4782e"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=224&m=content",
+      "title": "亚诺阿格斯 老花镜品牌 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/877f419e8a85db36a0d9.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/877f419e8a85db36a0d9.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/877f419e8a85db36a0d9.json",
+      "html_sha256": "2499a27e7568ce812224ba29bb0a9518f3dc7346e3220d0a8e3e9424040bda94",
+      "body_sha256": "362e9c75ae822a6fe53db4b31402c5b61d42e9eddad8c0c965bb5753c9992ee2"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=217&m=content",
+      "title": "SOLAR咖啡 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ea1ef2fbd9f588d77b08.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ea1ef2fbd9f588d77b08.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ea1ef2fbd9f588d77b08.json",
+      "html_sha256": "e0658f1c9edeb09fa7abe4aa399757495d7e61202fd7fb7eaaf7b8f08a70a18a",
+      "body_sha256": "ceea05b50ed96635b8d00591037a6d2de8ef57a6cb98ef344bb83cbced94f870"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=72&m=content",
+      "title": "安踏旗下品牌Sprandi - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/b315eef9ab852398d44e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b315eef9ab852398d44e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b315eef9ab852398d44e.json",
+      "html_sha256": "e846f91641e16e04350ab4446153019af49627ba4a0fa12251d848b6b0b37d12",
+      "body_sha256": "ba13db76162e266c168b7c176b3e0b2ecaf0be84d042e38e243070e25f68ec5e"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=103&m=content",
+      "title": "新菲华（石业） - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/639454a2e2b3e22113cf.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/639454a2e2b3e22113cf.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/639454a2e2b3e22113cf.json",
+      "html_sha256": "1c951663c20e8c58dd024232db3eab7cc7e54bc68c051d36f984882a29492105",
+      "body_sha256": "7d1efa6a6a034cc4dd77e6b3e6e36c5b91f640bbc843d6ad24461ee00196359e"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=195&m=content",
+      "title": "大苑子 台湾饮料连锁 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/7afadf896d749fee0ad3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7afadf896d749fee0ad3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7afadf896d749fee0ad3.json",
+      "html_sha256": "a8eba8a71629a8415a87efa19b9d0d8d761c668f652b4e495d31578ec47b6b4b",
+      "body_sha256": "18c223cf8c6e659b01c82894ee5f5c45b995810e312d87594865639d370ef415"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=218&m=content",
+      "title": "客家土楼 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3943881dc07353c81c81.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3943881dc07353c81c81.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3943881dc07353c81c81.json",
+      "html_sha256": "82e63f4c6d0d77c523bbc927358821dc58c68e704d57260515bd8a536ed6e692",
+      "body_sha256": "d576e27330efd5aa8683a71744a58f748fe2324a5f3246b098531da62ba4a3d0"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=118&m=content",
+      "title": "在东方艺术馆（艺术餐厅） - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a2f060af15e73093c11e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a2f060af15e73093c11e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a2f060af15e73093c11e.json",
+      "html_sha256": "27f877048508e25e76cb1942b5e33cb0c513409664419fe40d57d5b5d2d4fcfb",
+      "body_sha256": "93638cdf95410dac939298eed0edf4a2c360fb3f5f4d7de47d2c7d06ded1f0d6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=112&m=content",
+      "title": "连城旅游局（冠豸山） - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3c49c48ab47ce2412bf0.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3c49c48ab47ce2412bf0.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3c49c48ab47ce2412bf0.json",
+      "html_sha256": "beadaca649e213d7bf0448768d437458201d2cb39acc73a0689aa19080fcf451",
+      "body_sha256": "71db778d29e792b56fe561e3d8bea4b9fae2cd7cb09c96e68c6b9238ee1a7137"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=106&m=content",
+      "title": "石狮公交 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ca25a2f2d924859196f0.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ca25a2f2d924859196f0.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ca25a2f2d924859196f0.json",
+      "html_sha256": "a167529ac551652846fe11defa1e1ba013df876f3f83ccc2e98881e341c518c0",
+      "body_sha256": "8990cb8466635a57d17b4fb5d0f6e90317724fcde1fe2a3b62f465072b14276b"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=191&m=content",
+      "title": "高分文化（儿童教育） - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/eb3faa316e0415253f0f.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/eb3faa316e0415253f0f.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/eb3faa316e0415253f0f.json",
+      "html_sha256": "d8a5a1491a3ee903756f0f97525ddbff1e660292786012db9fc027c552247251",
+      "body_sha256": "57ebf40fcb0aef942d1c2bce351d6d9ccb24041cd57c9c99f227be20b4668f2f"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=108&m=content",
+      "title": "台湾爱育（幼童教育） - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/72f64e139f89f8481671.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/72f64e139f89f8481671.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/72f64e139f89f8481671.json",
+      "html_sha256": "6964c0ebb4a11d5cf7e475bbf30d105fdde8c21058c598e6f67fc65bde7ac96c",
+      "body_sha256": "32a398f8df3947025dbb1ca06371abd419087a23ef0c208140c6dd724ce517cb"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=107&m=content",
+      "title": "朵拉舞蹈（舞蹈培训） - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/f29859256022ddbe26b2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f29859256022ddbe26b2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f29859256022ddbe26b2.json",
+      "html_sha256": "d27edbf8882339ddb71ba8e3a151b46606717c71f7b5507a109a3fc30f6c21e4",
+      "body_sha256": "352f19455eca09e6a7133b311a35c0098ed5740fa87c4a165535c63e2435e5c9"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=117&m=content",
+      "title": "鳌霸食品 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/464822342cab5862e502.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/464822342cab5862e502.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/464822342cab5862e502.json",
+      "html_sha256": "1e591e4fc076da94bdf5469eee072b6f0018ce5638035c81aaa2a23c57154a19",
+      "body_sha256": "346b384f753cd76281630550fdda937909add9c259640d94cc9fef6e13269634"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=105&m=content",
+      "title": "盟展鳄鱼 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3fb288e410bef3e266fb.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3fb288e410bef3e266fb.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3fb288e410bef3e266fb.json",
+      "html_sha256": "a8eec79e09898f07cf8d36f0d3d45a624805232e7ed95885e6a28ae3c853fbc8",
+      "body_sha256": "a29df130a75fe2feca36ebcd956294cd8288e2ae9ebd84968bdeec94b3441b2f"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=104&m=content",
+      "title": "咕叽咕叽创意童话馆 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/f55099286ec7402dc659.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f55099286ec7402dc659.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f55099286ec7402dc659.json",
+      "html_sha256": "42389077d1eefd8bc168db3126e028e0d76079e845d6648d894b6aada72960a1",
+      "body_sha256": "544af3b6ff9d6be1cb7a6dfd86d123817adc9680ce47ea5dc62ea61d5e31a180"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=110&m=content",
+      "title": "薇茉丽 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/f33db118c2ea98fd825c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f33db118c2ea98fd825c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f33db118c2ea98fd825c.json",
+      "html_sha256": "f34a1d6a6bb0db8bccb8a45a413b7ff3a379cdc55cbe930d9d1f539769f351fc",
+      "body_sha256": "96a8fb4ff8a7d0f4d8eb0f54d768401b56d717bda73f30c2a8a3bc3f4c63c1ad"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=39&m=content",
+      "title": "厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/b78261fcd284e2ed804e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b78261fcd284e2ed804e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b78261fcd284e2ed804e.json",
+      "html_sha256": "5d2408a9725f3be1db4a44dd5df0aa8765503843836037f9c6cbb4b28cc9837a",
+      "body_sha256": "dba3808383ab347e274937d9f87f48f55c31c25bc98c00ad35ead508fb0aae08"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=41&m=content",
+      "title": "厦门私人会所设计-别墅装修设计-别墅会所改造设计 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/64b0e0293937f3d15021.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/64b0e0293937f3d15021.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/64b0e0293937f3d15021.json",
+      "html_sha256": "d0ee23e1362cbca801584074c7116d5c7ce2470742dccf941b0aa545bf7750df",
+      "body_sha256": "dba3808383ab347e274937d9f87f48f55c31c25bc98c00ad35ead508fb0aae08"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=248&m=content",
+      "title": "MACA啤酒烧烤吧 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/2725c7c91f5813275fe3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2725c7c91f5813275fe3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2725c7c91f5813275fe3.json",
+      "html_sha256": "1d7198a8074979e3e0078cbe52e68d57357c46cb8edd13295acd38e293d70ea6",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=247&m=content",
+      "title": "富豪冰室(港式餐厅） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1275df4a3fd9c664cd7d.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1275df4a3fd9c664cd7d.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1275df4a3fd9c664cd7d.json",
+      "html_sha256": "81f6f2fafc49c2ee2bca48bd80e0d496248bcbd736f3a3fcd87ecd7f83be9bc6",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=210&m=content",
+      "title": "(安踏旗下品牌) - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/bd6ec902d405b125db66.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bd6ec902d405b125db66.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bd6ec902d405b125db66.json",
+      "html_sha256": "66ff1fd9fdffc1ba51bc75d6e11087adeff7ffc1b68d73b96c165836c5117029",
+      "body_sha256": "b8e9ffe78d85210ff2db2601151bc617e90200281b60b50ba249915ac23a8b30"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=211&m=content",
+      "title": "暴龙眼镜（BOLON）店面设计 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/6a82d2aa7c495abd13c8.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6a82d2aa7c495abd13c8.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6a82d2aa7c495abd13c8.json",
+      "html_sha256": "5097c9187f348a48a92cfc4a7bc6144d097d34953b4af44ba2e57b5eb81d7115",
+      "body_sha256": "78cacbdce2d9fcbcc008012fd4d78912cf7bb21f4b53d5260b0bf8e0aa1a63d1"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=207&m=content",
+      "title": "SOLAR（咖啡店店铺设计） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/e4c4c82beac05da13840.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e4c4c82beac05da13840.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e4c4c82beac05da13840.json",
+      "html_sha256": "2c4cb48933961c23f259a85bf75780da181b78f2e4e4d0466437f0a2a74c5d3d",
+      "body_sha256": "bf20fcce7cbd6ed819502713bdaa156591b3ff2f1826a3c689256827789325c3"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+      "title": "延江股份（美国展厅设计） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/50e66f9b8170d3767f58.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/50e66f9b8170d3767f58.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/50e66f9b8170d3767f58.json",
+      "html_sha256": "aca8bb5aae39a2f7b750d23f2a9237ad0250f797ab1b6d656016cc94df5faa11",
+      "body_sha256": "9b58fbfd2e9c546b5ff727979fe0f4ae110a5d5fa41765c49eebda4756250c92"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=84&m=content",
+      "title": "华地投资 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/5a0f3686ab05806e072f.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5a0f3686ab05806e072f.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5a0f3686ab05806e072f.json",
+      "html_sha256": "c3fda8317885acdbce19b9a2b000a915380bf1976ed84a9ab1736481ac28b7c2",
+      "body_sha256": "40ae08889639d15ae64ed737b7b4c63d6297ed0104290960d792019f7ed040fc"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=89&m=content",
+      "title": "苏小糖 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1a5128ba685a6f109976.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1a5128ba685a6f109976.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1a5128ba685a6f109976.json",
+      "html_sha256": "f151fff4aed8a88e3d1f374d9cdf921f928659d2cc0e08b7d2d60d05090092bc",
+      "body_sha256": "43b1cf4753a89687a8fa33486a4eae7d07dbc3907926e946984b70378fc41222"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=40&id=202&m=content",
+      "title": "君奥远运 - 厦门办公空间设计-创意办公室设计-锐伽办公场所设计 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/b2b1cf29d2334e51c730.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b2b1cf29d2334e51c730.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b2b1cf29d2334e51c730.json",
+      "html_sha256": "c03c5a95675001a7917cf1fba6a47a581ab7d0b15ca369e0098a80641d7980f9",
+      "body_sha256": "ccbc0a82fa6f00676fe09c3c7340122bc4bc256ead1004632f708d84833e2016"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=44&m=content",
+      "title": "微电影 + Micro-film - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/4f95c698d25111df6e12.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4f95c698d25111df6e12.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4f95c698d25111df6e12.json",
+      "html_sha256": "56ed6d7f6e179d0223120ac3e90a61568831d351614eceea3303bd889eb56ace",
+      "body_sha256": "f5aab314fba77e2a9373e942ef445bdde8ae3f83014d8258806bf138864d6578"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=47&m=content",
+      "title": "微视频 + Micro-video - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ae47f089e64b14e575f7.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ae47f089e64b14e575f7.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ae47f089e64b14e575f7.json",
+      "html_sha256": "0d5cf3cea10fa49cadf869deb95594bc00514608960a6bf1e69cfe82d6ed9594",
+      "body_sha256": "f5aab314fba77e2a9373e942ef445bdde8ae3f83014d8258806bf138864d6578"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=45&m=content",
+      "title": "产品宣传片 + Product videos - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/b0c1c598634e6b36c0eb.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b0c1c598634e6b36c0eb.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b0c1c598634e6b36c0eb.json",
+      "html_sha256": "db324f8e9a9ef0bdb6933bc70997f030c7bc24e761a98550f2ae53763fba48c3",
+      "body_sha256": "f5aab314fba77e2a9373e942ef445bdde8ae3f83014d8258806bf138864d6578"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=46&m=content",
+      "title": "企业宣传片 + Corporate videosding - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/996d7f4c1af373ab4e52.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/996d7f4c1af373ab4e52.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/996d7f4c1af373ab4e52.json",
+      "html_sha256": "97b6255f8b362894fbd67b29d7adaa277cb178d1f0090136384b84e001d953a5",
+      "body_sha256": "f5aab314fba77e2a9373e942ef445bdde8ae3f83014d8258806bf138864d6578"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=62&m=content",
+      "title": "科技品牌VI设计的未来发展方向 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/6edd459d02d68cb8932f.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6edd459d02d68cb8932f.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6edd459d02d68cb8932f.json",
+      "html_sha256": "0e6cdc1346a44523a446fcd09feaef2998ea22cf04a81c6acefa78887dd13b0c",
+      "body_sha256": "25115d9ae95edfaa2389afe6bb4d0f728f398815bcbea4df336b89c8a6b93c07"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=61&m=content",
+      "title": "科技品牌VI设计的未来发展方向 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/97be25bc461aeba917ad.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/97be25bc461aeba917ad.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/97be25bc461aeba917ad.json",
+      "html_sha256": "5087ae1a693f95824d232e928a17a9e007d5dbc7aa6a7557bce320c1ce88d9dc",
+      "body_sha256": "25115d9ae95edfaa2389afe6bb4d0f728f398815bcbea4df336b89c8a6b93c07"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=59&m=content",
+      "title": "品牌设计须知 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/811dfcc64883870da7a9.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/811dfcc64883870da7a9.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/811dfcc64883870da7a9.json",
+      "html_sha256": "336627ed0fed94e2dbddf61bdcb0091c91697e5bc0e1f822daca51f30981b87d",
+      "body_sha256": "471b508e51839cfae5b73fd0a0e2787698b758c5bb9b87cacc73179302008849"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=58&m=content",
+      "title": "走访品牌企业杂谈 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ef199559b36f3caaa670.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ef199559b36f3caaa670.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ef199559b36f3caaa670.json",
+      "html_sha256": "5351af26f3b137c10a2019df245618c66dc58b4d93146bd1da2df86155ccfb78",
+      "body_sha256": "babdf57d27ed674fad8e02013201518d9ac4f0e4456f327adfd28cb88827d109"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=57&m=content",
+      "title": "宏弘宠物品牌策划 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/bbcd7ecac79610c91d3e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bbcd7ecac79610c91d3e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bbcd7ecac79610c91d3e.json",
+      "html_sha256": "af1a2926e7aa28e3f2bbda792d89d3441a66c466695bc893a3b3a0cade35d0c4",
+      "body_sha256": "fdce9a96ead0453cf7bc37bf3e50d5d03b4e81ff5061594604917df30800427b"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=56&m=content",
+      "title": "包装设计 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/5282074caeca110717a5.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5282074caeca110717a5.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5282074caeca110717a5.json",
+      "html_sha256": "063fa663f33e4b1edaf9924a4390139437ad204edfceb8029dc2db3657012098",
+      "body_sha256": "1af023fc7c1d36c9f3d3efd7311606e8018b326c09a848c32aefc8ec582faa7b"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=54&m=content",
+      "title": "关于餐饮品牌的孵化 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a21ef9af412e3fa31eee.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a21ef9af412e3fa31eee.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a21ef9af412e3fa31eee.json",
+      "html_sha256": "452ff6569844072854a64099db87801fa12f7993d4573ad61eff46193c3d35aa",
+      "body_sha256": "b6a389f3dad35e6a530d205ac45108fd9ea5d4e3e71bf59890c4afae49234e60"
+    },
+    {
+      "source_url": "https://www.ruika.hk/sitemap.html",
+      "title": "www.ruika.hk Site Map",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/172160a2a72d3ade8605.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/172160a2a72d3ade8605.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/172160a2a72d3ade8605.json",
+      "html_sha256": "f095bc088addcd55eb55c4fde359cd48625bd0e270271da9a2ebc684b90696a3",
+      "body_sha256": "32e3751271651010c908bdd3db5dec8a7b0de40f027dd22a231eaeb6c5b8e83d"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=221&m=content",
+      "title": "同记食品 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/2de7caf86bd70cc98866.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2de7caf86bd70cc98866.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2de7caf86bd70cc98866.json",
+      "html_sha256": "e9010f22ed3b192d6889abe9d44e626d4b198c15666a15468769972655ea4f49",
+      "body_sha256": "0cd1b54f5439c13d5549b33f2f967b8f4347a95a01654e126014e29292366150"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=216&m=content",
+      "title": "盟展鳄鱼（展厅设计） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3e157699c9c74b5eabb4.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3e157699c9c74b5eabb4.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3e157699c9c74b5eabb4.json",
+      "html_sha256": "7a3c30738e163ff29178dc5457db50b3af7b6030163dc9df2ff9f80aa67d511c",
+      "body_sha256": "300894ebd4014c963340751231fac7ac247a5f84006129ba19c1a217f619e5cf"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=206&m=content",
+      "title": "延江股份（南京展） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/7c381d3b69f500763c1d.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7c381d3b69f500763c1d.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7c381d3b69f500763c1d.json",
+      "html_sha256": "8203ee5f5707cfd5f63edde94d001031215725042d77a3bb69c456bd5d1fa53d",
+      "body_sha256": "02988ae2f41134f44c8ed1091dd6187b39c66d9e64cb21c42aee36c29d04601d"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=83&m=content",
+      "title": "咕叽咕叽创意童话馆 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/0e18ff727d86ed60054c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0e18ff727d86ed60054c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0e18ff727d86ed60054c.json",
+      "html_sha256": "d7d1931cc9a1977fc89923172e8ca5b1f1d9d5c4b062541b7fc29f0b2870de61",
+      "body_sha256": "f639bf61fbca68c5cc5087b0bdfc4313524893aa4dd4262d02211bffa6439f38"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=85&m=content",
+      "title": "弥乐福 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/24a01f67980bd83eaebb.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/24a01f67980bd83eaebb.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/24a01f67980bd83eaebb.json",
+      "html_sha256": "909f1d5c92ea19e2c97f4cd7bcbe960c97eaf90d16ad65a1387a414976fd3a81",
+      "body_sha256": "5643eca0aae112e5c93a4f460e8ac4c7e65ff263524f6824a6eeb69c1603abb4"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=109&m=content",
+      "title": "空空沉香 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/fa22b9b06a86caddcc9a.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fa22b9b06a86caddcc9a.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fa22b9b06a86caddcc9a.json",
+      "html_sha256": "9d226131bfd2296d870c2af4c0344f65e56c055d3e2ad47a147d9c2eabfa54d5",
+      "body_sha256": "d6f9c7fc5a3794e9986050f64abd7dab0df2fafc92977dd4090256747c5c303d"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=101&m=content",
+      "title": "哈乐猫香精 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3f0930d942c5d597e2e3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3f0930d942c5d597e2e3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3f0930d942c5d597e2e3.json",
+      "html_sha256": "e29f46503c5b888b9febbaefd22a423352d3e7fd42aeb3face6e1d98de1ce8de",
+      "body_sha256": "d866f3ab054055ec6d6e933f22314ce32b107575024b82c593345d69b6f4d6aa"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=100&m=content",
+      "title": "本筑咖啡 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/fbc98cabddd29480cd91.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fbc98cabddd29480cd91.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fbc98cabddd29480cd91.json",
+      "html_sha256": "44a653041cba479342db83ec2e66e9000d85f7a48cfd701b3b3dab86cd2f0d1f",
+      "body_sha256": "e639178f3fad98c4d29c6f808cb1470f9163bb01177db14f7a6a27ef259837c8"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=99&m=content",
+      "title": "M蛋糕夫人品牌 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/44d212db0e6e8bec48ae.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/44d212db0e6e8bec48ae.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/44d212db0e6e8bec48ae.json",
+      "html_sha256": "5b5f163e91240bd41fbf2ee6e02c76e6964bfb75cf0f3da2521f8471a986b661",
+      "body_sha256": "1473f38d2f12c366d58ab2d5ff3f2c6dc116015b14d3e14821a1056351c975e8"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=219&m=content",
+      "title": "提示信息",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/844b596519367e32cc50.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/844b596519367e32cc50.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/844b596519367e32cc50.json",
+      "html_sha256": "f817a1db907a68f422a427968e75ceae38ceca3368077f5c1324777678bd71ba",
+      "body_sha256": "28f4449d465362a7d2a6b0a67b8e280aa36b02b188a91445cc7623c39de69176"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=192&m=content",
+      "title": "欧冠阀门 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/bafc9b6db39a7cc10dcf.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bafc9b6db39a7cc10dcf.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bafc9b6db39a7cc10dcf.json",
+      "html_sha256": "2fe3ffe333fc97a578329334042c7119072bd8da2fdd68c4768ed301ca08c9d9",
+      "body_sha256": "fd029552df5311a377f4299a3d9f3b1cad16c044f50e6c8eca6a01154d88ed52"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=102&m=content",
+      "title": "暴风骑士 - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/08c204575d1ce3a5f6c2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/08c204575d1ce3a5f6c2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/08c204575d1ce3a5f6c2.json",
+      "html_sha256": "4e20d7ac7349e174710834896ea7a22266e8c17ed4f7d492ffee168ede86ef6f",
+      "body_sha256": "b5e59b058591e359b76965c041f878b5ed21c7ac3c1d8b885203ab7b5c914618"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=98&m=content",
+      "title": "安踏旗下品牌 / Earth Gear - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/8e914a4021752c8d76c3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8e914a4021752c8d76c3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8e914a4021752c8d76c3.json",
+      "html_sha256": "73a8c7bfe994d8d917e6575bb78e25d188f6fd9becf620c934f5b09b570ef137",
+      "body_sha256": "c2d03d373bd6229df36662749e6ed07f0c3431759efefababeaa7950f65d6302"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=181&m=content",
+      "title": "成都市市标 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/805f75954b22b3828dd6.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/805f75954b22b3828dd6.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/805f75954b22b3828dd6.json",
+      "html_sha256": "23857c20870a62d4be292d007c5844db1b08b965e87e4f323a8d5f081c72863f",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=180&m=content",
+      "title": "石狮公交 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/636f679f756e647761f8.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/636f679f756e647761f8.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/636f679f756e647761f8.json",
+      "html_sha256": "33657f46327ab9ae326f64736659884b858721b4d75ccf958918d7a6c8170f73",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=179&m=content",
+      "title": "连城旅游局 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/bba8ceeacf6add0f8578.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bba8ceeacf6add0f8578.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bba8ceeacf6add0f8578.json",
+      "html_sha256": "cd81e33186a5c4e054ecc64a202496cba5db157db5fe1eafe0bf6a5213dce47e",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=178&m=content",
+      "title": "爱登堡 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a37bfe6f29575131a5eb.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a37bfe6f29575131a5eb.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a37bfe6f29575131a5eb.json",
+      "html_sha256": "5c64dc6eb10fa5c8afd36ed3fb490fd9a2fe1102ef38ba896ccd6dde1fcbc46a",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=177&m=content",
+      "title": "延江股份 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/020546e060fb440b2b1e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/020546e060fb440b2b1e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/020546e060fb440b2b1e.json",
+      "html_sha256": "2e86c3d08df8da3ebcd50b97f7a27d6cfc2ecabce76e304b62ccbf99281c7f0d",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=175&m=content",
+      "title": "欧冠阀门 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/8d6d9f442ab94f62d7dc.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8d6d9f442ab94f62d7dc.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8d6d9f442ab94f62d7dc.json",
+      "html_sha256": "c277191709b05cf9ad69b7d19a0beacd81b65ed541334a710d7705aa19e1e50b",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=174&m=content",
+      "title": "新菲华（石业） - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/93e9e0c5ecfc7ae39692.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/93e9e0c5ecfc7ae39692.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/93e9e0c5ecfc7ae39692.json",
+      "html_sha256": "14b4148bd34198fd870949fc82124cefd7a41585b081136408d00071b38181c7",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=173&m=content",
+      "title": "咕叽咕叽创意童话馆 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/64d5a86f3fcdb412091b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/64d5a86f3fcdb412091b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/64d5a86f3fcdb412091b.json",
+      "html_sha256": "57a0471f4183d3525ca1c6d36209d7253689e98d9c24c58eed5e8d5a573302fd",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=172&m=content",
+      "title": "百胜水业 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/bc146514b5487d593c66.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bc146514b5487d593c66.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bc146514b5487d593c66.json",
+      "html_sha256": "44e1166fe1248b23f0fe4ab68975fadb03d43b3bcb7e45ad7a4521330626be4f",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=169&m=content",
+      "title": "振鸿水泥 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/8c7ba31e8beb44d31c0e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8c7ba31e8beb44d31c0e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8c7ba31e8beb44d31c0e.json",
+      "html_sha256": "26a89f626d5dcb2154fbe3bcbc510732119ceb59be2e471ec5374230843d7de3",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=168&m=content",
+      "title": "中恒信 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/aaa71b2fdbcdd6a5c079.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/aaa71b2fdbcdd6a5c079.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/aaa71b2fdbcdd6a5c079.json",
+      "html_sha256": "f63b6fadaf556ba235f6d09b1bffbf65a2d06233c2351633174cafab8462dcce",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=167&m=content",
+      "title": "SSBN FURNITURE - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/74fb89c8358165f7f907.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/74fb89c8358165f7f907.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/74fb89c8358165f7f907.json",
+      "html_sha256": "463dfb8781b415bdd2411f164ea19896444425d9dc45f1b6827c44404df04255",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=166&m=content",
+      "title": "安踏旗下品牌 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ee8c4ec10ea728451a7b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ee8c4ec10ea728451a7b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ee8c4ec10ea728451a7b.json",
+      "html_sha256": "0726bde5702af7d32d9835ddff6326f10f7e1d9de8f59d0f5a06c01183bfc918",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=165&m=content",
+      "title": "朵拉舞蹈 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/de0024696728f2682257.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/de0024696728f2682257.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/de0024696728f2682257.json",
+      "html_sha256": "d04449af1fbab38c3ca07490ce960f8055b7f40dbf18f7d3a42ea4633061c9b2",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=164&m=content",
+      "title": "哈乐猫香精 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/890751bc1dd02ce8a71a.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/890751bc1dd02ce8a71a.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/890751bc1dd02ce8a71a.json",
+      "html_sha256": "ddb476ca2362ee1b837bfc332bd36147a804a9f37c3f815968b59285f1dea89a",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=162&m=content",
+      "title": "众合电器 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/5d7f7ff38450df35a72f.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5d7f7ff38450df35a72f.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5d7f7ff38450df35a72f.json",
+      "html_sha256": "2515045a2313b6b5605ebf76bb22fa13d45e34fe8c3a6a2f44f2541c57678521",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=158&m=content",
+      "title": "宴东方创意闽南菜 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/de26615d2468e4f8d8f1.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/de26615d2468e4f8d8f1.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/de26615d2468e4f8d8f1.json",
+      "html_sha256": "605b31cbb313257d5b7494a18d764976868188cb317a4948bbb5451a46eb344a",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=157&m=content",
+      "title": "蛋糕品牌 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/f2489c11e3f0aee59381.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f2489c11e3f0aee59381.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f2489c11e3f0aee59381.json",
+      "html_sha256": "0090453aa985f5759596dda7ac68ff5c7670e5af0aaecdc25f2137515cb81564",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=156&m=content",
+      "title": "台湾爱育幼童教育 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/05a3b0545faadfff2510.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/05a3b0545faadfff2510.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/05a3b0545faadfff2510.json",
+      "html_sha256": "3d6814a87eaea202df9a9168d8522725a95a8b8b9b80dda319d221839293a02d",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=155&m=content",
+      "title": "薇茉丽 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/72c0832731d7f33bbafe.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/72c0832731d7f33bbafe.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/72c0832731d7f33bbafe.json",
+      "html_sha256": "f2c2bbe82f9405e458bf47f4303c431d6a9d1468f5e506ecaa700ea8607d8368",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=152&m=content",
+      "title": "玖玛尼 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/951e822cdc0f9a39e6e6.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/951e822cdc0f9a39e6e6.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/951e822cdc0f9a39e6e6.json",
+      "html_sha256": "af3bc68673157bfce5b35506801a39393289fecaf6f1a2157f7608bec1a6aa1b",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=151&m=content",
+      "title": "暴风骑士 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a6a59fd541590c77b2a1.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a6a59fd541590c77b2a1.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a6a59fd541590c77b2a1.json",
+      "html_sha256": "62f984f80aae3aa309e1c965d9a2b454a8e3ec732eeba7de028fc81d3752551a",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=150&m=content",
+      "title": "皇家一号 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/74918068cb859388d1ab.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/74918068cb859388d1ab.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/74918068cb859388d1ab.json",
+      "html_sha256": "b61d5a94cc5f39587c1a5b94e77f9575bd74e4ac6ec193cea5117b4fc007ed19",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=149&m=content",
+      "title": "上竹 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1f4d8c69bf6946850c7c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1f4d8c69bf6946850c7c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1f4d8c69bf6946850c7c.json",
+      "html_sha256": "c0b05929ce41eafcef2828714f62234190bde13a2660249ab297a845f9afb775",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=148&m=content",
+      "title": "华地投资 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/9c28954b03242c3ecd66.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/9c28954b03242c3ecd66.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/9c28954b03242c3ecd66.json",
+      "html_sha256": "233fef2374cbe5e73ce011ed0cd5729b26fc3389c173486345421870345c4322",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=147&m=content",
+      "title": "茶叔公 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/bb12cb01a7438620fa5a.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bb12cb01a7438620fa5a.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bb12cb01a7438620fa5a.json",
+      "html_sha256": "28b29aac20f75b899e42bbd742f131e9a37fdfcb5d69797030f9bb6f16ce6019",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=146&m=content",
+      "title": "盟展鳄鱼 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1cdcc6a24072ca96fa16.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1cdcc6a24072ca96fa16.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1cdcc6a24072ca96fa16.json",
+      "html_sha256": "6692c87b7e69901dbd033603125ddf49cb2bad80b6283b8129863b970604c895",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=145&m=content",
+      "title": "氟乐泰科 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/4192635c2780c46aca73.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4192635c2780c46aca73.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4192635c2780c46aca73.json",
+      "html_sha256": "fb1e02c0aa59f35bc8f1a3ec7a6c7b8bb532ec613b6868a9a57fb47a876c9baa",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=144&m=content",
+      "title": "弥乐福 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3d540f30d5bba83d42c7.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3d540f30d5bba83d42c7.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3d540f30d5bba83d42c7.json",
+      "html_sha256": "4ca9123ee2103cae692da2b2cbfd73653433b337c37747af7fd51105126061d7",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=143&m=content",
+      "title": "驱逐者 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1159b98033c08e1f7a81.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1159b98033c08e1f7a81.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1159b98033c08e1f7a81.json",
+      "html_sha256": "5509335f610d60ac4871cc57cb7f06f0fcb55ef24772f7a12aadf538079e975a",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=142&m=content",
+      "title": "日益膳 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/c3422c4ec7ec294ddefa.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/c3422c4ec7ec294ddefa.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/c3422c4ec7ec294ddefa.json",
+      "html_sha256": "07962de4bb007a1de610461acd9a93c1406300a4c16b2b97ae2fc92035fa5d4e",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=141&m=content",
+      "title": "罗德斯医疗器械 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/6ac75b1b884892842411.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6ac75b1b884892842411.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6ac75b1b884892842411.json",
+      "html_sha256": "727e30dcd588d288709203b51b04132dd14e8953e1667389f45b8387ba1c91d1",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=140&m=content",
+      "title": "正雄集团 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a1e73d810aebff96debe.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a1e73d810aebff96debe.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a1e73d810aebff96debe.json",
+      "html_sha256": "5636ae4b188af635095af14c8a45e07085dcddba80825e93bd8d6710ac9fe5ec",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=139&m=content",
+      "title": "CiCi酒吧 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ec74c3a6c67984ef6a74.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ec74c3a6c67984ef6a74.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ec74c3a6c67984ef6a74.json",
+      "html_sha256": "5561b4946aac4f93acc3aec0cf333dc93a8ac573b98bb72414df438967f5b592",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=138&m=content",
+      "title": "上奇 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/50fdc4f877a152c87240.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/50fdc4f877a152c87240.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/50fdc4f877a152c87240.json",
+      "html_sha256": "312527dc07f2fa90751b79829c89b389422f450fb7e6e34273ccb814a53b2181",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=35&id=137&m=content",
+      "title": "三福财富中心 - 导视设计案例-导视设计报价-厦门导视设计制作公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/00ba438f94b754e72f04.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/00ba438f94b754e72f04.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/00ba438f94b754e72f04.json",
+      "html_sha256": "8cafa758fc75914f1f04e8e27d7e2d5cfee1fba22c412f650471d1a7b0175f82",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=35&id=136&m=content",
+      "title": "成都地铁 - 导视设计案例-导视设计报价-厦门导视设计制作公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/d30a9a48c55f500ef6b3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d30a9a48c55f500ef6b3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d30a9a48c55f500ef6b3.json",
+      "html_sha256": "f26a356d9967ca574cf558eceec06224d1875f0c86135da3bb7d815f56ddfa14",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=35&id=135&m=content",
+      "title": "厦门BRT快速公交 - 导视设计案例-导视设计报价-厦门导视设计制作公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3b7ef44afdef8501ff9d.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3b7ef44afdef8501ff9d.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3b7ef44afdef8501ff9d.json",
+      "html_sha256": "5e1fc9da9c29c5837760c2c1bbadac7180aeb93470fe4d29bb88dca13c2c0ac1",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=193&m=content",
+      "title": "朵拉舞蹈 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/4b234ee8ec9c88d0508e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4b234ee8ec9c88d0508e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4b234ee8ec9c88d0508e.json",
+      "html_sha256": "b972c67b10e65c9ed9a64a5f46b96ab75b80382395a396054cbd3b85961d8f03",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=190&m=content",
+      "title": "延江股份 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/32570e3ac017227be7e2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/32570e3ac017227be7e2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/32570e3ac017227be7e2.json",
+      "html_sha256": "5ccb9ec7bb9c84b9bc53c0add3502cb64fd703807b9e79632ba9b2468dc698fe",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=189&m=content",
+      "title": "厦门特宝生物制药 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ff7fc810a5433ce8ebb2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ff7fc810a5433ce8ebb2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ff7fc810a5433ce8ebb2.json",
+      "html_sha256": "082efdc680a0e7d7262ce2bd4a95ba88664fc976d4a2ca4d61e4946cd3ad0d64",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=188&m=content",
+      "title": "七匹狼 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/87b42b8a2484d7855898.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/87b42b8a2484d7855898.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/87b42b8a2484d7855898.json",
+      "html_sha256": "e3bd2a56aa138557bc37f3f079c31a1de0678723fc08007f72109b64ecf9073a",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=187&m=content",
+      "title": "弥乐福 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/715c96291ee705d7c0ca.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/715c96291ee705d7c0ca.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/715c96291ee705d7c0ca.json",
+      "html_sha256": "e5df75ba9e0ec9d6e94f4b68796ae0f625d22ad889a3d88bc8806480680f0a73",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=186&m=content",
+      "title": "盟展鳄鱼 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/6e18c91af1db8b435f5b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6e18c91af1db8b435f5b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6e18c91af1db8b435f5b.json",
+      "html_sha256": "06b6907765595ace4cb05b78298b21761a7db6b36f540a820a9a1bca591166c3",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=185&m=content",
+      "title": "蛋糕品牌 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/0a5dfcab0c9e7ef1b10b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0a5dfcab0c9e7ef1b10b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0a5dfcab0c9e7ef1b10b.json",
+      "html_sha256": "66139552d4f3d5746ed027b77bd45fada8895347a701d7fc509e17ece855bf9a",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=184&m=content",
+      "title": "大苑子 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/0b6889f9ed9b2c7922f9.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0b6889f9ed9b2c7922f9.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0b6889f9ed9b2c7922f9.json",
+      "html_sha256": "a084024b61b1bfa2ecef377801e2a19429f9a9447d907b91024a24ce300e1456",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=36&id=183&m=content",
+      "title": "福建古雷 - 厦门画册设计-画册设计报价-画册设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/971ef08bbdb3e18138f9.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/971ef08bbdb3e18138f9.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/971ef08bbdb3e18138f9.json",
+      "html_sha256": "c131588fb72b741cdd28af3ba246cfe6a1b9e76c7c3874825c76bd3056668de0",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=200&m=content",
+      "title": "存昔 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/b4c6318af5541f2c20cf.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b4c6318af5541f2c20cf.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b4c6318af5541f2c20cf.json",
+      "html_sha256": "dbede1eaf1c63382deeada5e72e556a4f1fe22fed5c7238f7573ab0e7e8c4b12",
+      "body_sha256": "c9b5c8379061e7f9f6108d1b205a08aec81c73502cca191f976d0ff2f29d89eb"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=199&m=content",
+      "title": "肽悦 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/fdd0b7c4cb71fc2155df.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fdd0b7c4cb71fc2155df.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/fdd0b7c4cb71fc2155df.json",
+      "html_sha256": "f5d0f054c91554825ec29c0d375f89a80b2dbe969810fb833909aa7d6c010a52",
+      "body_sha256": "3546915b594ee0add6648d84b029864f6b8f09fb2aa0ad5468aeb713d9ab93b7"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=198&m=content",
+      "title": "Ve'molly - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/5bb0682a6bb1ee589df1.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5bb0682a6bb1ee589df1.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5bb0682a6bb1ee589df1.json",
+      "html_sha256": "872a96d0fc34ed3ea15d6b27cdd4f4899774bbcf5aa57770d40557f3d1ab0eaa",
+      "body_sha256": "78447d5bf08964325ae12556c8492844ab60585b2c5eb2a3702cec46ec09ca44"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=127&m=content",
+      "title": "喜来登酒店 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1784abd7d4a5627bc429.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1784abd7d4a5627bc429.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1784abd7d4a5627bc429.json",
+      "html_sha256": "e878c649100be9e2800d01f9b14cc526d2570dd67081390302c16e38494ac8c7",
+      "body_sha256": "03ab1e512d3ba49eed7093f920501fa76a3110f1de0e7ec53bd5ce76d0833ef1"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=125&m=content",
+      "title": "蛋糕品牌 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/0e2a844cf43f8b40665e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0e2a844cf43f8b40665e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0e2a844cf43f8b40665e.json",
+      "html_sha256": "6c74f86561310c44e4864dc9615ede12f2209d01d95fbed638f6e207095ffa6f",
+      "body_sha256": "d116903e5b8f9deb6befa5038853f15512b0cb45bce8bcbb103b1aa4a0e4b735"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=124&m=content",
+      "title": "盟展鳄鱼 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a34fc548f346d327600b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a34fc548f346d327600b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a34fc548f346d327600b.json",
+      "html_sha256": "40c01554f3428e44cca817dbd38805e8fcbe8d01ae2753e5f322cea567cb5eb4",
+      "body_sha256": "aa09dfcc17a6a24571f19248699c5a05c2dadd129d5ab65b105ee11e66a3c712"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=123&m=content",
+      "title": "狼爵士 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/f3528d95b1058dfe065d.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f3528d95b1058dfe065d.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f3528d95b1058dfe065d.json",
+      "html_sha256": "c0553240236f4ae24f6e64ac506d2485acca23ec7dff5941bd364e4fbc225209",
+      "body_sha256": "5764249c53d81959fbfebff6b543700f35c6a895e2e74a76917c5ff67a7971b2"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=122&m=content",
+      "title": "古琳坊咖啡 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/487d519d0664fa966fc5.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/487d519d0664fa966fc5.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/487d519d0664fa966fc5.json",
+      "html_sha256": "38b4b33afaecc0170b6d645ed1fd1070a0c2188ccc16b3e8318f8428acf23361",
+      "body_sha256": "729194d253201cdcf9f4e1b218508ec7da29d306e916d71d195a14b84ba94d11"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=121&m=content",
+      "title": "冰酒 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/4fb5007c6912b7741f4b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4fb5007c6912b7741f4b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4fb5007c6912b7741f4b.json",
+      "html_sha256": "963cada4765db9f1e55180146fd56439bb52c823998168b5e2e363aae3943ecb",
+      "body_sha256": "248ebb4aeb86006598ff76b5e3885b02dae7a6edfa73ec7c830e0216860f3c47"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=120&m=content",
+      "title": "佰翔空厨 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/8d7e8b4357a65e4f5b0c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8d7e8b4357a65e4f5b0c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8d7e8b4357a65e4f5b0c.json",
+      "html_sha256": "aa31086a86de5117e7fa6a06fe45bd65844820f94037a7df95d5dfce01321c51",
+      "body_sha256": "cbb38c711d5072e3cd73c5868a7cc0cacea33b599042292a5542c5136127d7ae"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=119&m=content",
+      "title": "鳌霸食品 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1cf71839cd95fbf3bfdc.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1cf71839cd95fbf3bfdc.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1cf71839cd95fbf3bfdc.json",
+      "html_sha256": "f7000ed6eb08b3b297bdcebeca08dc33ef66df51861b52a397901d56fb83029f",
+      "body_sha256": "1079a8e37d8ef9fa7bc8bc0b1323d2c170cef874aae6fba4c809cc8c913c51bc"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=132&m=content",
+      "title": "七匹狼 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/34a7ba97c46c020f3c75.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/34a7ba97c46c020f3c75.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/34a7ba97c46c020f3c75.json",
+      "html_sha256": "fa546ad7c793073b3639c5dce39bef24a76950158a608ad36808012235875186",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=197&m=content",
+      "title": "在东方艺术馆 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/8959631c3f09fd37a33c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8959631c3f09fd37a33c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8959631c3f09fd37a33c.json",
+      "html_sha256": "c4600a47d04bd62f8cede9b5df66fa9654236dc0d79294ff1e75e6b7a5d54804",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=196&m=content",
+      "title": "大苑子 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/db3917383add25144436.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/db3917383add25144436.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/db3917383add25144436.json",
+      "html_sha256": "1fe7f088a82dcbf47ca5716910d9d9ad9a64d4851b8cc78ef4d061146beec7a8",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=134&m=content",
+      "title": "国际旅游小姐大赛 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/cddad5d5a407d01ae54d.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/cddad5d5a407d01ae54d.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/cddad5d5a407d01ae54d.json",
+      "html_sha256": "6ff85991fa5d02aeaee264c473b0ed777e5439b50ec058f706a9f1f0473b4e3f",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=133&m=content",
+      "title": "与狼共舞 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/cb39cc6bcd869abc30e1.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/cb39cc6bcd869abc30e1.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/cb39cc6bcd869abc30e1.json",
+      "html_sha256": "a610e845b93b1559354935a481a06e915e3ee88dfb4a7978ed18a0c1ef30f39b",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=131&m=content",
+      "title": "国际欧芭 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/e8a76749e564302e5bd6.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e8a76749e564302e5bd6.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e8a76749e564302e5bd6.json",
+      "html_sha256": "970de92ea1c83fc7812f61f4f349e3ec80a06faf23cc504eea3eef07b69b56a0",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=130&m=content",
+      "title": "蛋糕品牌 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/b02dfffc1f6d93202068.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b02dfffc1f6d93202068.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b02dfffc1f6d93202068.json",
+      "html_sha256": "b44d04a2249d10e880933e7e887ac74a6ac3c0c614970430eac62d163c94c133",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=129&m=content",
+      "title": "朵拉舞蹈 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a592aff734ffeca50bf4.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a592aff734ffeca50bf4.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a592aff734ffeca50bf4.json",
+      "html_sha256": "69597ea64ac2c804a6e21b8391f96acb8bb42c7e617d0db46430ee00dde1f0d8",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=38&id=128&m=content",
+      "title": "冰酒 - 厦门海报设计-创意海报设计案例-海报设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/c63811626c9cc16987e2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/c63811626c9cc16987e2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/c63811626c9cc16987e2.json",
+      "html_sha256": "d66c6576a7bef785ff2e3676e9d2eb6d8fc2bae94c29d85961022afccacc5be1",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=233&m=content",
+      "title": "延江集团 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a49b11a027004904bfd5.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a49b11a027004904bfd5.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a49b11a027004904bfd5.json",
+      "html_sha256": "ac8dd8f57aa9128774d1093a0686c4e941453c8440736f68fc38a62508ef93c9",
+      "body_sha256": "2bc579e20d212144706214b340c5cbfebcff85d77aa81087b37db70eeee77eec"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=232&m=content",
+      "title": "THE WILD ONE - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ff7c291cc59b7ff0c630.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ff7c291cc59b7ff0c630.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ff7c291cc59b7ff0c630.json",
+      "html_sha256": "7142e151cea3fa5a938e84deb2f07445bd822ef78477fecc06237d3eebdf618f",
+      "body_sha256": "28a4ae1ab0e9799d5445774abe0a09c807fe4a13ca7dffc409326b29d841d0f8"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=231&m=content",
+      "title": "KING W - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/dfc7e992af1de5e7c070.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/dfc7e992af1de5e7c070.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/dfc7e992af1de5e7c070.json",
+      "html_sha256": "badc657428fa996a40859ee33dc3987bb0563d49632b6b2d1f0838120e054d07",
+      "body_sha256": "f713731dcc0005c5959dc463b6e59c3155dccffed5e395ecac8cc08bc57cd4a8"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=230&m=content",
+      "title": "六百海里（餐饮店设计） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/8b75a094f523aa104adb.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8b75a094f523aa104adb.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8b75a094f523aa104adb.json",
+      "html_sha256": "037d1d3984569069993f55287ee888b1a0638bf96e41a7f24e4114080874327f",
+      "body_sha256": "68ddcd0ee5ac8446e75caa31af4b5d8cc01602caffe431a8ed9e2d74e03d67bf"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=222&m=content",
+      "title": "延江翔安新办公大楼设计 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/60acef1e90c3ee7ff9c3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/60acef1e90c3ee7ff9c3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/60acef1e90c3ee7ff9c3.json",
+      "html_sha256": "4991f868856b8991de6b48c79b04f480970777b83130e60ce68f69b602bd1839",
+      "body_sha256": "9950b370cf3f4567f397dd84028dde6c1d7fdd7e55291b07082d236a163adb0e"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=204&m=content",
+      "title": "BIO德国展 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/324555e01e2dc1e24b8e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/324555e01e2dc1e24b8e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/324555e01e2dc1e24b8e.json",
+      "html_sha256": "96537798b3a83cee9fc7de0b71a000d55cea964dc395779a003e6cda85ad5ad0",
+      "body_sha256": "a56befdd59bd4419f6466b3a6f88f727c51e3c82de8c44d965f310bcad54e8d4"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=41&id=203&m=content",
+      "title": "一代佳人会所 - 厦门私人会所设计-别墅装修设计-别墅会所改造设计 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/02aa213144ff1339bdce.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/02aa213144ff1339bdce.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/02aa213144ff1339bdce.json",
+      "html_sha256": "397d2071e6ed0caadeb33bac44208a77bd77c7cd5cbfb75e2d100ec4ae97c71f",
+      "body_sha256": "d5c77a39e5e8a853a6cc7248742ee73172c65e2d64c032078c9da60d337d6bd6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=182&m=content",
+      "title": "延江股份 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/2b2eb670264321648150.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2b2eb670264321648150.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2b2eb670264321648150.json",
+      "html_sha256": "4c509c096237efe87f486c72f6571e0b9f32f77111f63e1cf98009d9da602348",
+      "body_sha256": "de1614f2fe9f8f1117ebb958bafba244f835855566458d37d92fa09149efccdc"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=90&m=content",
+      "title": "维全建材 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/29f60870c35c58b44b49.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/29f60870c35c58b44b49.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/29f60870c35c58b44b49.json",
+      "html_sha256": "cec55936ca32a02fe3fcf09841af319b69bc17cd23e450a3ee0001ac529fb46d",
+      "body_sha256": "89d6e194dd21deba3e06e0b8b50ac41a0ec75792c510306693357643524fa0d6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=86&m=content",
+      "title": "明月集团 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/e600a772fc212b3ced61.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e600a772fc212b3ced61.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e600a772fc212b3ced61.json",
+      "html_sha256": "6705df53376bd757a54ebce7ddd1ce5c529daf0e66b3790eabc2d37e511a6f51",
+      "body_sha256": "c148428aacf7ec64ce7ebf81357eab331404c46b792ec93b584fa3bdd1dbca43"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=82&m=content",
+      "title": "本筑咖啡 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/34d0bb993d97e4643b55.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/34d0bb993d97e4643b55.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/34d0bb993d97e4643b55.json",
+      "html_sha256": "9f6af1c18eb6dcadbb3415b5d27f782bb59778d916e865049217d6e054cf4659",
+      "body_sha256": "ba3d623ab7e1333c6dc09ad6c2dfb78fe37651efa40a79c058b62e10eb37c194"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=81&m=content",
+      "title": "雅思幼儿园 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/92f578e3377e438c25b8.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/92f578e3377e438c25b8.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/92f578e3377e438c25b8.json",
+      "html_sha256": "28b0026b5684e83e76eb5041bd8c6162676b03cd91ef97a457997f65d28e2ccb",
+      "body_sha256": "61d6289f5c9ada86beaa261c43eea2dc0b471b35eaadf4fb1bd1912f43bbd456"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=49&m=content&page=3",
+      "title": "锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/f450243fc4ecc0439628.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f450243fc4ecc0439628.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f450243fc4ecc0439628.json",
+      "html_sha256": "a3a42b8839cc62fb809e1ee44317fbb87de3695e20b6abca2b47aba32a9b208e",
+      "body_sha256": "96de15dc92760a1e5a794bcd6e4f214461711d1873591d40625cdb48814818e6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=49&m=content&page=4",
+      "title": "锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/0f005dff8690bc9045d9.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0f005dff8690bc9045d9.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/0f005dff8690bc9045d9.json",
+      "html_sha256": "48e8663cf1e729e0c398464e7d2b73998f5442d69d489202f17690be790a6363",
+      "body_sha256": "12e03b2000353299e478f6da793c6fcaee7722fe4f134230f298b8a3dae4a5a0"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=49&m=content&page=5",
+      "title": "锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/8e95868ea5005b3288c3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8e95868ea5005b3288c3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/8e95868ea5005b3288c3.json",
+      "html_sha256": "1029a87486976ff4617e970faae7fb9fbebc8859458bf17e96c80b27163f6330",
+      "body_sha256": "0127670f90def9b76a3f502cd43f01761f5deb966419541552bd4e00392c1ce1"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=52&m=content",
+      "title": "策划品牌需要怎么做更适合自己的品牌 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/6045723e80d4a0699ef5.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6045723e80d4a0699ef5.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/6045723e80d4a0699ef5.json",
+      "html_sha256": "1386dc0509c6a21468ebd4286cbd34a86befa74e010250ab915dd2a2b138d60a",
+      "body_sha256": "6a5f4a8a63bcf005feac5f770b4bb31027cc4c2fb980234d87fe4bb3215e5fe0"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=login&c=index&forward=https%3A%2F%2Fwww.ruika.hk%2Findex.php%3Fm%3Dcontent%26c%3Dindex%26a%3Dshow%26catid%3D33%26id%3D219&m=member",
+      "title": "phpcmsV9 - 会员管理中心",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/dc2b452081f288d1fed3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/dc2b452081f288d1fed3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/dc2b452081f288d1fed3.json",
+      "html_sha256": "e00b15dc4ffcf7d91ddd295f031df1fdbc112986b1598031a7f3bed9d0756724",
+      "body_sha256": "30c805e41aca6e3a8d3c9a6cc5e4918dc8f3a544411304ba2a7bdbf5e73537f8"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=46&m=content",
+      "title": "公司为什么要做品牌设计和全案策划论述一二 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/7e4c662e858c57013d36.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7e4c662e858c57013d36.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7e4c662e858c57013d36.json",
+      "html_sha256": "286d022d1b0bba7b854e9a8f4da5defbc67ee20b639099a4c0bbfa5981c8bc4e",
+      "body_sha256": "640f4bbca0ad5355abc5de9b4895d7cf3954c39507930615cf403d0c7eddecaa"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=44&m=content",
+      "title": "如何选择一个好的品牌设计公司 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/44f25a958e729b258893.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/44f25a958e729b258893.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/44f25a958e729b258893.json",
+      "html_sha256": "8aa3e67d01f197b20bd100ddec08330a8b7e09882e1bc0a3adfa55b9098b2933",
+      "body_sha256": "ebc01ddd5a0d5c7ae1fedb9f5abe11405187a460d6518e3e819a3ca872b6347a"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=43&m=content",
+      "title": "如何策划一个让人印象深刻的品牌命名（教学篇） - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ae0ec6ccb5fff5b1ee38.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ae0ec6ccb5fff5b1ee38.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ae0ec6ccb5fff5b1ee38.json",
+      "html_sha256": "08024ba7e184b35bcdb80ebfc21290382cd8f66688c4c486bee72329b110f7e4",
+      "body_sha256": "63062375a5dcef6907560590034d15c2501be3c87dda576d68ec8c37a982228e"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=42&m=content",
+      "title": "如何做年轻人喜欢看的广告宣传片呢？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/05a95c715e009f95ca10.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/05a95c715e009f95ca10.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/05a95c715e009f95ca10.json",
+      "html_sha256": "a56208121896fe3b5e1457ac5d0acb6782dde3e1292c84a5b5ae2adb748d8cd7",
+      "body_sha256": "cb9b17da54cbf3976ae0ccaeb71195c3f103cf30a7fe0ffbddfecb22cf81e4a9"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=47&m=content",
+      "title": "锐伽如何与客户一起完成品牌策划工作 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/cde707f00c8132a5d6a7.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/cde707f00c8132a5d6a7.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/cde707f00c8132a5d6a7.json",
+      "html_sha256": "989d4f965cd28ec28aca95ab66b5c0e51a8e5dd835fbed6f68a11e5d2b8d7ae6",
+      "body_sha256": "65a40b20a0748e050630d136a0f73662de4124dc3878309e8372e1461057bccb"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=48&m=content",
+      "title": "究竟什么是品牌策划？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/65bdd32d1db2c50d88ee.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/65bdd32d1db2c50d88ee.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/65bdd32d1db2c50d88ee.json",
+      "html_sha256": "6e368fd227b067607afaa9bc1c075e47809182ba5f60e83f1e22852af92c1129",
+      "body_sha256": "48f5fbf9d5d1fa819afe395f0c6b8dc277dad8cf5d99afdbd5c05c1a7ce5a1c4"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=14&m=content",
+      "title": "品牌策划是什么？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/5c413b86bd353ca769af.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5c413b86bd353ca769af.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5c413b86bd353ca769af.json",
+      "html_sha256": "31afb54bbe4da2a403773127cf8ff361559343109ff5105005be8c88d9c624c1",
+      "body_sha256": "b245d221e4366b308db8dfaa3ad103055db3e6d35b1b77484e10a45a030b2c83"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=36&m=content",
+      "title": "企业宣传片进行广告宣传已经是未来推广趋势 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/4667daf10b9b0024e23d.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4667daf10b9b0024e23d.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4667daf10b9b0024e23d.json",
+      "html_sha256": "144a142c2de4c7814bb35e23e9ca411ccf4862faafd394a7ebf322c926bc9667",
+      "body_sha256": "6f119dbb9285398f933e0580a777498ea640364cc95ad41ef6fefda6e4863fdd"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=20&m=content",
+      "title": "企业如何正确选择好的影视制作公司？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3ecd77e74de1bdeac1ca.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3ecd77e74de1bdeac1ca.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3ecd77e74de1bdeac1ca.json",
+      "html_sha256": "1f84abbf9888aff41b67d9198ca693ae4247cc350c063fcd0baf9fc3cbf1cdcd",
+      "body_sha256": "240cf3953cbb8ff401c7c340f647f0a5622d828d78dde6e2612b461945341893"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=41&m=content",
+      "title": "设计公司对于设计标志logo需要注意哪些禁忌。 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/9613f36b8ee31f6385d6.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/9613f36b8ee31f6385d6.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/9613f36b8ee31f6385d6.json",
+      "html_sha256": "ac253fd347212d7b164df1c5fdd9af59e062784f90e737af2ecf6f52dc69e606",
+      "body_sha256": "a435dc4ef4fe8ada23ddf055cdaec58c725df96b2cdc3cf9a87c1c34a0253dfb"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=40&m=content",
+      "title": "服装店设计如何找到适合自己风格的设计 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/363efcaad63d5e78a23c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/363efcaad63d5e78a23c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/363efcaad63d5e78a23c.json",
+      "html_sha256": "e53244844dcc74a55a109a7d81c14b72301b19df6b621893121e037617b7373d",
+      "body_sha256": "e1cf1043e2fd6a5e2effad3f72892738c41574eb8bd55556d23d2c0d194722b3"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=39&m=content",
+      "title": "办公室装修设计公司哪家好，看完本文你就知道 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/2216721fccdc8922afc0.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2216721fccdc8922afc0.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2216721fccdc8922afc0.json",
+      "html_sha256": "b44be990edf4e53170e8e5009d11bb628b6eca9479b7625b34dc54bf230ed3e7",
+      "body_sha256": "e4e54a9ea8a67246c54fe7a9317a22d40843d7d104eb667009c5fd07ff6ad87b"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=38&m=content",
+      "title": "办公室设计哪家好？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/2363d55581f639e5c885.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2363d55581f639e5c885.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2363d55581f639e5c885.json",
+      "html_sha256": "a703b10eab9fa5767cb6492ace8c4aaf732012d2783ccb7593aec5f0889291de",
+      "body_sha256": "bd560cd4aa51247579c8707c483d870d4546d7a7245a8195a2fcd382f6755cfb"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=37&m=content",
+      "title": "广告片是如何进行推广的？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/5a8864e0ede017d8e29d.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5a8864e0ede017d8e29d.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/5a8864e0ede017d8e29d.json",
+      "html_sha256": "a07617e69057dbb7dcec493d3383a6d2740958f9b5207d50274a06a54d4fd843",
+      "body_sha256": "86bdcb625aefb32ed4c4db7302b9152284aaf90d8fca01548b4c85a1855a6634"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=32&m=content",
+      "title": "饮食行业品牌策划哪家好？如何进行评判挑选？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3b94c3f2142971cd1b63.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3b94c3f2142971cd1b63.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3b94c3f2142971cd1b63.json",
+      "html_sha256": "897458a5dcd004c3f9dfd6b432d407899fa1da98cbd51793af4fa0b8c0856b1b",
+      "body_sha256": "14c8ccd0afed6898ef37a18752160f1b1055d032348ad703be58eed532d2d330"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=31&m=content",
+      "title": "珠宝皮包等奢侈品品牌策划哪家好？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/7bda57b16bc910b2124a.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7bda57b16bc910b2124a.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7bda57b16bc910b2124a.json",
+      "html_sha256": "542e7c61660be382ccbb92a6acbf245b70162952ce15fcbfecc38e18c1be2971",
+      "body_sha256": "395b956a675be75ef6289b7d9e75dc3813d23bde480032ba617cbe22ef6b3592"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=30&m=content",
+      "title": "做一整套VI设计多少钱？关键看水平。 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/76471191048396e21f4b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/76471191048396e21f4b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/76471191048396e21f4b.json",
+      "html_sha256": "012c98b96d96edeb8ca4d7aa3b50b9fb7dcd64560362ade62df67cea99540c60",
+      "body_sha256": "e04c6add3a09ce2939b6716fb22133a42e99ab75b23ad12389a960c33e0c6c77"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=29&m=content",
+      "title": "企业宣传片中策划文案充当了什么角色？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/c88cbedef86bc98bd431.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/c88cbedef86bc98bd431.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/c88cbedef86bc98bd431.json",
+      "html_sha256": "224d0cc9ebe4e61607aaf7508737ac7a17d06c5c651aa2602348d3dbe5082421",
+      "body_sha256": "89d35f1d8c91be957bd1292e44651b65c41819f314a690c66bf0c387d8b7d4a7"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=27&m=content",
+      "title": "拍摄一个企业宣传片/广告片需要多少钱? - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/13b8d4c1cfd36f53d427.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/13b8d4c1cfd36f53d427.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/13b8d4c1cfd36f53d427.json",
+      "html_sha256": "b48b20eaf767ae41e36a4588731e72e0443f0ff794f6df57bda18aa52449e18d",
+      "body_sha256": "7d6d12325728582dfbd61427e818dd033b2f99951a080ec80d85f4d5804fee91"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=26&m=content",
+      "title": "产品广告片制作有哪家做的比较好？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/1f5c97a0d4ef9d58b855.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1f5c97a0d4ef9d58b855.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/1f5c97a0d4ef9d58b855.json",
+      "html_sha256": "f08032f96be58ec4882cfec81fb25a790b9566151de2b3102a72be8a717fa3c0",
+      "body_sha256": "c6032d00cfa6fe98816d329a24716b4c16371ef9a5e06e73d16779210340305b"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=25&m=content",
+      "title": "影视制作中的广告创意是如何想出来的？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/96490510e111d2992918.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/96490510e111d2992918.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/96490510e111d2992918.json",
+      "html_sha256": "2fa3f39bbe1fd1527c6368096e42fe18b7fadde925d0fa10308598e25471f458",
+      "body_sha256": "ef6d13c9db3c7516f5155588af9e4d03911c87d113219d86091f611c3eed549a"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=23&m=content",
+      "title": "制作拍摄微电影与企业宣传片的区别在哪里 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/34e5af3350894bbfffb3.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/34e5af3350894bbfffb3.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/34e5af3350894bbfffb3.json",
+      "html_sha256": "2fc559c1fd8dbfdb715716f8f3f6e3c81bd3f8f70e8bec757d188d012286ff89",
+      "body_sha256": "73509df8ae432d5586c67b92136acba2db6579c08d8a33254285315368939fa6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=21&m=content",
+      "title": "厦门最好的影视制作公司如何拍摄餐饮类宣传片？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/78d786d9cffa132e4435.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/78d786d9cffa132e4435.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/78d786d9cffa132e4435.json",
+      "html_sha256": "edf2c6af76df31c1c1a9fca9a4db421f5b5c1825f3053d88995087a8ad0051b1",
+      "body_sha256": "8fae19dc41bb730fad362d65dc795f3d5e8eb000382be9c1ae6612551e659ad3"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=19&m=content",
+      "title": "展厅设计时，要从哪里入手？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/506619523022ea845fb2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/506619523022ea845fb2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/506619523022ea845fb2.json",
+      "html_sha256": "da99ca9db0afa9e7a88122da2231e8d7fc0f39e81e6f9ffce420b90c3d4d7474",
+      "body_sha256": "b2fb56265a1bdac0b642746e2ef90084e5cb6316bb61799ce81c1065cb34bcc2"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=17&m=content",
+      "title": "广告宣传片的拍摄流程以及注意事项 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/217c92857f18c1a3a973.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/217c92857f18c1a3a973.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/217c92857f18c1a3a973.json",
+      "html_sha256": "20244ebc8832a005930be5beeb91db9700afa0d62a0d2105ca7c7eac1e189aac",
+      "body_sha256": "ca8d59972d4ca9367be47aae91aa73450e11c0de36e1d1dd48171f78480133f6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=15&m=content",
+      "title": "一个好的品牌策划公司应该做到什么？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/37f85534f01bfb766c0b.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/37f85534f01bfb766c0b.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/37f85534f01bfb766c0b.json",
+      "html_sha256": "77625e0a6b7413ceb0a7136df14d3aeaf1bf88552caff08a7a16227698915383",
+      "body_sha256": "b9d39919fb5c3461617f3b1e8071572ac893023156470a9e0032603d6d0c684c"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=13&m=content",
+      "title": "一个好的包装设计对于产品有多重要？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/de194c8952d63455b932.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/de194c8952d63455b932.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/de194c8952d63455b932.json",
+      "html_sha256": "60fe37d6029064177b0e45ea73388e147fe5b570c735e4671356002fbf4d11aa",
+      "body_sha256": "7ad44241ae6f2233378391a83526002dbf7ab74eb951154212c88bc6c60f4fd6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=12&m=content",
+      "title": "食品包装设计的一些注意事项 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/3a91381e04a473ad7fc9.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3a91381e04a473ad7fc9.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/3a91381e04a473ad7fc9.json",
+      "html_sha256": "f50878e636b9f85ec21db93b1c7659d4e1c63f8a35f656728371c552e72fab17",
+      "body_sha256": "b539e70658a7b9a8e8777c6ae7e12d4249fe3fd2f45d2d93d462d25e85206191"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=public_get_password_type&c=index&m=member&siteid=1",
+      "title": "phpcmsV9 - 会员管理中心",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/58fa5af8cd90a897ef8a.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/58fa5af8cd90a897ef8a.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/58fa5af8cd90a897ef8a.json",
+      "html_sha256": "f26e34c317a5eba22a3b3ccbe82a0a3c6659f98341a1d8ce2edd352aa5218f2c",
+      "body_sha256": "1411d8fde518c41c31e69906275ec88228fe140a34eed1665b54e8c146ce345d"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?m=link",
+      "title": "友情链接 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/bd62fffff846a616f980.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bd62fffff846a616f980.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bd62fffff846a616f980.json",
+      "html_sha256": "55335765950374afb73fcd8c3a81b1098016ec948492d2b51436f28d5cd5dfdb",
+      "body_sha256": "9051ee5dde50b4b2d756e81795b041d7c6799ddf59b14141b9ebd3196be8e17a"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?m=link&siteid=1",
+      "title": "友情链接 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/17445153079692ecd03c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/17445153079692ecd03c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/17445153079692ecd03c.json",
+      "html_sha256": "55335765950374afb73fcd8c3a81b1098016ec948492d2b51436f28d5cd5dfdb",
+      "body_sha256": "9051ee5dde50b4b2d756e81795b041d7c6799ddf59b14141b9ebd3196be8e17a"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=list_type&c=index&m=link&siteid=1&type_id=0",
+      "title": "友情链接 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/4cb343a80bc6a7cb91d9.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4cb343a80bc6a7cb91d9.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/4cb343a80bc6a7cb91d9.json",
+      "html_sha256": "e3f075d49688832cdda7190628945ea66f492728f26030d2e39dfd2759b076b0",
+      "body_sha256": "ce5c404e6df18621496c6568d65a63710ea3301298eccc9d9b1117b3e19207e3"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=register&c=index&m=link&siteid=1",
+      "title": "友情链接申请 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/55f759ab2766188682c5.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/55f759ab2766188682c5.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/55f759ab2766188682c5.json",
+      "html_sha256": "ed4cf5f51042ae0a1e9f8031f76f4a9ec45f4702bbcf546ebb297d3425eb9d83",
+      "body_sha256": "7b6015eb2b95456ce240fc6c3602e3499bcbf1d1fdbfcd3b859641d40097bab8"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=login&c=index&forward=https%3A%2F%2Fwww.ruika.hk%2Findex.php%3Fa%3Dshow%26c%3Dindex%26catid%3D33%26id%3D219%26m%3Dcontent&m=member",
+      "title": "phpcmsV9 - 会员管理中心",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/296fa217e0495f2b9549.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/296fa217e0495f2b9549.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/296fa217e0495f2b9549.json",
+      "html_sha256": "96ad1bcd4a756fc3d8d326fea884a73a1d65eb7289880c67c33eb5fc2ab1eea7",
+      "body_sha256": "30c805e41aca6e3a8d3c9a6cc5e4918dc8f3a544411304ba2a7bdbf5e73537f8"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=40&m=content",
+      "title": "厦门办公空间设计-创意办公室设计-锐伽办公场所设计 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/d8bdca05db3f67bec2aa.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d8bdca05db3f67bec2aa.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d8bdca05db3f67bec2aa.json",
+      "html_sha256": "b013c95bf318d179e9f7778f8c0d350aacfd34a7b649527db9e89335c09e1dcf",
+      "body_sha256": "dba3808383ab347e274937d9f87f48f55c31c25bc98c00ad35ead508fb0aae08"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=42&m=content",
+      "title": "创意别墅装修设计-别墅改造设计-酒店会所设计 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/651629884f866d1c5676.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/651629884f866d1c5676.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/651629884f866d1c5676.json",
+      "html_sha256": "1fbe287dd8868b09b2b521118bc7c6916f6cf146e604a59b9198145557390327",
+      "body_sha256": "dba3808383ab347e274937d9f87f48f55c31c25bc98c00ad35ead508fb0aae08"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=43&m=content",
+      "title": "厦门电视广告制作公司-电视广告报价-视频制作 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/dad724bfc0ac0d873133.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/dad724bfc0ac0d873133.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/dad724bfc0ac0d873133.json",
+      "html_sha256": "b4c3db4080366e6449d9d4a8becbe8103b764d355a64db73e852be73defd0ff5",
+      "body_sha256": "f5aab314fba77e2a9373e942ef445bdde8ae3f83014d8258806bf138864d6578"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=60&m=content",
+      "title": "厦门品牌设计/厦门VI设计注意事项 - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/cb5be1efc95d6aebf0e2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/cb5be1efc95d6aebf0e2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/cb5be1efc95d6aebf0e2.json",
+      "html_sha256": "c05f85f731937f84b592f9e15e88fcad58e49c8f0b78645dcd2cb52604d95b24",
+      "body_sha256": "ada73a6db367c8e446ccd065be10b73cfd3c378803631047303690891990d79b"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=229&m=content",
+      "title": "KING W - 品牌策划案例_厦门VI设计公司_logo设计报价 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/f04525ae5c54779a54f2.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f04525ae5c54779a54f2.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/f04525ae5c54779a54f2.json",
+      "html_sha256": "c21d75a3c235032585a3f044f948b2fb986d3b70ed9ccfcd1ff860195f16802f",
+      "body_sha256": "7e7e37106c6ebed9a8b942b9576ee55036ce9ca6e17aef0f02fa0de79922ac16"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=176&m=content",
+      "title": "维全建材 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/e451735cde8ace5e4923.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e451735cde8ace5e4923.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/e451735cde8ace5e4923.json",
+      "html_sha256": "c8efb2d87164e212fe9d970f3d21272168291286b8c359974d5c16c750315631",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=171&m=content",
+      "title": "存昔（日化品） - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/ba16b83d8d8fa799c15e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ba16b83d8d8fa799c15e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/ba16b83d8d8fa799c15e.json",
+      "html_sha256": "19c222953b60b3c10c96aef6dcf5618339ee529d492a9993f5da303332bee7b5",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=170&m=content",
+      "title": "振晟水泥 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/d86fe7bca15e720080c1.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d86fe7bca15e720080c1.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d86fe7bca15e720080c1.json",
+      "html_sha256": "eaac1a20efdf9de5732b339b22e1313d2699343e16da5f2b0897a66e7f8079d3",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=163&m=content",
+      "title": "空空沉香 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/51547e635164c9c09b2c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/51547e635164c9c09b2c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/51547e635164c9c09b2c.json",
+      "html_sha256": "adc984a568473df8572d166e10f5616511abb74bcf05fdd6bb45b0bc5222520f",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=234&m=content",
+      "title": "容谷 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/65311fd3f12e6e290e47.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/65311fd3f12e6e290e47.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/65311fd3f12e6e290e47.json",
+      "html_sha256": "79e6272929615df5f687a008259c46f43f13ee2f9f4bd72de310e2d86d6dd4ab",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=161&m=content",
+      "title": "鳌霸食品 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/2834cb66c4e1cf68a0a0.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2834cb66c4e1cf68a0a0.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/2834cb66c4e1cf68a0a0.json",
+      "html_sha256": "bb4d42a3a45c478afc6192c76c45b8a7ece5de18eede7f92f3b8e0956bed8077",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=160&m=content",
+      "title": "意味浓咖啡 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/a278b763684c251d08d0.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a278b763684c251d08d0.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/a278b763684c251d08d0.json",
+      "html_sha256": "776187bf69c7a3cabcf6c0c4025067668a7cfeab6635570d131384ebf7075c7c",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=154&m=content",
+      "title": "永固集团 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/15312bdefbe8ad470bb1.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/15312bdefbe8ad470bb1.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/15312bdefbe8ad470bb1.json",
+      "html_sha256": "87158077d8681211b7a1e8c8b27a36835efb54f94b4c29514718f006035f7ff9",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=34&id=153&m=content",
+      "title": "甜蜜时光 - 创意logo设计案例-品牌策划全案案例-厦门logo设计公司 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/53b84e1b9c1827796e55.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/53b84e1b9c1827796e55.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/53b84e1b9c1827796e55.json",
+      "html_sha256": "7ace975c38899a487406a77be17eb33ee695c15fb01f0b29e965bfcdc0584124",
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=37&id=126&m=content",
+      "title": "曲斗香 - 厦门包装设计-包装设计报价-包装设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/7785e04fe18da1db7db6.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7785e04fe18da1db7db6.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7785e04fe18da1db7db6.json",
+      "html_sha256": "7a6d8a7a0567bafb19008d52cca492396a781dad3548d56e3c9c9ad8440ea124",
+      "body_sha256": "8670c2aa17dbcb17b987ec071091d99841d25a6419d43969b458ba2f6ebe6e8e"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=201&m=content",
+      "title": "延江股份（2018日本展） - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/d5de3b8d993699d2585e.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d5de3b8d993699d2585e.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/d5de3b8d993699d2585e.json",
+      "html_sha256": "03a160ec2f002b65c66de0c9726e2d9f1e44dc2e0d2aeeaeac160022eb576cd4",
+      "body_sha256": "b8b0292cae721dc9670d4f1ef3213305f67edd563fc97616b7876e68e8885fc6"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=78&m=content",
+      "title": "厦门大学嘉庚号科考船 - 厦门店面装修设计公司-创意店铺设计-锐伽店面设计案例 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/76da456492700c72390c.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/76da456492700c72390c.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/76da456492700c72390c.json",
+      "html_sha256": "db4dc9b1f52f9747d33fe66269520fd51da28a73ef678dc8c60d4282b4088123",
+      "body_sha256": "1d9d54b379c373f672725dccdf246751e1279c896b858b6f42b5dc65778ffcaf"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=lists&c=index&catid=49&m=content&page=2",
+      "title": "锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/bcd6ab7b9240eb0d5658.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bcd6ab7b9240eb0d5658.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/bcd6ab7b9240eb0d5658.json",
+      "html_sha256": "751d1630d5bc6579368c2483f345a8c9e09a9f18f8bf8f69cb0c0a9fc303eb5d",
+      "body_sha256": "fa93aaa07d006946022edfc19bc6e84bd82ceaa5fcdffc8c69848646044e8775"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=28&m=content",
+      "title": "企业宣传片能为企业带来什么效益？ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/b40b742c2534591f1dd6.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b40b742c2534591f1dd6.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/b40b742c2534591f1dd6.json",
+      "html_sha256": "36545ff6cd1f6ae84585a3de31ac9d5a2dbfb7301fbc8646a76184a313679bac",
+      "body_sha256": "5a5227500492c2d3654f3ff8e27ce62823ab6a9d2fd4594799f5283f2b9a766f"
+    },
+    {
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=49&id=18&m=content",
+      "title": "展厅设计时有几方面很重要！ - 锐伽动态 - 锐咖",
+      "html": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/pages/7d79d700b531e557b2f0.html",
+      "text": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7d79d700b531e557b2f0.txt",
+      "metadata": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/text-archive/7d79d700b531e557b2f0.json",
+      "html_sha256": "7a20c010366126ebb5846f192e7d90c4296e9c41a5056a214fcb0fda31753070",
+      "body_sha256": "9dc0a9d4488f4e266ddbd124f69dea1478ea51856da99ed555a05238131ad67e"
+    }
+  ],
+  "provenance_note": "Original archive files are byte-identical to Windows sources. Absolute Windows paths in historical metadata are provenance; use this index for portable paths."
+}

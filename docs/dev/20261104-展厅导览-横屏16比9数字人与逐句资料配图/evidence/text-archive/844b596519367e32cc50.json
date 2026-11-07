@@ -1,0 +1,12 @@
+{
+  "title": "提示信息",
+  "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=219&m=content",
+  "final_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=33&id=219&m=content",
+  "body_text": "提示信息\n请先登录网站！\n如果您的浏览器没有自动跳转，请点击这里",
+  "body_sha256": "28f4449d465362a7d2a6b0a67b8e280aa36b02b188a91445cc7623c39de69176",
+  "full_html_text": "提示信息\n请先登录网站！\n如果您的浏览器没有自动跳转，请点击这里",
+  "full_html_text_sha256": "28f4449d465362a7d2a6b0a67b8e280aa36b02b188a91445cc7623c39de69176",
+  "html_sha256": "f817a1db907a68f422a427968e75ceae38ceca3368077f5c1324777678bd71ba",
+  "html_path": "C:\\Users\\Joey\\code\\AI-Enterprise-Exhibition\\docs\\dev\\20261104-展厅导览-横屏16比9数字人与逐句资料配图\\evidence\\media-archive\\pages\\844b596519367e32cc50.html",
+  "extraction_method": "HTML text nodes, entities decoded; script/style/noscript/template excluded. Main/article or case-body container preferred; full body text retained separately, including navigation/footer/contact text. No JS execution, OCR, paraphrase or invented text."
+}

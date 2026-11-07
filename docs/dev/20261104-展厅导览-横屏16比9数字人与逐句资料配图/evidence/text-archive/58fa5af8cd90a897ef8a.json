@@ -1,0 +1,12 @@
+{
+  "title": "phpcmsV9 - 会员管理中心",
+  "source_url": "https://www.ruika.hk/index.php?a=public_get_password_type&c=index&m=member&siteid=1",
+  "final_url": "https://www.ruika.hk/index.php?a=public_get_password_type&c=index&m=member&siteid=1",
+  "body_text": "请选择密码找回方式\n通过手机校验码找回密码\n通过电子邮箱找回密码\n通过用户名找回密码\n已经有了账号？\n请直接登录\n友情链接\nPowered by PHPCMS v9 © 2026",
+  "body_sha256": "1411d8fde518c41c31e69906275ec88228fe140a34eed1665b54e8c146ce345d",
+  "full_html_text": "请选择密码找回方式\n通过手机校验码找回密码\n通过电子邮箱找回密码\n通过用户名找回密码\n已经有了账号？\n请直接登录\n友情链接\nPowered by PHPCMS v9 © 2026",
+  "full_html_text_sha256": "1411d8fde518c41c31e69906275ec88228fe140a34eed1665b54e8c146ce345d",
+  "html_sha256": "f26e34c317a5eba22a3b3ccbe82a0a3c6659f98341a1d8ce2edd352aa5218f2c",
+  "html_path": "C:\\Users\\Joey\\code\\AI-Enterprise-Exhibition\\docs\\dev\\20261104-展厅导览-横屏16比9数字人与逐句资料配图\\evidence\\media-archive\\pages\\58fa5af8cd90a897ef8a.html",
+  "extraction_method": "HTML text nodes, entities decoded; script/style/noscript/template excluded. Main/article or case-body container preferred; full body text retained separately, including navigation/footer/contact text. No JS execution, OCR, paraphrase or invented text."
+}

@@ -1,0 +1,12 @@
+{
+  "title": "phpcmsV9 - 会员管理中心",
+  "source_url": "https://www.ruika.hk/index.php?a=login&c=index&forward=https%3A%2F%2Fwww.ruika.hk%2Findex.php%3Fm%3Dcontent%26c%3Dindex%26a%3Dshow%26catid%3D33%26id%3D219&m=member",
+  "final_url": "https://www.ruika.hk/index.php?a=login&c=index&forward=https%3A%2F%2Fwww.ruika.hk%2Findex.php%3Fm%3Dcontent%26c%3Dindex%26a%3Dshow%26catid%3D33%26id%3D219&m=member",
+  "body_text": "会员登录\n用户名：\n密码：\n验证码：\n记住用户名 密码找回\n您还没有注册PHPCMS会员？\n使用外部通行证\n通行证介绍\nPHPCMS支持使用第三方账号登录。\n友情链接\nPowered by PHPCMS v9 © 2026",
+  "body_sha256": "30c805e41aca6e3a8d3c9a6cc5e4918dc8f3a544411304ba2a7bdbf5e73537f8",
+  "full_html_text": "会员登录\n用户名：\n密码：\n验证码：\n记住用户名 密码找回\n您还没有注册PHPCMS会员？\n使用外部通行证\n通行证介绍\nPHPCMS支持使用第三方账号登录。\n友情链接\nPowered by PHPCMS v9 © 2026",
+  "full_html_text_sha256": "30c805e41aca6e3a8d3c9a6cc5e4918dc8f3a544411304ba2a7bdbf5e73537f8",
+  "html_sha256": "e00b15dc4ffcf7d91ddd295f031df1fdbc112986b1598031a7f3bed9d0756724",
+  "html_path": "C:\\Users\\Joey\\code\\AI-Enterprise-Exhibition\\docs\\dev\\20261104-展厅导览-横屏16比9数字人与逐句资料配图\\evidence\\media-archive\\pages\\dc2b452081f288d1fed3.html",
+  "extraction_method": "HTML text nodes, entities decoded; script/style/noscript/template excluded. Main/article or case-body container preferred; full body text retained separately, including navigation/footer/contact text. No JS execution, OCR, paraphrase or invented text."
+}
