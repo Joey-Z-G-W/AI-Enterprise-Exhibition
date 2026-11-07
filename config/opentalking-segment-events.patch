@@ -1,7 +1,16 @@
 diff --git a/apps/api/routes/sessions.py b/apps/api/routes/sessions.py
-index 44a8a74..58baf96 100644
+index 44a8a74..ba2f485 100644
 --- a/apps/api/routes/sessions.py
 +++ b/apps/api/routes/sessions.py
+@@ -32,7 +32,7 @@ from apps.api.schemas.session import (
+     WebRTCOfferRequest,
+ )
+ from apps.api.services import session_service
+-from apps.api.services.worker_service import forward_webrtc_offer, forward_worker_post_empty
++from apps.api.services.worker_service import forward_webrtc_offer, forward_worker_post_empty, forward_worker_json
+ from apps.api.core.config import get_settings
+ from opentalking.core.queue_status import get_flashtalk_queue_status
+ from opentalking.core.redis_keys import offline_bundle_job_key
 @@ -1142,6 +1142,7 @@ async def speak_flashtalk_audio(
      session_id: str,
      request: Request,
@@ -10,22 +19,111 @@ index 44a8a74..58baf96 100644
  ) -> dict[str, str]:
      """上传音频 → 解码为 16kHz mono PCM → 直接驱动兼容音频数字人（不经语音识别、LLM、TTS）。
 
-@@ -1184,8 +1185,8 @@ async def speak_flashtalk_audio(
+@@ -1151,6 +1152,8 @@ async def speak_flashtalk_audio(
+     s = await session_service.get_session(r, session_id)
+     if not s:
+         raise HTTPException(status_code=404, detail="session not found")
++    if segment_id and await r.hget(f"guide:cancelled:{session_id}", segment_id):
++        raise HTTPException(status_code=409, detail="GUIDE_SEGMENT_CANCELLED")
+     if not _is_flashtalk_compatible_model(s.get("model")):
+         raise HTTPException(
+             status_code=400,
+@@ -1184,8 +1187,10 @@ async def speak_flashtalk_audio(
      if pcm.size == 0:
          raise HTTPException(status_code=400, detail="解码后音频为空")
 
 -    await session_service.speak_flashtalk_uploaded_pcm(r, session_id, pcm.tobytes())
 -    return {"session_id": session_id, "status": "queued"}
++    if segment_id and await r.hget(f"guide:cancelled:{session_id}", segment_id):
++        raise HTTPException(status_code=409, detail="GUIDE_SEGMENT_CANCELLED")
 +    await session_service.speak_flashtalk_uploaded_pcm(r, session_id, pcm.tobytes(), segment_id=segment_id)
 +    return {"session_id": session_id, "status": "queued", **({"segment_id": segment_id} if segment_id else {})}
 
 
  @router.websocket("/{session_id}/speak_audio_stream")
+@@ -1589,3 +1594,37 @@ async def webrtc_offer(
+     except Exception as e:  # noqa: BLE001
+         raise HTTPException(status_code=502, detail=f"worker error: {e}") from e
+     return ans
++
++
++@router.post("/{session_id}/webrtc/reset")
++async def reset_guide_receiver(session_id: str, body: dict, request: Request) -> dict:
++    segment_id = body.get("segment_id")
++    if not isinstance(segment_id, str) or not 1 <= len(segment_id) <= 128:
++        raise HTTPException(status_code=422, detail="segment_id required")
++    if not await session_service.get_session(request.app.state.redis, session_id):
++        raise HTTPException(status_code=404, detail="session not found")
++    # Persist the cancellation before ACK, including requests whose multipart body
++    # has not finished arriving. The worker also fences tasks already in its queue.
++    r = request.app.state.redis
++    bounded_hash = getattr(r, "hset_bounded", None)
++    if bounded_hash is not None:
++        accepted = await bounded_hash(f"guide:cancelled:{session_id}", segment_id, "1", 1024, 3600)
++    else:
++        accepted = await r.eval("""
++            if redis.call('HEXISTS', KEYS[1], ARGV[1]) == 0 and redis.call('HLEN', KEYS[1]) >= 1024 then return 0 end
++            redis.call('HSET', KEYS[1], ARGV[1], '1'); redis.call('EXPIRE', KEYS[1], 3600); return 1
++        """, 1, f"guide:cancelled:{session_id}", segment_id)
++    if not accepted:
++        raise HTTPException(status_code=409, detail="GUIDE_CANCEL_CAPACITY")
++    runners = getattr(request.app.state, "session_runners", None)
++    if runners is not None:
++        runner = runners.get(session_id)
++        if not runner or not hasattr(runner, "reset_guide_receiver"):
++            raise HTTPException(status_code=409, detail="receiver reset unavailable")
++        return await runner.reset_guide_receiver(segment_id)
++    import asyncio
++    try:
++        return await asyncio.wait_for(forward_worker_json(request.app.state.settings.worker_url,
++                                      f"webrtc/{session_id}/reset", {"segment_id": segment_id}), timeout=12)
++    except Exception as exc:
++        raise HTTPException(status_code=502, detail="receiver reset failed") from exc
+diff --git a/apps/api/routes/tts_preview.py b/apps/api/routes/tts_preview.py
+index 266785e..53019f5 100644
+--- a/apps/api/routes/tts_preview.py
++++ b/apps/api/routes/tts_preview.py
+@@ -439,3 +439,35 @@ async def preview_duo_dialog_tts(body: DuoDialogPreviewRequest) -> Response:
+         media_type="audio/wav",
+         headers={"Cache-Control": "no-store"},
+     )
++
++
++@router.post("/preview-aligned")
++async def preview_aligned(body: TTSPreviewRequest) -> dict:
++    """One Edge synthesis yields both the decoded WAV and native sentence boundaries."""
++    import asyncio
++    import base64
++    import edge_tts
++    from opentalking.providers.tts.edge.adapter import _decode_mp3_to_pcm16_mono
++
++    text, voice, provider, _, _ = _normalize_preview_request(body)
++    if provider not in (None, "edge", "edge_tts"):
++        raise HTTPException(status_code=422, detail="aligned preview requires Edge TTS")
++    audio = bytearray()
++    timeline = []
++    async def collect():
++        async for event in edge_tts.Communicate(text, voice or "zh-CN-XiaoxiaoNeural", boundary="SentenceBoundary").stream():
++            if event["type"] == "audio":
++                audio.extend(event["data"])
++            elif event["type"] == "SentenceBoundary":
++                timeline.append({"text": event["text"], "start_ms": event["offset"] / 10000,
++                                 "end_ms": (event["offset"] + event["duration"]) / 10000})
++    try:
++        await asyncio.wait_for(collect(), timeout=60)
++        pcm, sr = await asyncio.to_thread(_decode_mp3_to_pcm16_mono, bytes(audio), 16000)
++    except Exception as exc:
++        raise HTTPException(status_code=502, detail="aligned speech synthesis failed") from exc
++    if not len(pcm):
++        raise HTTPException(status_code=502, detail="empty speech synthesis")
++    return {"audio_base64": base64.b64encode(_wav_bytes([pcm], sr)).decode("ascii"),
++            "timeline": timeline, "duration_ms": len(pcm) * 1000 / sr,
++            "timing_source": "edge-sentence-boundary", "sample_rate": sr}
 diff --git a/apps/api/services/session_service.py b/apps/api/services/session_service.py
-index 174cc76..f8f034c 100644
+index 174cc76..42193c9 100644
 --- a/apps/api/services/session_service.py
 +++ b/apps/api/services/session_service.py
-@@ -247,6 +247,8 @@ async def speak_flashtalk_uploaded_pcm(
+@@ -247,12 +247,15 @@ async def speak_flashtalk_uploaded_pcm(
      r: redis.Redis,
      sid: str,
      pcm_bytes: bytes,
@@ -34,7 +132,15 @@ index 174cc76..f8f034c 100644
  ) -> None:
      """将上传音频解码后的 PCM 送入 Worker，仅走 FlashTalk（不经 LLM/TTS）。
 
-@@ -263,6 +265,7 @@ async def speak_flashtalk_uploaded_pcm(
+     PCM 存在共享 Redis 临时键中，任务里只传 key，避免 API/Worker 分离部署时依赖共享文件系统。
+     """
+-    await interrupt(r, sid)
++    if segment_id is None:
++        await interrupt(r, sid)
+     upload_id = uuid.uuid4().hex
+     key = uploaded_pcm_key(sid, upload_id)
+     await r.set(key, base64.b64encode(bytes(pcm_bytes)).decode("ascii"), ex=10 * 60)
+@@ -263,6 +266,7 @@ async def speak_flashtalk_uploaded_pcm(
              "session_id": sid,
              "pcm_key": key,
              "enqueue_unix": time.time(),
@@ -42,11 +148,130 @@ index 174cc76..f8f034c 100644
          },
      )
 
+diff --git a/opentalking/core/in_memory_redis.py b/opentalking/core/in_memory_redis.py
+index 6ca01ee..7a60c17 100644
+--- a/opentalking/core/in_memory_redis.py
++++ b/opentalking/core/in_memory_redis.py
+@@ -74,6 +74,16 @@ class InMemoryRedis:
+             return 1
+         return 0
+
++    async def hset_bounded(self, name: str, key: str, value: str, limit: int, ttl: int) -> bool:
++        """Atomic bounded hash admission in the single-process event loop."""
++        self._purge_if_expired(name)
++        mapping = self._hash.setdefault(name, {})
++        if key not in mapping and len(mapping) >= limit:
++            return False
++        mapping[key] = value
++        self._expiry[name] = monotonic() + ttl
++        return True
++
+     async def hgetall(self, name: str) -> dict[str, str]:
+         self._purge_if_expired(name)
+         return dict(self._hash.get(name, {}))
+diff --git a/opentalking/core/types/frames.py b/opentalking/core/types/frames.py
+index b724cb6..1dfa5c3 100644
+--- a/opentalking/core/types/frames.py
++++ b/opentalking/core/types/frames.py
+@@ -22,3 +22,5 @@ class VideoFrameData:
+     width: int
+     height: int
+     timestamp_ms: float
++    guide_segment_id: str | None = None
++    guide_source_ms: float | None = None
 diff --git a/opentalking/pipeline/speak/synthesis_runner.py b/opentalking/pipeline/speak/synthesis_runner.py
-index 03c1d79..c5b5687 100644
+index 03c1d79..415bd62 100644
 --- a/opentalking/pipeline/speak/synthesis_runner.py
 +++ b/opentalking/pipeline/speak/synthesis_runner.py
-@@ -1927,9 +1927,10 @@ class FlashTalkRunner:
+@@ -990,9 +990,12 @@ class FlashTalkRunner:
+             )
+
+         # Auto-close session when WebRTC peer disconnects (releases the slot lock)
+-        @self.webrtc.pc.on("connectionstatechange")
++        owner = self.webrtc
++        @owner.pc.on("connectionstatechange")
+         async def _on_connection_state_change() -> None:
+-            state = self.webrtc.pc.connectionState if self.webrtc else None
++            if self.webrtc is not owner:
++                return
++            state = owner.pc.connectionState
+             if state in ("failed", "closed", "disconnected"):
+                 controller = getattr(self, "output_controller", None)
+                 active_outputs = getattr(controller, "outputs", None) or {}
+@@ -1278,6 +1281,8 @@ class FlashTalkRunner:
+                 width=item.width,
+                 height=item.height,
+                 timestamp_ms=item.timestamp_ms,
++                guide_segment_id=item.guide_segment_id,
++                guide_source_ms=item.guide_source_ms,
+             )
+         )
+
+@@ -1759,6 +1764,63 @@ class FlashTalkRunner:
+         self._remember_tts_opener(opener_id)
+         return opener_id, opener_text, chosen_pcm, cache_hit, padded
+
++    def _guide_lock(self) -> asyncio.Lock:
++        if not hasattr(self, "_guide_control_lock"):
++            self._guide_control_lock = asyncio.Lock()
++        return self._guide_control_lock
++
++    async def admit_guide_upload(self, pcm_path: str, *, enqueue_unix: float | None, segment_id: str) -> None:
++        # One admission transaction owns cancellation and starting; no unscoped
++        # interrupt from an obsolete upload can arrive after a receiver reset.
++        async with self._guide_lock():
++            if segment_id in getattr(self, "_guide_cancelled_segments", set()):
++                Path(pcm_path).unlink(missing_ok=True)
++                return
++            await asyncio.wait_for(self.interrupt(strict_reset=True), timeout=8.0)
++            native_idle = getattr(self.flashtalk, "wait_native_idle", None)
++            if native_idle is not None:
++                await native_idle()
++            self.create_speak_uploaded_pcm_task(pcm_path, enqueue_unix=enqueue_unix, segment_id=segment_id)
++
++    async def reset_guide_receiver(self, segment_id: str) -> dict:
++        async with asyncio.timeout(10.0):
++            async with self._guide_lock():
++                if self._closed:
++                    raise RuntimeError("session closed")
++                return await self._reset_guide_receiver(segment_id)
++
++    async def _reset_guide_receiver(self, segment_id: str) -> dict:
++        """Cancel production and replace the PC: browser jitter buffers are not flushable."""
++        cancelled = getattr(self, "_guide_cancelled_segments", set())
++        if len(cancelled) >= 1024 and segment_id not in cancelled:
++            raise RuntimeError("GUIDE_CANCEL_CAPACITY: create a new session")
++        cancelled.add(segment_id)
++        self._guide_cancelled_segments = cancelled
++        old = self.webrtc
++        self.webrtc = None
++        self._webrtc_started.clear()
++        if old:
++            await old.close()
++        await asyncio.wait_for(self.interrupt(strict_reset=True), timeout=8.0)
++        if self._closed or any(not task.done() for task in self.speech_tasks):
++            raise RuntimeError("speech producer did not stop")
++        native_idle = getattr(self.flashtalk, "wait_native_idle", None)
++        if native_idle is not None:
++            await native_idle()
++        if self.program:
++            await self.program.detach_branch("studio-webrtc")
++            self.program.reset_audio_processing()
++            self.program.add_branch("studio-webrtc", video_callback=self._program_video_to_webrtc,
++                                    audio_callback=self._program_audio_to_webrtc)
++        self._program_audio_resampler = None
++        self.webrtc = WebRTCSession(fps=float(self.flashtalk.fps), sample_rate=16000)
++        owner = self.webrtc
++        @owner.pc.on("connectionstatechange")
++        async def on_state():
++            if self.webrtc is owner and owner.pc.connectionState in ("failed", "closed", "disconnected") and not self._closed:
++                await self.close()
++        return {"session_id": self.session_id, "status": "receiver_reset", "generation": owner.guide_generation}
++
+     async def handle_webrtc_offer(self, sdp: str, type_: str) -> dict[str, str]:
+         # Wait for prepare() to finish (may take ~25s for FlashTalk init)
+         await asyncio.wait_for(self.ready_event.wait(), timeout=60)
+@@ -1927,9 +1989,10 @@ class FlashTalkRunner:
          pcm_path: str,
          *,
          enqueue_unix: float | None = None,
@@ -58,15 +283,20 @@ index 03c1d79..c5b5687 100644
          )
          self.speech_tasks.add(task)
          task.add_done_callback(self.speech_tasks.discard)
-@@ -1939,6 +1940,7 @@ class FlashTalkRunner:
+@@ -1939,8 +2002,12 @@ class FlashTalkRunner:
          self,
          pcm_path: str,
          enqueue_unix: float | None = None,
 +        segment_id: str | None = None,
      ) -> None:
          path = Path(pcm_path)
++        if segment_id in getattr(self, "_guide_cancelled_segments", set()):
++            path.unlink(missing_ok=True)
++            return
          pcm: np.ndarray | None = None
-@@ -1967,7 +1969,7 @@ class FlashTalkRunner:
+         try:
+             raw = path.read_bytes()
+@@ -1967,7 +2034,7 @@ class FlashTalkRunner:
          assert pcm is not None
          log.info("speak_uploaded_pcm start: session=%s samples=%d", self.session_id, pcm.size)
          try:
@@ -75,7 +305,7 @@ index 03c1d79..c5b5687 100644
              log.info("speak_uploaded_pcm done: session=%s", self.session_id)
          except asyncio.CancelledError:
              log.info("speak_uploaded_pcm cancelled: session=%s", self.session_id)
-@@ -2001,11 +2003,13 @@ class FlashTalkRunner:
+@@ -2001,11 +2068,13 @@ class FlashTalkRunner:
              if not self._closed:
                  await set_session_state(self.redis, self.session_id, "error")
 
@@ -90,7 +320,7 @@ index 03c1d79..c5b5687 100644
          utterance_id = getattr(self, "_active_command_id", None)
          if utterance_id:
              payload["utterance_id"] = str(utterance_id)
-@@ -2749,6 +2753,7 @@ class FlashTalkRunner:
+@@ -2749,10 +2818,11 @@ class FlashTalkRunner:
          pcm: np.ndarray,
          *,
          enqueue_unix: float | None = None,
@@ -98,7 +328,12 @@ index 03c1d79..c5b5687 100644
      ) -> None:
          """仅 FlashTalk：将用户上传解码后的 16 kHz mono int16 PCM 直接对口型，不经 LLM/TTS。"""
          async with self._speak_lock:
-@@ -2775,6 +2780,7 @@ class FlashTalkRunner:
+-            if self._closed:
++            if self._closed or segment_id in getattr(self, "_guide_cancelled_segments", set()):
+                 return
+             await self._await_dynamic_idle_prepare_done()
+             self._interrupt.clear()
+@@ -2775,6 +2845,7 @@ class FlashTalkRunner:
                  {
                      "session_id": self.session_id,
                      "text": "[上传音频]",
@@ -106,7 +341,7 @@ index 03c1d79..c5b5687 100644
                      **({"utterance_id": str(getattr(self, "_active_command_id"))}
                         if getattr(self, "_active_command_id", None) else {}),
                  },
-@@ -2892,13 +2898,13 @@ class FlashTalkRunner:
+@@ -2892,13 +2963,13 @@ class FlashTalkRunner:
                          _start_pacing()
                          if sub_tag:
                              await _publish_subtitle_chunk(sub_tag)
@@ -122,7 +357,7 @@ index 03c1d79..c5b5687 100644
                          continue
 
                      pending.append((pcm_chunk, frames, sub_tag))
-@@ -2914,7 +2920,7 @@ class FlashTalkRunner:
+@@ -2914,7 +2985,7 @@ class FlashTalkRunner:
                      for pc, bf, st in pending:
                          if st:
                              await _publish_subtitle_chunk(st)
@@ -131,7 +366,7 @@ index 03c1d79..c5b5687 100644
                      pending.clear()
 
                  if pending and not self._interrupt.is_set():
-@@ -2927,7 +2933,7 @@ class FlashTalkRunner:
+@@ -2927,7 +2998,7 @@ class FlashTalkRunner:
                      for pc, buffered_frames, st in pending:
                          if st:
                              await _publish_subtitle_chunk(st)
@@ -140,7 +375,7 @@ index 03c1d79..c5b5687 100644
 
                  timing["flashtalk_generate_sum_ms"] = flashtalk_gen_sum_s * 1000.0
                  timing["flashtalk_chunks"] = float(flashtalk_chunks)
-@@ -2984,7 +2990,7 @@ class FlashTalkRunner:
+@@ -2984,7 +3055,7 @@ class FlashTalkRunner:
                  ),
              )
 
@@ -149,7 +384,7 @@ index 03c1d79..c5b5687 100644
              if not self._closed:
                  await set_session_state(self.redis, self.session_id, "ready")
 
-@@ -3157,7 +3163,7 @@ class FlashTalkRunner:
+@@ -3157,7 +3228,7 @@ class FlashTalkRunner:
                  waited, self.webrtc.video._queue.qsize(), self.webrtc.audio._queue.qsize(),
              )
 
@@ -158,7 +393,7 @@ index 03c1d79..c5b5687 100644
          """Queue generated video frames interleaved with matching audio.
 
          Each video frame is paired with a proportional slice of the audio
-@@ -3193,6 +3199,7 @@ class FlashTalkRunner:
+@@ -3193,6 +3264,7 @@ class FlashTalkRunner:
                      "speech.media_started",
                      {
                          "session_id": self.session_id,
@@ -166,15 +401,242 @@ index 03c1d79..c5b5687 100644
                          **({"utterance_id": str(getattr(self, "_active_command_id"))}
                             if getattr(self, "_active_command_id", None) else {}),
                      },
+@@ -3228,6 +3300,8 @@ class FlashTalkRunner:
+                 if len(audio_slice) > 0
+                 else default_frame_interval_ms
+             )
++            frame.guide_segment_id = segment_id
++            frame.guide_source_ms = self._av_ts_ms if segment_id else None
+             frame.timestamp_ms = max(0.0, self._av_ts_ms + av_offset_ms)
+             self._trace_queued_video_frame(frame)
+             await self._video_put_safe(frame)
+@@ -3306,7 +3380,7 @@ class FlashTalkRunner:
+                 delta,
+             )
+
+-    async def interrupt(self) -> None:
++    async def interrupt(self, *, strict_reset: bool = False) -> None:
+         self._interrupt.set()
+         pending_speech_tasks = [task for task in self.speech_tasks if not task.done()]
+         # 仅在「确有口播在进行」时需要整段重建 FlashTalk 会话；空闲时跳过可省 ~1s（close/reconnect/init）。
+@@ -3346,6 +3420,8 @@ class FlashTalkRunner:
+                     await self._reset_flashtalk_session(ref)
+                 except Exception:
+                     log.exception("FlashTalk session reset after interrupt failed")
++                    if strict_reset:
++                        raise
+             else:
+                 log.info(
+                     "FlashTalk interrupt: idle path, skip session reset (session=%s)",
+diff --git a/opentalking/providers/rtc/aiortc/adapter.py b/opentalking/providers/rtc/aiortc/adapter.py
+index 0b281f4..d58cf5b 100644
+--- a/opentalking/providers/rtc/aiortc/adapter.py
++++ b/opentalking/providers/rtc/aiortc/adapter.py
+@@ -6,6 +6,8 @@ import json
+ import logging
+ import os
+ import time
++import uuid
++from collections import OrderedDict
+ from dataclasses import dataclass
+
+ import numpy as np
+@@ -207,6 +209,7 @@ class _BufferedNumpyVideoTrack(MediaStreamTrack):
+         self._prev_source_ts_ms: float | None = None
+         self._next_pts_ms = 0
+         self._shared_clock = shared_clock
++        self.guide_by_pts = OrderedDict()
+         self._debug_frames = os.environ.get("OPENTALKING_RTC_DEBUG_FRAMES", "").strip().lower() in {"1", "true", "yes", "on"}
+         self._debug_recv_count = 0
+         self._debug_prev_mean: float | None = None
+@@ -248,6 +251,11 @@ class _BufferedNumpyVideoTrack(MediaStreamTrack):
+         vf = VideoFrame.from_ndarray(item.data, format="bgr24")
+         vf.pts = self._next_pts_ms
+         vf.time_base = fractions.Fraction(1, 1000)
++        # Immutable association for this exact recv result, retained across asynchronous encoding.
++        self.guide_by_pts[vf.pts * 90] = (item.guide_segment_id, item.guide_source_ms)
++        while len(self.guide_by_pts) > 2048:
++            self.guide_by_pts.popitem(last=False)
++
+         if self._debug_frames:
+             arr = np.asarray(item.data)
+             mean = float(arr.mean()) if arr.size else 0.0
+@@ -432,10 +440,68 @@ class WebRTCSession:
+             self.video = _BufferedNumpyVideoTrack(fps=fps, shared_clock=self._shared_clock)
+             self.audio = _BufferedPCM16AudioTrack(sample_rate=sample_rate, shared_clock=self._shared_clock)
+         self.mode = normalized_mode
+-        self.pc.addTrack(self.video)
++        sender = self.pc.addTrack(self.video)
+         self.pc.addTrack(self.audio)
++        self._install_guide_timeline(sender)
+         self.draining = False  # True while clearing queues for speech start
+
++    def _install_guide_timeline(self, sender) -> None:
++        self.guide_generation = uuid.uuid4().hex
++        channel = None
++        pending = None
++        last_rtp = None
++        timestamp_origin = None
++        capable = hasattr(self.video, "guide_by_pts") and hasattr(sender, "_next_encoded_frame")
++
++        @self.pc.on("datachannel")
++        def on_channel(value):
++            nonlocal channel
++            if value.label != "guide-timeline":
++                return
++            channel = value
++            def hello():
++                if value.readyState == "open":
++                    value.send(json.dumps({"type": "capabilities", "version": 1,
++                        "generation": self.guide_generation, "clock": "rtp-video" if capable else None}))
++            value.on("open", hello)
++            value.on("message", lambda _: hello())
++            hello()
++
++        if not capable:
++            return
++        encode = sender._next_encoded_frame
++        transmit = sender.transport._send_rtp
++        async def encoded(codec):
++            nonlocal pending
++            frame = await encode(codec)
++            pending = None
++            if frame is not None:
++                metadata = self.video.guide_by_pts.pop(frame.timestamp, None)
++                if metadata is not None:
++                    pending = (codec.payloadType, metadata, frame.timestamp)
++            return frame
++
++        async def send(data):
++            nonlocal last_rtp, timestamp_origin
++            # Ignore RTCP, RTX, other tracks and duplicate fragments of the same video frame.
++            if pending is not None and len(data) >= 12 and data[0] >> 6 == 2 and not 192 <= data[1] <= 223:
++                payload_type = data[1] & 127
++                ssrc = int.from_bytes(data[8:12], "big")
++                stamp = int.from_bytes(data[4:8], "big")
++                if ssrc == sender._ssrc and payload_type == pending[0] and timestamp_origin is None:
++                    timestamp_origin = (stamp - pending[2]) & 0xffffffff
++                expected = ((timestamp_origin or 0) + pending[2]) & 0xffffffff
++                if ssrc == sender._ssrc and payload_type == pending[0] and stamp == expected and stamp != last_rtp:
++                    last_rtp = stamp
++                    if channel is not None and channel.readyState == "open":
++                        segment_id, source_ms = pending[1]
++                        channel.send(json.dumps({"type": "frame", "version": 1,
++                            "generation": self.guide_generation, "rtp_timestamp": stamp,
++                            "segment_id": segment_id, "source_ms": source_ms}))
++            await transmit(data)
++        sender._next_encoded_frame = encoded
++        sender.transport._send_rtp = send
++
+     def reset_clocks(self) -> None:
+         """Reset pacing wall-clock so next frame/audio is sent immediately.
+         Does NOT reset PTS counters — keeps the RTP stream continuous."""
+diff --git a/opentalking/providers/synthesis/audio2video_client.py b/opentalking/providers/synthesis/audio2video_client.py
+index 16aa323..411fe97 100644
+--- a/opentalking/providers/synthesis/audio2video_client.py
++++ b/opentalking/providers/synthesis/audio2video_client.py
+@@ -455,8 +455,17 @@ class LocalAudio2VideoClient:
+         self.speech_frame_index += len(frames)
+         return frames
+
++    async def wait_native_idle(self, timeout: float = 5.0) -> None:
++        executor = self._executor
++        if executor is not None:
++            # Cancelling an asyncio waiter cannot stop an active native/GPU call.
++            # A FIFO barrier on the same single-worker executor proves it returned.
++            barrier = asyncio.get_running_loop().run_in_executor(executor, lambda: None)
++            await asyncio.wait_for(asyncio.shield(barrier), timeout=timeout)
++
+     async def close(self, send_close_msg: bool = True) -> None:
+         del send_close_msg
++        await self.wait_native_idle()
+         close = getattr(self.adapter, "close", None)
+         if callable(close):
+             response = await self._run_sync(close)
+diff --git a/opentalking/runtime/server.py b/opentalking/runtime/server.py
+index 4f09d7f..816e6a8 100644
+--- a/opentalking/runtime/server.py
++++ b/opentalking/runtime/server.py
+@@ -69,6 +69,16 @@ def create_app() -> FastAPI:
+             raise HTTPException(status_code=404, detail="session not loaded on this worker")
+         return await runner.handle_webrtc_offer(body.sdp, body.type)
+
++    @app.post("/webrtc/{session_id}/reset")
++    async def reset_guide_receiver(session_id: str, body: dict) -> dict:
++        runner = runners.get(session_id)
++        if not runner or not hasattr(runner, "reset_guide_receiver"):
++            raise HTTPException(status_code=409, detail="receiver reset unavailable")
++        segment_id = body.get("segment_id")
++        if not isinstance(segment_id, str) or not 1 <= len(segment_id) <= 128:
++            raise HTTPException(status_code=422, detail="segment_id required")
++        return await runner.reset_guide_receiver(segment_id)
++
+     def _require_internal(request: Request) -> None:
+         settings = get_settings()
+         expected = str(getattr(settings, "streaming_internal_control_token", "") or "")
 diff --git a/opentalking/runtime/task_consumer.py b/opentalking/runtime/task_consumer.py
-index 1f909b2..8e4610d 100644
+index 1f909b2..f788d9b 100644
 --- a/opentalking/runtime/task_consumer.py
 +++ b/opentalking/runtime/task_consumer.py
-@@ -976,6 +976,7 @@ async def handle_worker_task(
-         fn(
-             pcm_path.strip(),
-             enqueue_unix=float(eu) if isinstance(eu, (int, float)) else None,
-+            **({"segment_id": task["segment_id"]} if task.get("segment_id") else {}),
-         )
+@@ -973,10 +973,13 @@ async def handle_worker_task(
+             log.warning("speak_flashtalk_audio missing pcm_key/pcm_path session=%s", sid)
+             return
+         eu = task.get("enqueue_unix")
+-        fn(
+-            pcm_path.strip(),
+-            enqueue_unix=float(eu) if isinstance(eu, (int, float)) else None,
+-        )
++        admit = getattr(runner, "admit_guide_upload", None)
++        if task.get("segment_id") and admit is not None:
++            await admit(pcm_path.strip(), enqueue_unix=float(eu) if isinstance(eu, (int, float)) else None,
++                        segment_id=task["segment_id"])
++        else:
++            fn(pcm_path.strip(), enqueue_unix=float(eu) if isinstance(eu, (int, float)) else None,
++               **({"segment_id": task["segment_id"]} if task.get("segment_id") else {}))
      elif cmd == "flashtalk_offline_bundle":
          job_id = task.get("job_id")
+         pcm_path = task.get("pcm_path")
+diff --git a/opentalking/streaming/manager.py b/opentalking/streaming/manager.py
+index 76e367f..765d8b2 100644
+--- a/opentalking/streaming/manager.py
++++ b/opentalking/streaming/manager.py
+@@ -114,6 +114,18 @@ class ProgramOutputManager:
+             self._put_sentinel(branch.video_queue)
+             self._put_sentinel(branch.audio_queue)
+
++    async def detach_branch(self, name: str) -> None:
++        """Wait until callbacks can no longer forward an old receiver's media."""
++        branch = self._branches.get(name)
++        self.remove_branch(name)
++        if branch is not None:
++            tasks = [task for task in (branch.video_task, branch.audio_task) if task is not None]
++            await asyncio.gather(*tasks, return_exceptions=True)
++
++    def reset_audio_processing(self) -> None:
++        """Discard resampler filter tails after the producer has been cancelled."""
++        self._resamplers.clear()
++
+     @staticmethod
+     def _put_sentinel(queue: asyncio.Queue[Any]) -> None:
+         try:
+@@ -167,6 +179,8 @@ class ProgramOutputManager:
+             width=int(width),
+             height=int(height),
+             timestamp_ms=self.clock.next_video(),
++            guide_segment_id=frame.guide_segment_id,
++            guide_source_ms=frame.guide_source_ms,
+             source=source,
+             utterance_id=utterance_id,
+         )
+diff --git a/opentalking/streaming/types.py b/opentalking/streaming/types.py
+index 4161426..f2630d9 100644
+--- a/opentalking/streaming/types.py
++++ b/opentalking/streaming/types.py
+@@ -14,5 +14,7 @@ class ProgramVideo:
+     width: int
+     height: int
+     timestamp_ms: float
++    guide_segment_id: str | None = None
++    guide_source_ms: float | None = None
+     source: str = "unknown"
+     utterance_id: str | None = None

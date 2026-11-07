@@ -13,6 +13,7 @@ from exhibition_guide.evidence_model import ModelEvidenceEvaluator, ModelQuestio
 from exhibition_guide.context import ContextStore, Invalidation, Rewriter
 from exhibition_guide.knowledge import KnowledgeClient
 from exhibition_guide.llm import ModelClient
+from exhibition_guide.tour import TourPlanner, PlaybackReceipt
 from exhibition_guide.media import MediaCatalog, PresentedQuestionResponse
 from starlette.concurrency import run_in_threadpool
 
@@ -48,7 +49,7 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
                 application.state.answer_service = AnswerService(
                     KnowledgeClient(http), ModelEvidenceEvaluator(model, media),
                     kb_id=config.knowledge.kb_id, timeout=config.llm.timeout_seconds,
-                    narration_resolver=media.resolve_narration,
+                    narration_resolver=media.resolve_narration, visual_resolver=media.resolve_visual,
                 )
                 application.state.rewriter = ModelQuestionRewriter(model)
             try:
@@ -60,7 +61,7 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
 
     application = FastAPI(title="Exhibition Guide", lifespan=lifespan)
     application.state.answer_service = service
-    application.state.history = ContextStore()
+    application.state.history = ContextStore(tour_planner=TourPlanner(media))
     application.state.rewriter = rewriter
 
     @application.get("/health")
@@ -68,7 +69,8 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
         return {"status": "ok"}
 
     @application.get("/ui-config", response_model=UIConfigResponse)
-    def ui_config() -> UIConfigResponse:
+    def ui_config(response: Response) -> UIConfigResponse:
+        response.headers["X-Guide-Speech-Mode"] = "paragraph"
         return UIConfigResponse(
             avatar_id=config.avatar.avatar_id, tts_voice=config.avatar.tts_voice,
         )
@@ -101,6 +103,13 @@ def create_app(config: AppConfig | None = None, *, service: AnswerService | None
         if presentation is not None:
             payload["presentation"] = presentation
         return PresentedQuestionResponse.model_validate(payload)
+
+    @application.post("/visitors/{visitor_id}/playback")
+    async def playback_receipt(visitor_id: str, body: PlaybackReceipt) -> dict:
+        try:
+            return application.state.history.playback(visitor_id, body)
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from None
 
     @application.post("/visitors/{visitor_id}/invalidate")
     async def invalidate(visitor_id: str, body: Invalidation) -> dict:

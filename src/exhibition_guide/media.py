@@ -45,6 +45,10 @@ class ReviewedNarration(BaseModel):
         return self
 
 
+class ReviewedFact(ReviewedNarration):
+    id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
+
+
 class _Asset(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid", frozen=True)
     id: str = Field(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$")
@@ -58,6 +62,13 @@ class _Asset(BaseModel):
     keywords: list[str] = Field(min_length=1, max_length=64)
     reviewed: bool
     narrations: list[ReviewedNarration] = Field(default_factory=list, max_length=24)
+    case_id: str | None = None
+    case_name: str | None = None
+    client_id: str | None = None
+    aliases: list[str] = Field(default_factory=list, max_length=16)
+    category: Literal["exhibition", "retail", "office", "brand", "film", "services"] | None = None
+    angle: str | None = None
+    facts: list[ReviewedFact] = Field(default_factory=list, max_length=24)
 
     @model_validator(mode="after")
     def safe(self):
@@ -93,6 +104,7 @@ class PublicAsset(BaseModel):
 
 
 class Presentation(BaseModel):
+    mode: Literal["paragraph"] | None = None
     sentences: list[Sentence]
     assets: list[PublicAsset]
 
@@ -168,6 +180,51 @@ class MediaCatalog:
             stream.close()
             raise
 
+    def playback_sentence_ids(self, answer: QuestionResponse) -> set[str]:
+        # Plain audio-only answers still have valid playback receipts, but no
+        # reviewed case/angle claims. Match the public plan's exact partition.
+        parts = answer._visual_plan or _sentences(answer.text)
+        return {f"s{i + 1}" for i in range(len(parts))}
+
+    def cases(self) -> dict[str, dict]:
+        result = {}
+        for asset in self.assets.values():
+            if asset.case_id and asset.category and asset.category != "services" and asset.facts:
+                item = result.setdefault(asset.case_id, {"id": asset.case_id, "name": asset.case_name or asset.case_id,
+                    "category": asset.category, "client_id": asset.client_id or asset.case_id, "aliases": asset.aliases, "angles": []})
+                if asset.angle not in item["angles"]:
+                    item["angles"].append(asset.angle)
+        return result
+
+    def visual_options(self, snippets: tuple[str, ...], tour: dict | None = None) -> list[dict]:
+        result = []
+        for asset in self.assets.values():
+            if tour and tour.get("case_id") and asset.case_id != tour["case_id"]:
+                continue
+            facts = [f.model_dump() for f in asset.facts if all(any(e in s for s in snippets) for e in f.evidence)]
+            if facts:
+                result.append({"asset_id": asset.id, "case_id": asset.case_id, "case_name": asset.case_name,
+                    "category": asset.category, "angle": asset.angle, "description": asset.alt, "facts": facts})
+        return result
+
+    def resolve_visual(self, ids: list[str], snapshot: list[AnswerSource], citations: list[AnswerSource], tour: dict | None) -> str | None:
+        if not ids or len(set(ids)) != len(ids):
+            return None
+        cited = {s.source.filename for s in citations if s.source.status == "known"}
+        matches = []
+        for fact_id in ids:
+            candidates = [(a, f) for a in self.assets.values() for f in a.facts if f.id == fact_id]
+            if len(candidates) != 1:
+                return None
+            asset, fact = candidates[0]
+            if asset.source_filename not in cited or (tour and tour.get("case_id") and asset.case_id != tour["case_id"]):
+                return None
+            if not all(any(s.source.status == "known" and s.source.filename == asset.source_filename
+                           and evidence in s.excerpt for s in snapshot) for evidence in fact.evidence):
+                return None
+            matches.append(asset.id)
+        return matches[0] if len(set(matches)) == 1 else None
+
     def narration_options(self, snippets: tuple[str, ...]) -> list[dict]:
         # Only offer optional wording supported by the current retrieval, never
         # enrich the answer with facts from the catalog or another turn.
@@ -190,7 +247,7 @@ class MediaCatalog:
     def presentation(self, answer: QuestionResponse) -> Presentation | None:
         if answer.status != "answer" or not self.assets:
             return None
-        parts = _sentences(answer.text)
+        parts = [s["text"] for s in answer._visual_plan] if answer._visual_plan else _sentences(answer.text)
         if not parts or len(parts) > 64:
             return None
         cited_files = {s.source.filename for s in answer.sources if s.source.status == "known"}
@@ -206,6 +263,9 @@ class MediaCatalog:
                     and evidence in source.excerpt
                     for source in snapshot) for evidence in narration.evidence)
                 for narration in asset.narrations)]
+            if answer._visual_plan:
+                approved = answer._visual_plan[index]["asset_id"]
+                candidates = [self.assets[approved]] if approved in self.assets else []
             selected = None
             if len(candidates) == 1:
                 asset = candidates[0]
@@ -219,7 +279,7 @@ class MediaCatalog:
                     selected = asset.id
                     used[selected] = PublicAsset(id=asset.id, kind=asset.kind, url=f"/guide/media/{asset.id}", mime=asset.mime, alt=asset.alt)
             sentences.append(Sentence(id=f"s{index + 1}", text=text, asset_id=selected))
-        return Presentation(sentences=sentences, assets=list(used.values()))
+        return Presentation(sentences=sentences, assets=list(used.values()), mode="paragraph" if any(a.facts for a in self.assets.values()) else None)
 
     def response(self, asset_id: str, request: Request) -> Response:
         asset = self.assets.get(asset_id)

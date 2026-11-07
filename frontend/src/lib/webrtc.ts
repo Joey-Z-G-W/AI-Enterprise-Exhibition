@@ -7,7 +7,8 @@
 import { jsonRequest, post, RequestError } from "./api";
 import { createReceiverClock, type ReceiverClock } from "./receiverClock";
 
-export type Playback = { close: () => void; receiver?: ReceiverClock };
+import { createParagraphClock, type ParagraphClock } from "./paragraphClock";
+export type Playback = { close: () => void; isolate: () => void; receiver?: ReceiverClock; timeline?: ParagraphClock };
 
 function waitUntil(check: () => boolean, signal: AbortSignal, milliseconds: number): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -36,6 +37,7 @@ export async function startPlayback(
   signal: AbortSignal,
   onSoundBlocked: () => void,
   onFailure: () => void,
+  negotiationMs = 60000,
 ): Promise<Playback> {
   if (signal.aborted) throw new RequestError("cancelled");
   const lifetime = new AbortController();
@@ -43,6 +45,12 @@ export async function startPlayback(
   let pc: RTCPeerConnection | undefined;
   let closed = false;
   let receiver: ReceiverClock | undefined;
+  const timeline = createParagraphClock(video);
+  const isolate = () => {
+    video.muted = true; video.pause(); video.srcObject = null; timeline.cancel(); receiver?.cancel();
+    window.clearInterval(progressTimer);
+    if (pc) { pc.onconnectionstatechange = null; pc.oniceconnectionstatechange = null; }
+  };
   let cancellation = new RequestError("cancelled");
   let negotiationTimer: number | undefined;
   let progressTimer: number | undefined;
@@ -60,6 +68,7 @@ export async function startPlayback(
     if (frameCallback !== undefined) video.cancelVideoFrameCallback(frameCallback);
     lifetime.abort();
     receiver?.close();
+    timeline.close();
     if (pc) {
       pc.ontrack = null;
       pc.onconnectionstatechange = null;
@@ -90,7 +99,7 @@ export async function startPlayback(
   negotiationTimer = window.setTimeout(() => {
     cancellation = new RequestError("timeout");
     close();
-  }, 60000);
+  }, negotiationMs);
   try {
     const config = await guarded(jsonRequest<{ iceServers?: RTCIceServer[]; iceTransportPolicy?: RTCIceTransportPolicy }>(
       "/opentalking/sessions/webrtc/ice-config", { signal: lifetime.signal },
@@ -101,6 +110,11 @@ export async function startPlayback(
       iceTransportPolicy: config.iceTransportPolicy === "relay" ? "relay" : "all",
     });
     const peer = pc;
+    if (typeof peer.createDataChannel === "function") {
+      const channel = peer.createDataChannel("guide-timeline", { ordered: true });
+      channel.onopen = () => channel.send("capabilities");
+      channel.onmessage = event => { try { timeline.message(JSON.parse(event.data)); } catch { /* Invalid sideband never advances playback. */ } };
+    }
     video.srcObject = stream;
     video.autoplay = true;
     video.playsInline = true;
@@ -152,8 +166,9 @@ export async function startPlayback(
     // Idle avatars still deliver frames; silence is not a failure. Prefer presented
     // video frames, then decoded frame count, then ready video playback time.
     let previousProgress = video.getVideoPlaybackQuality?.().totalVideoFrames ?? video.currentTime;
-    const presented = () => {
+    const presented = (_now: number, metadata: VideoFrameCallbackMetadata) => {
       if (closed) return;
+      timeline.presented((metadata as VideoFrameCallbackMetadata & { rtpTimestamp?: number }).rtpTimestamp);
       seenFrame = true;
       lastProgress = performance.now();
       frameCallback = video.requestVideoFrameCallback(presented);
@@ -180,7 +195,7 @@ export async function startPlayback(
       if (performance.now() - lastProgress >= (seenFrame ? 10000 : 15000)) fail();
     }, 500);
     void play();
-    return { close, receiver };
+    return { close, isolate, receiver, timeline };
   } catch (error) {
     close();
     throw error;

@@ -1,4 +1,4 @@
-"""Idempotently apply the segment-event compatibility patch to the pinned upstream."""
+"""Idempotently apply guide identity, native TTS timing and receiver-reset support to pinned upstream."""
 from pathlib import Path
 import argparse
 import subprocess

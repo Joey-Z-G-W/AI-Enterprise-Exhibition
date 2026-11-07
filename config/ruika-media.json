@@ -28,6 +28,30 @@
             "千纸鹤男装 类型：院线广告片 用途：影院电影播放前的广告展示"
           ]
         }
+      ],
+      "case_id": "qianzhihe-film",
+      "case_name": "千纸鹤男装院线广告",
+      "client_id": "qianzhihe-film",
+      "category": "film",
+      "aliases": [
+        "千纸鹤"
+      ],
+      "angle": "ruika-video",
+      "facts": [
+        {
+          "id": "ruika-video-f1",
+          "text": "千纸鹤男装《有态度的服装》是院线广告片案例。",
+          "evidence": [
+            "千纸鹤男装 | QIAN ZHI HE 《有态度的服装》 客户：千纸鹤男装 类型：院线广告片"
+          ]
+        },
+        {
+          "id": "ruika-video-f2",
+          "text": "千纸鹤男装广告片用于影院电影播放前的广告展示。",
+          "evidence": [
+            "千纸鹤男装 类型：院线广告片 用途：影院电影播放前的广告展示"
+          ]
+        }
       ]
     },
     {
@@ -55,6 +79,33 @@
           ]
         },
         {
+          "text": "ARNO品牌重塑定位于时尚、轻奢和品位。",
+          "evidence": [
+            "ARNO 于2018年委托锐伽对其品牌进行重塑",
+            "全新定位时尚、轻奢、品位"
+          ]
+        }
+      ],
+      "case_id": "arno-brand",
+      "case_name": "ARNO品牌重塑",
+      "client_id": "arno-brand",
+      "category": "brand",
+      "aliases": [
+        "ARNO",
+        "亚诺"
+      ],
+      "angle": "arno-fashion",
+      "facts": [
+        {
+          "id": "arno-fashion-f1",
+          "text": "ARNO品牌重塑提出了“老花镜更是时尚单品”的概念。",
+          "evidence": [
+            "ARNO 于2018年委托锐伽对其品牌进行重塑",
+            "提出“老花镜更是时尚单品”的概念"
+          ]
+        },
+        {
+          "id": "arno-fashion-f2",
           "text": "ARNO品牌重塑定位于时尚、轻奢和品位。",
           "evidence": [
             "ARNO 于2018年委托锐伽对其品牌进行重塑",
@@ -132,6 +183,33 @@
             "清水泥地砖、灰度木饰面、不锈钢台面"
           ]
         }
+      ],
+      "case_id": "solar-cafe",
+      "case_name": "SOLAR咖啡店",
+      "client_id": "solar-cafe",
+      "category": "retail",
+      "aliases": [
+        "SOLAR",
+        "咖啡店"
+      ],
+      "angle": "solar-interior",
+      "facts": [
+        {
+          "id": "solar-interior-f1",
+          "text": "SOLAR咖啡店设计希望打造有家庭温馨感的场所。",
+          "evidence": [
+            "SOLAR是三位澳洲海归创立的咖啡、烘培品牌",
+            "打造一个有家庭温馨感的场所"
+          ]
+        },
+        {
+          "id": "solar-interior-f2",
+          "text": "SOLAR咖啡店室内设计采用清水泥地砖、灰度木饰面和不锈钢台面。",
+          "evidence": [
+            "SOLAR是三位澳洲海归创立的咖啡、烘培品牌",
+            "清水泥地砖、灰度木饰面、不锈钢台面"
+          ]
+        }
       ]
     },
     {
@@ -156,6 +234,32 @@
           ]
         },
         {
+          "text": "华地投资办公室设计以极简框架和硬朗墙面材料营造统一的空间风格。",
+          "evidence": [
+            "华地投资（办公室设计）",
+            "极简的框架，温文的肌理，硬朗的墙面材料"
+          ]
+        }
+      ],
+      "case_id": "huadi-office",
+      "case_name": "华地投资办公室",
+      "client_id": "huadi-office",
+      "category": "office",
+      "aliases": [
+        "华地"
+      ],
+      "angle": "huadi-conference",
+      "facts": [
+        {
+          "id": "huadi-conference-f1",
+          "text": "华地投资广州分公司的办公室改造采用简洁硬朗的设计风格。",
+          "evidence": [
+            "华地投资在广州分公司的办公室改造项目",
+            "简洁硬朗，非常利落的风格"
+          ]
+        },
+        {
+          "id": "huadi-conference-f2",
           "text": "华地投资办公室设计以极简框架和硬朗墙面材料营造统一的空间风格。",
           "evidence": [
             "华地投资（办公室设计）",
@@ -194,6 +298,34 @@
             "地和墙干净利索一个满铺大理石，一个纯白墙面漆，而货架和装置清一色的金色钛金不锈钢"
           ]
         }
+      ],
+      "case_id": "bolon-store",
+      "case_name": "BOLON店面设计",
+      "client_id": "bolon-store",
+      "category": "retail",
+      "aliases": [
+        "BOLON",
+        "暴龙"
+      ],
+      "angle": "bolon-interior",
+      "facts": [
+        {
+          "id": "bolon-interior-f1",
+          "text": "暴龙日本分店的形象提升设计强调简洁的空间与质感。",
+          "evidence": [
+            "暴龙概念形象设计是为暴龙在日本的一家分店做的形象提升设计",
+            "瞬间让空间简单起来",
+            "实实在在的质感和结构"
+          ]
+        },
+        {
+          "id": "bolon-interior-f2",
+          "text": "暴龙店面设计方案使用大理石地面、白色墙面和金色钛金不锈钢货架。",
+          "evidence": [
+            "BOLON暴龙眼镜(店面设计)",
+            "地和墙干净利索一个满铺大理石，一个纯白墙面漆，而货架和装置清一色的金色钛金不锈钢"
+          ]
+        }
       ]
     },
     {
@@ -219,6 +351,23 @@
             "锐伽以咕叽咕叽英文名为品牌标志设计原型，通过多彩的七巧板拼接进行创意解构"
           ]
         }
+      ],
+      "case_id": "gujiguji-brand",
+      "case_name": "咕叽咕叽品牌设计",
+      "client_id": "gujiguji-brand",
+      "category": "brand",
+      "aliases": [
+        "咕叽"
+      ],
+      "angle": "gujiguji-vi",
+      "facts": [
+        {
+          "id": "gujiguji-vi-f1",
+          "text": "咕叽咕叽的品牌标志以英文名为原型，融入多彩七巧板创意。",
+          "evidence": [
+            "锐伽以咕叽咕叽英文名为品牌标志设计原型，通过多彩的七巧板拼接进行创意解构"
+          ]
+        }
       ]
     },
     {
@@ -238,6 +387,25 @@
       "reviewed": true,
       "narrations": [
         {
+          "text": "薇茉丽的品牌视觉希望塑造青春、有质感的形象。",
+          "evidence": [
+            "薇茉丽正是崛起中优质国产面膜品牌",
+            "塑造一个青春、有质感的形象"
+          ]
+        }
+      ],
+      "case_id": "vemolly-brand",
+      "case_name": "薇茉丽品牌设计",
+      "client_id": "vemolly-brand",
+      "category": "brand",
+      "aliases": [
+        "薇茉丽",
+        "Vemolly"
+      ],
+      "angle": "vemolly-visual",
+      "facts": [
+        {
+          "id": "vemolly-visual-f1",
           "text": "薇茉丽的品牌视觉希望塑造青春、有质感的形象。",
           "evidence": [
             "薇茉丽正是崛起中优质国产面膜品牌",
@@ -271,6 +439,28 @@
           ]
         },
         {
+          "text": "品牌策划设计涵盖品牌定位、文化铸造、形象包装设计和品牌落地执行。",
+          "evidence": [
+            "品牌定位 + 文化铸造 + 形象包装设计 + 品牌落地执行"
+          ]
+        }
+      ],
+      "case_id": "ruika-services",
+      "case_name": "锐伽服务",
+      "client_id": "ruika-services",
+      "category": "services",
+      "aliases": [],
+      "angle": "home-brand",
+      "facts": [
+        {
+          "id": "home-brand-f1",
+          "text": "锐伽提供品牌策划设计服务。",
+          "evidence": [
+            "品牌策划设计"
+          ]
+        },
+        {
+          "id": "home-brand-f2",
           "text": "品牌策划设计涵盖品牌定位、文化铸造、形象包装设计和品牌落地执行。",
           "evidence": [
             "品牌定位 + 文化铸造 + 形象包装设计 + 品牌落地执行"
@@ -311,6 +501,28 @@
             "商业空间设计 国际&国内展览"
           ]
         }
+      ],
+      "case_id": "ruika-services",
+      "case_name": "锐伽服务",
+      "client_id": "ruika-services",
+      "category": "services",
+      "aliases": [],
+      "angle": "home-space",
+      "facts": [
+        {
+          "id": "home-space-f1",
+          "text": "锐伽提供国际和国内展览设计服务。",
+          "evidence": [
+            "商业空间设计 国际&国内展览"
+          ]
+        },
+        {
+          "id": "home-space-f2",
+          "text": "商业空间设计服务包括国际和国内展览。",
+          "evidence": [
+            "商业空间设计 国际&国内展览"
+          ]
+        }
       ]
     },
     {
@@ -340,6 +552,28 @@
           ]
         },
         {
+          "text": "视频广告制作包括企业宣传片、广告片制作和三维动画。",
+          "evidence": [
+            "视频广告制作 企业宣传片 + 广告片制作 + 三维动画"
+          ]
+        }
+      ],
+      "case_id": "ruika-services",
+      "case_name": "锐伽服务",
+      "client_id": "ruika-services",
+      "category": "services",
+      "aliases": [],
+      "angle": "home-film",
+      "facts": [
+        {
+          "id": "home-film-f1",
+          "text": "锐伽提供视频广告制作服务。",
+          "evidence": [
+            "视频广告制作"
+          ]
+        },
+        {
+          "id": "home-film-f2",
           "text": "视频广告制作包括企业宣传片、广告片制作和三维动画。",
           "evidence": [
             "视频广告制作 企业宣传片 + 广告片制作 + 三维动画"
@@ -398,6 +632,463 @@
           "text": "锐伽提供传播服务。",
           "evidence": [
             "传播： 以广告片／企业宣传片／短视频／为创意核心，结合新媒资源传播"
+          ]
+        }
+      ],
+      "case_id": "ruika-services",
+      "case_name": "锐伽服务",
+      "client_id": "ruika-services",
+      "category": "services",
+      "aliases": [],
+      "angle": "ruika-services",
+      "facts": [
+        {
+          "id": "ruika-services-f1",
+          "text": "锐伽是一家以研究定位为核心的品牌综合服务公司。",
+          "evidence": [
+            "我们的服务是研究定位（消费者心理动向）为核心的一家品牌综合服务公司。"
+          ]
+        },
+        {
+          "id": "ruika-services-f2",
+          "text": "锐伽于2014年在厦门成立。",
+          "evidence": [
+            "2014年在厦门成立锐伽联创广告公司"
+          ]
+        },
+        {
+          "id": "ruika-services-f3",
+          "text": "锐伽提供品牌定位服务。",
+          "evidence": [
+            "定位 ： 品牌核心价值 / 品牌架构 / 品牌个性 / 品牌联想 / 品牌命名等"
+          ]
+        },
+        {
+          "id": "ruika-services-f4",
+          "text": "锐伽提供视觉设计服务。",
+          "evidence": [
+            "视觉： 标志&VI设计 / 产品包装设计 / 品牌展览 展厅和店铺，以及企业办公室统一化视觉识别调性"
+          ]
+        },
+        {
+          "id": "ruika-services-f5",
+          "text": "锐伽提供传播服务。",
+          "evidence": [
+            "传播： 以广告片／企业宣传片／短视频／为创意核心，结合新媒资源传播"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yanjan-us-2019-1",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/57564f72f88ece162853.jpg",
+      "sha256": "53b2c31b35bdef201960525b18bf10c858fc682ce6506935c7da93ac5fd0d6ab",
+      "mime": "image/jpeg",
+      "source_filename": "07-yanjan-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+      "alt": "延江美国展厅效果图1：整体斜视，品牌塔、大海报、吊楣与开放展位",
+      "keywords": [
+        "延江美国展"
+      ],
+      "reviewed": true,
+      "case_id": "yanjan-us-2019",
+      "case_name": "延江美国展",
+      "client_id": "yanjan",
+      "category": "exhibition",
+      "aliases": [
+        "延江"
+      ],
+      "angle": "angle-1",
+      "facts": [
+        {
+          "id": "yanjan-us-2019-1-fact",
+          "text": "延江美国展的整体设计采用大体块和大海报，形成简约大气的视觉形象。",
+          "evidence": [
+            "大体块加上大海报，给人以恢弘大气的体验"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yanjan-us-2019-2",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/f2cdcb5a728cc276416d.jpg",
+      "sha256": "ce48aa834e6d19ae1ce7c412b8fc4f54250bb7c02fb768fec2a07982bcf50263",
+      "mime": "image/jpeg",
+      "source_filename": "07-yanjan-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+      "alt": "延江美国展厅效果图3：侧视，大型透明白吊楣、海报柱和开放座区",
+      "keywords": [
+        "延江美国展"
+      ],
+      "reviewed": true,
+      "case_id": "yanjan-us-2019",
+      "case_name": "延江美国展",
+      "client_id": "yanjan",
+      "category": "exhibition",
+      "aliases": [
+        "延江"
+      ],
+      "angle": "angle-2",
+      "facts": [
+        {
+          "id": "yanjan-us-2019-2-fact",
+          "text": "上方的大型吊楣保持展位通透，也方便远处的观众识别品牌。",
+          "evidence": [
+            "然后是一个大型的吊楣，不仅增加了展位的通透感同时能让远处的客人可以很快的识别到品牌"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yanjan-us-2019-3",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/d79c325399c38c031834.jpg",
+      "sha256": "eba55ddd84fdae61b303278402c2318b4e3bfe4853b88d3ba1a3982fd0caf18c",
+      "mime": "image/jpeg",
+      "source_filename": "07-yanjan-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=214&m=content",
+      "alt": "延江美国展厅效果图9：内侧桌椅、玻璃隔断与样品展示墙",
+      "keywords": [
+        "延江美国展"
+      ],
+      "reviewed": true,
+      "case_id": "yanjan-us-2019",
+      "case_name": "延江美国展",
+      "client_id": "yanjan",
+      "category": "exhibition",
+      "aliases": [
+        "延江"
+      ],
+      "angle": "angle-3",
+      "facts": [
+        {
+          "id": "yanjan-us-2019-3-fact",
+          "text": "内部通过隔墙划分功能分区，让不同空间各有安排。",
+          "evidence": [
+            "几个功能分区隔墙"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mengzhan-crocodile-showroom-1",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/c6f734482f2d3809bca6.jpg",
+      "sha256": "1b8e683668b719e6f225fce26260f9e8c1e87257fba2f7f1dda5d5470af94f0c",
+      "mime": "image/jpeg",
+      "source_filename": "13-mengzhan-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=216&m=content",
+      "alt": "盟展鳄鱼展厅设计效果图1：园区鸟瞰规划，总平面道路、建筑和区域",
+      "keywords": [
+        "盟展鳄鱼展厅及园区"
+      ],
+      "reviewed": true,
+      "case_id": "mengzhan-crocodile-showroom",
+      "case_name": "盟展鳄鱼展厅及园区",
+      "client_id": "mengzhan",
+      "category": "exhibition",
+      "aliases": [
+        "盟展",
+        "鳄鱼"
+      ],
+      "angle": "angle-1",
+      "facts": [
+        {
+          "id": "mengzhan-crocodile-showroom-1-fact",
+          "text": "盟展鳄鱼的设计服务覆盖整个园区规划、展厅和入园形象。",
+          "evidence": [
+            "本次展厅设计服务内容是对整个园区进行规划及展厅、入园形象设计等。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mengzhan-crocodile-showroom-2",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/43532dfd9a4c433d874f.jpg",
+      "sha256": "90e3c09b09db57976a5f11cd846b9a0c4238e5ee312ba622fcb18e926164a4c6",
+      "mime": "image/jpeg",
+      "source_filename": "13-mengzhan-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=216&m=content",
+      "alt": "盟展鳄鱼展厅设计效果图6：展厅内景，鳄鱼模型、悬挂灯箱、展板、柱与玻璃展柜",
+      "keywords": [
+        "盟展鳄鱼展厅及园区"
+      ],
+      "reviewed": true,
+      "case_id": "mengzhan-crocodile-showroom",
+      "case_name": "盟展鳄鱼展厅及园区",
+      "client_id": "mengzhan",
+      "category": "exhibition",
+      "aliases": [
+        "盟展",
+        "鳄鱼"
+      ],
+      "angle": "angle-2",
+      "facts": [
+        {
+          "id": "mengzhan-crocodile-showroom-2-fact",
+          "text": "展厅利用平面设计强化空间关系，形成有序的展示体验。",
+          "evidence": [
+            "最后通过平面设计的别样表达，强化空间的处理关系，让展厅充满空间的序列感。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mengzhan-crocodile-showroom-3",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/09d806d95aa792a13518.jpg",
+      "sha256": "612b1d87b24ec79988b72067a9d4af7f59ceb93509b993f3369385a42a4b3be0",
+      "mime": "image/jpeg",
+      "source_filename": "13-mengzhan-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=216&m=content",
+      "alt": "盟展鳄鱼展厅设计效果图10：白色产品卖场，白色层叠展台、金色肌理墙和品牌文字",
+      "keywords": [
+        "盟展鳄鱼展厅及园区"
+      ],
+      "reviewed": true,
+      "case_id": "mengzhan-crocodile-showroom",
+      "case_name": "盟展鳄鱼展厅及园区",
+      "client_id": "mengzhan",
+      "category": "exhibition",
+      "aliases": [
+        "盟展",
+        "鳄鱼"
+      ],
+      "angle": "angle-3",
+      "facts": [
+        {
+          "id": "mengzhan-crocodile-showroom-3-fact",
+          "text": "产品卖场以大面积白色为主，搭配从鳄鱼纹路衍生的辅助图形。",
+          "evidence": [
+            "产品卖场采用了大面积的白色，以鳄鱼的纹路肌理衍生的辅助设计图形来作为装饰造型"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wild-one-chongqing-2020-1",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/59b0f331aef395ce3ba8.jpg",
+      "sha256": "549b7e9a69447ea589be867d7b6fe9136f8001734e2dc8840bdba5820d1f3235",
+      "mime": "image/jpeg",
+      "source_filename": "14-wildone-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=232&m=content",
+      "alt": "THE WILD ONE 2020年重庆摩博会展位设计效果图：俯视总布局，头盔展台、中央通道和后侧桌椅洽谈区",
+      "keywords": [
+        "THE WILD ONE重庆摩博会"
+      ],
+      "reviewed": true,
+      "case_id": "wild-one-chongqing-2020",
+      "case_name": "THE WILD ONE 2020年重庆摩博会展位设计方案",
+      "client_id": "wild-one",
+      "category": "exhibition",
+      "aliases": [
+        "THE WILD ONE",
+        "WILD ONE",
+        "摩博会"
+      ],
+      "angle": "angle-1",
+      "facts": [
+        {
+          "id": "wild-one-chongqing-2020-1-fact",
+          "text": "THE WILD ONE的摩博会展位采用三面敞开、阶梯式布置。",
+          "evidence": [
+            "展位三面敞开，整体阶梯式布置"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wild-one-chongqing-2020-2",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/af4167b2b5b22a4672ac.jpg",
+      "sha256": "31f4087f4bb102dfb544f390ab6d112c7228d45d1d45bd72af55c92656ce294e",
+      "mime": "image/jpeg",
+      "source_filename": "14-wildone-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=232&m=content",
+      "alt": "THE WILD ONE 2020年重庆摩博会展位设计效果图：正面头盔展示、大型后背景海报和木纹前台",
+      "keywords": [
+        "THE WILD ONE重庆摩博会"
+      ],
+      "reviewed": true,
+      "case_id": "wild-one-chongqing-2020",
+      "case_name": "THE WILD ONE 2020年重庆摩博会展位设计方案",
+      "client_id": "wild-one",
+      "category": "exhibition",
+      "aliases": [
+        "THE WILD ONE",
+        "WILD ONE",
+        "摩博会"
+      ],
+      "angle": "angle-2",
+      "facts": [
+        {
+          "id": "wild-one-chongqing-2020-2-fact",
+          "text": "展位后方通过大幅海报形成背景墙，提高品牌辨识度。",
+          "evidence": [
+            "后面为背景墙，通过一面大的海报来增加辨识度。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wild-one-chongqing-2020-3",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/a477b4f07f0af0167a7a.jpg",
+      "sha256": "16dde6dffa96e8e82a6869d4d8126fb28630816dfbecd6b2f20a9d2ae6558a82",
+      "mime": "image/jpeg",
+      "source_filename": "14-wildone-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=232&m=content",
+      "alt": "THE WILD ONE 2020年重庆摩博会展位设计效果图：侧面头盔陈列与框架内桌椅洽谈区，同一展位另一角度",
+      "keywords": [
+        "THE WILD ONE重庆摩博会"
+      ],
+      "reviewed": true,
+      "case_id": "wild-one-chongqing-2020",
+      "case_name": "THE WILD ONE 2020年重庆摩博会展位设计方案",
+      "client_id": "wild-one",
+      "category": "exhibition",
+      "aliases": [
+        "THE WILD ONE",
+        "WILD ONE",
+        "摩博会"
+      ],
+      "angle": "angle-3",
+      "facts": [
+        {
+          "id": "wild-one-chongqing-2020-3-fact",
+          "text": "展位中间安排相对私密的商务洽谈区。",
+          "evidence": [
+            "中间为商务洽谈区，保持一定私密"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wild-one-chongqing-2020-4",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/06df99c4c76c87b0e0ce.jpg",
+      "sha256": "240dd2b3be8c6d76a549416734f0886c07747f14873aecf70956dd7a40d338ab",
+      "mime": "image/jpeg",
+      "source_filename": "14-wildone-exhibition.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=232&m=content",
+      "alt": "THE WILD ONE 2020年重庆摩博会展位设计效果图：斜视全貌，深灰展台、木纹地面、地毯与头盔产品",
+      "keywords": [
+        "THE WILD ONE重庆摩博会"
+      ],
+      "reviewed": true,
+      "case_id": "wild-one-chongqing-2020",
+      "case_name": "THE WILD ONE 2020年重庆摩博会展位设计方案",
+      "client_id": "wild-one",
+      "category": "exhibition",
+      "aliases": [
+        "THE WILD ONE",
+        "WILD ONE",
+        "摩博会"
+      ],
+      "angle": "angle-4",
+      "facts": [
+        {
+          "id": "wild-one-chongqing-2020-4-fact",
+          "text": "材质采用木作深灰色烤漆，地面结合PVC地板和灰色地毯，呈现复古的感觉。",
+          "evidence": [
+            "主体结构为木作深灰色烤漆，地面PVC地板加灰色地毯"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solar-view-1",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/c88c99515f3ed239eb81.jpg",
+      "sha256": "189df6b84af3b3e78252792a2b579a9ca79862d2c402cad3c17f57cf97356adb",
+      "mime": "image/jpeg",
+      "source_filename": "08-solar-cafe.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=207&m=content",
+      "alt": "咖啡店门头设计效果图：店面外观，木饰面屋形轮廓与暖光",
+      "keywords": [
+        "SOLAR"
+      ],
+      "reviewed": true,
+      "case_id": "solar-cafe",
+      "case_name": "SOLAR咖啡店",
+      "client_id": "solar-cafe",
+      "category": "retail",
+      "aliases": [
+        "SOLAR"
+      ],
+      "angle": "solar-view-1",
+      "facts": [
+        {
+          "id": "solar-view-1-fact",
+          "text": "SOLAR的门头以“大家”呵护“小家”的造型，表达家的温馨。",
+          "evidence": [
+            "SOLAR门头造型是一个“大家”呵护着“小家”"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solar-view-2",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/82c489a93de517c31414.jpg",
+      "sha256": "5a9ae69b413626da193acd8c480893f0c939c0a2a13efd4225a3b751b1e29324",
+      "mime": "image/jpeg",
+      "source_filename": "08-solar-cafe.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=207&m=content",
+      "alt": "咖啡店吧台设计效果图：前区楼梯、吧台与复式挑高，内外层次分明",
+      "keywords": [
+        "SOLAR"
+      ],
+      "reviewed": true,
+      "case_id": "solar-cafe",
+      "case_name": "SOLAR咖啡店",
+      "client_id": "solar-cafe",
+      "category": "retail",
+      "aliases": [
+        "SOLAR"
+      ],
+      "angle": "solar-view-2",
+      "facts": [
+        {
+          "id": "solar-view-2-fact",
+          "text": "进入室内，两层空间改成挑高复式，楼梯移到前区，让空间层次更丰富。",
+          "evidence": [
+            "我们把室内两层的空间做成了挑高的复式，把原来设在最里头的楼梯移到前区，并打通了楼板做成挑高"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solar-view-3",
+      "kind": "image",
+      "relative_path": "docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图/evidence/media-archive/assets/d35eff942ca9263c2e89.jpg",
+      "sha256": "d5fc24d901733fec7649c89c571f8635200dc1804a645572044639cbb51e3ea8",
+      "mime": "image/jpeg",
+      "source_filename": "08-solar-cafe.md",
+      "source_url": "https://www.ruika.hk/index.php?a=show&c=index&catid=39&id=207&m=content",
+      "alt": "二楼沙发区效果图：阁楼客座、小桌和蓝色格架分隔，照片墙与植物",
+      "keywords": [
+        "SOLAR"
+      ],
+      "reviewed": true,
+      "case_id": "solar-cafe",
+      "case_name": "SOLAR咖啡店",
+      "client_id": "solar-cafe",
+      "category": "retail",
+      "aliases": [
+        "SOLAR"
+      ],
+      "angle": "solar-view-3",
+      "facts": [
+        {
+          "id": "solar-view-3-fact",
+          "text": "阁楼的客座区用蓝色装饰高架分隔，为不同需求的客人安排座位。",
+          "evidence": [
+            "蓝色的装饰高架分隔了两个区"
           ]
         }
       ]

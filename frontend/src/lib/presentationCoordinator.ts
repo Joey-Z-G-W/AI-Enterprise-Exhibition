@@ -1,5 +1,5 @@
 export type MaterialAsset = { id: string; kind: "image"; url: string; mime: string; alt: string };
-export type Presentation = { sentences: { id: string; text: string; asset_id: string | null }[]; assets: MaterialAsset[] };
+export type Presentation = { mode?: "paragraph"; sentences: { id: string; text: string; asset_id: string | null }[]; assets: MaterialAsset[] };
 export type PresentationIdentity = { visitorId: string; turnId: string; sessionId: string; generation: number };
 export type MaterialCommands = { waitReady: (id: string, signal: AbortSignal) => Promise<boolean>; prepare: (assets: MaterialAsset[]) => void; show: (id: string | null) => void; clear: () => void };
 const idPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/;
@@ -41,6 +41,7 @@ export function createPresentationCoordinator(player: () => MaterialCommands | n
       return !!ready;
     },
     cue(token: number, index: number) { if (owner?.token === token) player()?.show(owner.ready.get(index) ?? null); },
+    hide(token: number) { if (owner?.token === token) player()?.show(null); },
     sentenceEnd(token: number, index: number) {
       if (owner?.token !== token) return;
       const shown = owner.ready.get(index);

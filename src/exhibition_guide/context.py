@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from exhibition_guide.answer import AnswerService, QuestionRequest, QuestionResponse, error_response, social_reply
 from exhibition_guide.evidence_model import RewriteDecision
 from exhibition_guide.llm import ModelError
+from exhibition_guide.tour import TourMemory, TourPlanner, PlaybackReceipt
 
 Rewriter = Callable[[str, tuple[tuple[str, str], ...]], Awaitable[object]]
 
@@ -37,12 +38,15 @@ class _Visitor:
     retired: bool = False
     pairs: list[tuple[str, str]] = field(default_factory=list)
     turn: _Turn | None = None
+    tour: TourMemory = field(default_factory=TourMemory)
+    received_sentences: set[str] = field(default_factory=set)
 
 
 class ContextStore:
     """Mutations are synchronous on the app event loop; no locks span I/O."""
-    def __init__(self, *, clock: Callable[[], float] = time.monotonic):
+    def __init__(self, *, tour_planner: TourPlanner | None = None, clock: Callable[[], float] = time.monotonic):
         self.clock = clock
+        self.tour_planner = tour_planner
         self.entries: dict[str, _Visitor] = {}
 
     def _stop(self, entry: _Visitor) -> None:
@@ -79,6 +83,7 @@ class ContextStore:
         entry.retired = entry.retired or invalidation.retire
         if entry.retired:
             entry.pairs.clear()
+            entry.tour = TourMemory()
         if entry.turn and (entry.retired or entry.turn.request.turn_seq <= entry.cancelled):
             self._stop(entry)
         if advanced:
@@ -93,6 +98,45 @@ class ContextStore:
     def _current(self, visitor: str, entry: _Visitor, turn: _Turn) -> bool:
         self._expire()
         return self.entries.get(visitor) is entry and entry.turn is turn and turn.valid and not entry.retired
+
+    def playback(self, visitor: str, receipt: PlaybackReceipt) -> dict:
+        self._expire()
+        entry = self.entries.get(visitor)
+        turn = entry.turn if entry else None
+        if not entry or not turn or entry.retired or not turn.valid or not turn.future.done() or (
+            turn.request.turn_id != receipt.turn_id or turn.request.turn_seq != receipt.turn_seq
+        ):
+            raise ValueError("stale_playback")
+        answer = turn.future.result()
+        plan = answer._visual_plan
+        valid_ids = (self.tour_planner.media.playback_sentence_ids(answer) if self.tour_planner
+                     else {f"s{i + 1}" for i in range(len(plan))})
+        expected_prefix = [f"s{i + 1}" for i in range(len(receipt.sentence_ids))]
+        if (receipt.sentence_ids != expected_prefix or any(s not in valid_ids for s in receipt.sentence_ids)
+                or receipt.completed and set(receipt.sentence_ids) != valid_ids
+                or not entry.received_sentences.issubset(receipt.sentence_ids)):
+            raise ValueError("invalid_playback")
+        entry.received_sentences.update(receipt.sentence_ids)
+        completed_cases = set()
+        for i, sentence in enumerate(plan):
+            if f"s{i + 1}" not in entry.received_sentences or not self.tour_planner:
+                continue
+            asset = self.tour_planner.media.assets.get(sentence.get("fact_asset_id", sentence.get("asset_id")))
+            if not asset or not asset.case_id:
+                continue
+            if asset.case_id not in self.tour_planner.media.cases():
+                entry.tour.current_case = None
+                entry.tour.category = None
+                continue
+            entry.tour.current_case = asset.case_id
+            entry.tour.category = asset.category
+            if asset.angle:
+                entry.tour.angles.setdefault(asset.case_id, set()).add(asset.angle)
+            completed_cases.add(asset.case_id)
+        if receipt.completed and valid_ids and entry.received_sentences == valid_ids:
+            entry.tour.completed_cases.update(completed_cases)
+        entry.expires = self.clock() + 600
+        return {"accepted": True, "completed_cases": sorted(entry.tour.completed_cases)}
 
     async def answer(self, request: QuestionRequest, service: AnswerService, rewriter: Rewriter | None) -> QuestionResponse:
         entry = self._entry(request.visitor_id)
@@ -115,17 +159,27 @@ class ContextStore:
         self._stop(entry)
         turn = _Turn(request.model_copy(deep=True), asyncio.get_running_loop().create_future(), asyncio.current_task())
         entry.turn = turn
+        entry.received_sentences.clear()
         entry.highest = request.turn_seq
         entry.expires = self.clock() + 600
         history = tuple(entry.pairs)
         deadline = asyncio.get_running_loop().time() + service.timeout
         query = request.question
+        selection = self.tour_planner.select(query, entry.tour) if self.tour_planner else None
+        if selection and selection.get("mode") == "topic":
+            entry.tour.current_case = None
+            entry.tour.category = None
         stage = "rewrite"
         try:
             result = None
+            if selection and selection.get("exhausted"):
+                result = QuestionResponse(visitor_id=request.visitor_id, turn_id=request.turn_id, turn_seq=request.turn_seq,
+                                          status="answer", text=selection["exhausted"])
+            elif selection:
+                query = selection["query"]
             # A complete social utterance is not an elliptical business question.
             # Keep it inside the normal turn/watermark/deadline lifecycle.
-            if history and social_reply(query) is None:
+            if not selection and history and social_reply(query) is None:
                 if rewriter is None:
                     result = error_response(request, "rewrite_not_configured")
                 else:
@@ -147,7 +201,7 @@ class ContextStore:
                 return error_response(request, "turn_cancelled")
             if result is None:
                 stage = "model"
-                result = await service.answer(request.model_copy(update={"question": query}), deadline=deadline)
+                result = await service.answer(request.model_copy(update={"question": query}), deadline=deadline, **({"tour": selection} if selection else {}))
         except asyncio.CancelledError:
             if self._current(request.visitor_id, entry, turn):
                 entry.cancelled = max(entry.cancelled, request.turn_seq)
