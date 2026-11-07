@@ -1,3 +1,4 @@
+import { alignBoundaries, type Boundary } from "./lib/paragraphClock";
 import { useEffect, useRef, useState } from "react";
 import { jsonRequest, messageFor, post, request, RequestError } from "./lib/api";
 import { startPlayback, type Playback } from "./lib/webrtc";
@@ -7,6 +8,7 @@ import { createVoiceSegments, segmentWav, VOICE_RESOURCE_UNKNOWN, type VoiceSegm
 import { PRESET_QUESTIONS } from "./presetQuestions";
 import { AvatarPlayer } from "./components/AvatarPlayer";
 import { MaterialPlayer } from "./components/MaterialPlayer";
+import { flushSync } from "react-dom";
 import { createPresentationCoordinator, readPresentation, type Presentation, type MaterialCommands } from "./lib/presentationCoordinator";
 import { wavDuration } from "./lib/receiverClock";
 
@@ -21,10 +23,10 @@ type BusinessResult = {
   presentation?: unknown;
   sources: { excerpt: string; source: { status: "known" | "unknown"; filename: string | null } }[];
 };
-type UIConfig = Readonly<{ avatar_id: string; tts_voice: string }>;
+type UIConfig = Readonly<{ avatar_id: string; tts_voice: string; speech_mode?: "paragraph" }>;
 type ActiveSession = {
   mediaSessionId: string | null; visitorId: string; controller: AbortController; playback?: Playback; events?: EventSource;
-  uiConfig?: UIConfig;
+  uiConfig?: UIConfig; playbackReceipt?: Promise<boolean>;
   initializationDeadline?: number; initializationComplete?: boolean; upload?: Promise<boolean>; uploadUnknown?: boolean; mediaReady?: boolean; creation?: Promise<string>; creationRejected?: boolean; retirement?: Promise<boolean>;
 };
 type TurnIdentity = { visitorId: string; turnId: string; turnSeq: number };
@@ -57,7 +59,9 @@ type Speech = {
   phase: "preparing" | "sent" | "playing" | "ended"; acknowledged: boolean;
   texts: string[]; index: number; future?: Promise<PreparedAudio>; timing: Timing;
   controller: AbortController; draining?: boolean; prepared?: Blob; mediaStarted: boolean;
-  presentation?: Presentation; presentationToken?: number; receiverEnded?: boolean;
+  presentation?: Presentation; presentationToken?: number; receiverEnded?: boolean; segmentId?: string;
+  paragraph?: boolean; boundaries?: Boundary[]; heard?: Set<string>; lastCue?: number;
+  audioOnlyFallback?: boolean; audioDuration?: number; serverEndedAt?: number; fallbackTimer?: number;
 };
 
 function recordTiming(timing: Timing, stage: string, segment = -1) {
@@ -76,17 +80,7 @@ function answerSegments(text: string): string[] {
   // Natural boundaries only: retain every character, including spaces and punctuation.
   if (typeof Intl.Segmenter !== "function") return [text];
   const sentences = Array.from(new Intl.Segmenter("zh", { granularity: "sentence" }).segment(text), item => item.segment);
-  if (sentences.length < 2) return [text];
-  const parts = [sentences[0]];
-  let tail = "";
-  for (const sentence of sentences.slice(1)) {
-    if (tail && Array.from(tail + sentence).length > 100 && parts.length < 7) {
-      parts.push(tail); tail = "";
-    }
-    tail += sentence;
-  }
-  if (tail) parts.push(tail);
-  return parts.join("") === text ? parts : [text];
+  return sentences.length && sentences.join("") === text ? sentences : [text];
 }
 const labels: Record<Connection, string> = {
   idle: "尚未连接", connecting: "正在准备数字人", ready: "媒体已连接，等待播放",
@@ -158,6 +152,7 @@ async function releaseSession(id: string): Promise<boolean> {
 export default function App() {
   const video = useRef<HTMLVideoElement>(null);
   const material = useRef<MaterialCommands>(null);
+  const [materialStage, setMaterialStage] = useState({ active: false, reserve: false });
   const coordinator = useRef(createPresentationCoordinator(() => material.current));
   const [historyOpen, setHistoryOpen] = useState(false);
   const [frameScale, setFrameScale] = useState(() => Math.min(innerWidth / 1920, innerHeight / 1080));
@@ -199,6 +194,7 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [businessWarning, setBusinessWarning] = useState("");
   const [mediaWarning, setMediaWarning] = useState("");
+  const [playbackWarning, setPlaybackWarning] = useState("");
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [question, setQuestion] = useState("");
   const [submittedQuestion, setSubmittedQuestion] = useState("");
@@ -374,8 +370,15 @@ export default function App() {
     recordTiming(turn.timing, "answer_render_committed");
   }, [answer]);
 
+  function matchesSpeechEvent(item: Speech, event: Event) {
+    try {
+      const payload = JSON.parse((event as MessageEvent).data);
+      return !!item.segmentId && payload.session_id === item.session.mediaSessionId && payload.segment_id === item.segmentId;
+    } catch { return false; }
+  }
+
   function finishSpeech(item: Speech) {
-    if (!currentSpeech(item) || item.phase !== "ended" || !item.acknowledged) return;
+    if (!currentSpeech(item) || item.phase !== "ended" || !item.acknowledged || item.paragraph && item.draining && !item.session.mediaReady) return;
     if (!item.draining && !item.mediaStarted) {
       window.clearTimeout(speechTimer.current);
       item.session.playback?.receiver?.cancel();
@@ -390,9 +393,22 @@ export default function App() {
       segments.current?.pump();
       return;
     }
-    if (item.presentation && !item.receiverEnded) return;
+    if ((item.presentation || item.paragraph) && !item.audioOnlyFallback && !item.receiverEnded) return;
+    if (!item.draining && item.audioOnlyFallback && item.serverEndedAt !== undefined) {
+      // No receiver clock can prove drain here. Stay black and allow a whole
+      // WAV plus margin after the server producer ended, for every fallback segment.
+      const remaining = item.serverEndedAt + Math.max(1500, (item.audioDuration ?? 0) * 1000 + 500) - performance.now();
+      if (remaining > 0) {
+        if (item.fallbackTimer === undefined) item.fallbackTimer = window.setTimeout(() => {
+          item.fallbackTimer = undefined; finishSpeech(item);
+        }, remaining);
+        return;
+      }
+      recordTiming(item.timing, "audio_only_completion_guard", item.index);
+    }
     window.clearTimeout(speechTimer.current);
     recordTiming(item.timing, "segment_complete", item.index);
+    if (item.presentationToken !== undefined) coordinator.current.sentenceEnd(item.presentationToken, item.index);
     if (!item.draining && item.index + 1 < item.texts.length) {
       const prepared = item.future;
       item.future = undefined;
@@ -404,6 +420,7 @@ export default function App() {
       return;
     }
     if (!item.draining) item.timing.finished = true;
+    item.session.playback?.timeline?.cancel();
     if (item.presentationToken !== undefined) coordinator.current.end(item.presentationToken);
     setSpeechStatus(item, item.draining ? "当前段已结束，旧回答后续不再播报。" : item.kind === "welcome" ? "欢迎语播报结束，您可以继续提问" : item.kind === "demo" ? "固定文本播报结束" : "回答播报结束");
     item.controller.abort();
@@ -420,7 +437,7 @@ export default function App() {
 
   function promotePreparedSpeech() {
     const item = pendingSpeech.current;
-    if (speech.current || !item?.prepared || !preparingSpeech(item) || item.session.uploadUnknown) return;
+    if (speech.current || !item?.prepared || !preparingSpeech(item) || item.session.uploadUnknown || !item.session.mediaReady) return;
     pendingSpeech.current = null;
     speech.current = item;
     const blob = item.prepared;
@@ -434,10 +451,12 @@ export default function App() {
 
   function invalidateBusiness(visitor: string, through: number, retire = false): Promise<boolean> {
     if (through === 0 && !retire) return Promise.resolve(true);
+    const receipt = active.current?.visitorId === visitor ? active.current.playbackReceipt : undefined;
     const barrier: BusinessBarrier = { visitorId: visitor, through, status: "pending", promise: Promise.resolve(false) };
     businessBarrier.current = barrier;
     if (visitorId.current === visitor) setBusinessWarning("正在确认旧问答取消；确认前不会提交新的问题。");
     barrier.promise = (async () => {
+      await receipt;
       try {
         // Independent request: the media AbortController is about to be aborted.
         const result = await jsonRequest<{ visitor_id: string; cancelled_through: number; retired: boolean }>(
@@ -659,10 +678,12 @@ export default function App() {
     setQuestionError("");
     let welcomeSession: ActiveSession | undefined;
     try {
-      const config = await jsonRequest<unknown>("/guide/ui-config", { signal: session.controller.signal }, 10000);
+      const configResponse = await request("/guide/ui-config", { signal: session.controller.signal }, 10000);
+      if (!configResponse.ok) throw new RequestError("response");
+      const config: unknown = await configResponse.json();
       if (!current(session)) return;
       if (!isUIConfig(config)) throw new RequestError("response");
-      session.uiConfig = Object.freeze({ avatar_id: config.avatar_id, tts_voice: config.tts_voice });
+      session.uiConfig = Object.freeze({ avatar_id: config.avatar_id, tts_voice: config.tts_voice, speech_mode: configResponse.headers.get("X-Guide-Speech-Mode") === "paragraph" ? "paragraph" : undefined });
       // Let creation return its ID after a local cancel so the abandoned session can be deleted.
       session.creation = request("/opentalking/sessions", post({
         avatar_id: session.uiConfig.avatar_id, model: "quicktalk", tts_provider: "edge", stt_provider: "sensevoice",
@@ -692,23 +713,31 @@ export default function App() {
         await new Promise((resolve) => window.setTimeout(resolve, 750));
       }
       session.events = new EventSource(`/opentalking/sessions/${encodeURIComponent(session.mediaSessionId)}/events`);
-      session.events.addEventListener("speech.media_started", () => {
+      session.events.addEventListener("speech.media_started", event => {
         const item = speech.current;
-        if (item && item.session === session && currentSpeech(item) && ["sent", "playing"].includes(item.phase)) {
+        if (item && item.session === session && currentSpeech(item) && matchesSpeechEvent(item, event) && ["sent", "playing"].includes(item.phase)) {
           if (item.mediaStarted) return;
-          if (item.presentation) session.playback?.receiver?.signalStart();
+          if (item.presentation && !item.paragraph) session.playback?.receiver?.signalStart();
           recordTiming(item.timing, "media_started", item.index);
           item.phase = "playing";
           item.mediaStarted = true;
+          if (item.paragraph) window.setTimeout(() => {
+            if (currentSpeech(item) && !item.draining && item.lastCue === undefined && !item.receiverEnded) {
+              session.playback?.timeline?.cancel();
+              if (item.presentationToken !== undefined) coordinator.current.hide(item.presentationToken);
+              item.audioOnlyFallback = true; finishSpeech(item);
+            }
+          }, 8000);
           if (!item.draining && item.turnId === questionTurn.current?.turnId) releaseSwitchDuck();
           setSpeechStatus(item, item.kind === "welcome" ? "欢迎语正在播报" : item.kind === "demo" ? "固定文本正在播报" : "回答正在播报");
         }
       });
-      session.events.addEventListener("speech.ended", () => {
+      session.events.addEventListener("speech.ended", event => {
         const item = speech.current;
-        if (!item || item.session !== session || !currentSpeech(item) || !["sent", "playing"].includes(item.phase)) return;
+        if (!item || item.session !== session || !currentSpeech(item) || !matchesSpeechEvent(item, event) || !["sent", "playing"].includes(item.phase)) return;
+        item.serverEndedAt = performance.now();
         recordTiming(item.timing, "ended_signal", item.index);
-        if (item.presentation) session.playback?.receiver?.signalEnd();
+        if (item.presentation && !item.paragraph) session.playback?.receiver?.signalEnd();
         item.phase = "ended";
         // Keep the operation locked until its HTTP acknowledgement has also settled.
         finishSpeech(item);
@@ -753,6 +782,7 @@ export default function App() {
     visitorId.current = crypto.randomUUID();
     turnSequence.current = 0;
     setBusinessWarning("");
+    setPlaybackWarning("");
     detach(false);
     // Clear after detach, which may otherwise leave the previous speech-stop notice.
     setQuestion("");
@@ -788,6 +818,18 @@ export default function App() {
     const session = active.current;
     if (!session?.mediaReady || !current(session) || transition.current || visitorReset.current
       || (!busy.current && !speech.current && !voiceTurn.current)) return;
+    const paragraph = speech.current;
+    if (paragraph?.paragraph) {
+      const token = {}; bargeRecovery.current = token;
+      questionTurn.current?.controller.abort();
+      pendingSpeech.current?.controller.abort(); pendingSpeech.current = null;
+      paragraph.draining = true; paragraph.controller.abort();
+      endTiming(paragraph.timing, "cancelled", 0);
+      void invalidateBusiness(session.visitorId, turnSequence.current);
+      await resetParagraphReceiver(session, paragraph);
+      if (bargeRecovery.current === token) bargeRecovery.current = null;
+      setRecordingHint("播报已停止，可以继续提问。"); segments.current?.pump(); return;
+    }
     if (video.current) video.current.muted = true;
     detach(true, true, true); // Preserve another utterance already in progress during STT.
     const token = {};
@@ -817,6 +859,35 @@ export default function App() {
     switchQuestion(session, text, "text");
   }
 
+  async function resetParagraphReceiver(session: ActiveSession, old: Speech) {
+    session.mediaReady = false;
+    const playback = session.playback;
+    playback?.isolate();
+    coordinator.current.clear();
+    window.clearTimeout(speechTimer.current);
+    setMediaWarning("正在停止旧讲解并恢复接收连接…");
+    const started = performance.now();
+    try {
+      // A late upload must settle before worker cancellation, or it could enqueue after reset.
+      if (session.uploadUnknown || session.upload && !await session.upload) throw new RequestError("response");
+      if (!current(session)) return;
+      const reset = await jsonRequest<{ session_id: string; status: string }>(
+        `/opentalking/sessions/${encodeURIComponent(session.mediaSessionId!)}/webrtc/reset`, post({ segment_id: old.segmentId }, session.controller.signal), 13000);
+      if (!current(session) || reset.session_id !== session.mediaSessionId || reset.status !== "receiver_reset") throw new RequestError("response");
+      playback?.close();
+      if (speech.current === old) speech.current = null;
+      session.playback = await startPlayback(session.mediaSessionId!, video.current!, session.controller.signal,
+        () => { if (current(session)) setSoundBlocked(true); },
+        () => { if (current(session)) void disconnect("音视频连接已断开，请重新连接。"); }, 15000);
+      if (!current(session)) { session.playback.close(); return; }
+      session.mediaReady = true;
+      console.info("guide_receiver_reset", JSON.stringify({ elapsed_ms: performance.now() - started }));
+      setMediaWarning(""); releaseSwitchDuck(); promotePreparedSpeech(); refreshBusy();
+    } catch {
+      if (current(session)) await disconnect("旧讲解已静音隔离，接收连接恢复失败，请重新连接后提问。");
+    }
+  }
+
   function switchQuestion(session: ActiveSession, text: string, input: "text" | "voice", maySubmit?: () => boolean) {
     if (!current(session) || !session.mediaReady || transition.current || bargeRecovery.current) return;
     coordinator.current.clear();
@@ -840,6 +911,7 @@ export default function App() {
       endTiming(old.timing, "cancelled", old.index);
       old.controller.abort(); // Cancels only TTS, never the independent upload ACK.
       old.future = undefined;
+      if (old.paragraph && old.phase !== "preparing") void resetParagraphReceiver(session, old);
       if (old.phase === "preparing") {
         // Nothing from this segment was uploaded, so there is no ended to await.
         speech.current = null;
@@ -999,11 +1071,17 @@ export default function App() {
     const timing = kind === "answer" ? questionTurn.current!.timing
       : { trace: crypto.randomUUID(), turnSeq: 0, kind, started: performance.now() };
     const item: Speech = { session, visitorId: session.visitorId, turnId, kind, phase: "preparing", acknowledged: false,
-      texts: presentation ? presentation.sentences.map(s => s.text) : kind === "answer" ? answerSegments(text) : [text], index: 0, timing, controller: new AbortController(), mediaStarted: false, presentation };
+      paragraph: kind === "answer" && (presentation?.mode === "paragraph" || session.uiConfig?.speech_mode === "paragraph"),
+      texts: kind === "answer" && session.uiConfig?.speech_mode !== "paragraph" && presentation?.mode !== "paragraph"
+        ? presentation ? presentation.sentences.map(s => s.text) : answerSegments(text) : [text], index: 0, timing, controller: new AbortController(), mediaStarted: false, presentation };
+    item.controller.signal.addEventListener("abort", () => {
+      window.clearTimeout(item.fallbackTimer); item.fallbackTimer = undefined;
+      if (item.draining) finishSpeech(item);
+    }, { once: true });
     if (presentation && turnId) item.presentationToken = coordinator.current.begin({ visitorId: session.visitorId, turnId, sessionId, generation: generation.current }, presentation);
-    if (!text.trim() || Array.from(text).length > 1000) {
+    if (!text.trim() || Array.from(text).length > (item.paragraph ? 600 : 1000)) {
       endTiming(timing, "failed");
-      setSpeechStatus(item, !text.trim() ? "回答没有可播报文字，仅保留文字显示。" : "回答超过 1000 字，无法自动播报；完整文字已保留。");
+      setSpeechStatus(item, !text.trim() ? "回答没有可播报文字，仅保留文字显示。" : item.paragraph ? "回答超过600字，完整文字已保留；请指定一个部分继续讲解。" : "回答超过 1000 字，无法自动播报；完整文字已保留。");
       return;
     }
     pendingSpeech.current = item;
@@ -1016,7 +1094,9 @@ export default function App() {
       pendingSpeech.current = null;
       item.controller.abort();
       endTiming(item.timing, "failed");
-      setSpeechStatus(item, `语音合成未完成，文字已保留。${messageFor(audio.error)}`);
+      setSpeechStatus(item, audio.error instanceof Error && audio.error.message === "paragraph-too-long"
+        ? "这段语音超过三分钟，文字已保留；请指定一个部分继续讲解。"
+        : `语音合成未完成，文字已保留。${messageFor(audio.error)}`);
       releaseSwitchDuck();
       refreshBusy();
       if (kind !== "answer") await disconnect(`播报未完成。${messageFor(audio.error)}`);
@@ -1030,14 +1110,26 @@ export default function App() {
     try {
       if (!preparingSpeech(item) || !item.session.uiConfig) throw new RequestError("cancelled");
       recordTiming(item.timing, "tts_started", index);
-      const audio = await request("/opentalking/tts/preview", post({ text: item.texts[index], tts_provider: "edge",
-        voice: item.session.uiConfig.tts_voice }, item.controller.signal), 45000);
+      let blob: Blob;
+      if (item.paragraph) {
+        const audio = await jsonRequest<{ audio_base64: string; timeline: unknown; duration_ms: number }>(
+          "/opentalking/tts/preview-aligned", post({ text: item.texts[index], tts_provider: "edge",
+            voice: item.session.uiConfig.tts_voice }, item.controller.signal), 65000);
+        if (audio.duration_ms > 180000) throw new Error("paragraph-too-long");
+        const bytes = Uint8Array.from(atob(audio.audio_base64), c => c.charCodeAt(0));
+        blob = new Blob([bytes], { type: "audio/wav" });
+        const sentences = item.presentation?.sentences ?? [{ text: item.texts[0] }];
+        item.boundaries = alignBoundaries(audio.timeline, sentences, audio.duration_ms);
+        item.audioDuration = audio.duration_ms / 1000;
+        console.info("guide_sentence_timeline", JSON.stringify({ trace: item.timing.trace, native: audio.timeline, aligned: item.boundaries ?? null, duration_ms: audio.duration_ms }));
+      } else {
+        const audio = await request("/opentalking/tts/preview", post({ text: item.texts[index], tts_provider: "edge",
+          voice: item.session.uiConfig.tts_voice }, item.controller.signal), 45000);
+        if (!audio.ok || !audio.headers.get("content-type")?.includes("audio/wav")) throw new RequestError("response");
+        blob = await audio.blob();
+      }
       if (!preparingSpeech(item)) throw new RequestError("cancelled");
-      if (!audio.ok || !audio.headers.get("content-type")?.includes("audio/wav")) throw new RequestError("response");
-      // request() has already read the entire HTTP body inside its timeout.
       recordTiming(item.timing, "tts_ready", index);
-      const blob = await audio.blob();
-      if (!preparingSpeech(item)) throw new RequestError("cancelled");
       return { blob };
     } catch (error) {
       // A future segment can fail before it is consumed: never leave a rejecting promise.
@@ -1048,32 +1140,87 @@ export default function App() {
   async function playSpeechSegment(item: Speech, prepared?: Promise<PreparedAudio>) {
     const { session, kind } = item;
     const sessionId = session.mediaSessionId;
-    let index = item.index;
+    const index = item.index;
     try {
       if (!sessionId || !currentSpeech(item) || item.draining) return;
-      let audio = await (prepared ?? prepareSpeechAudio(item, index));
+      item.segmentId = crypto.randomUUID(); item.serverEndedAt = undefined; item.audioDuration = 0;
+      const audio = await (prepared ?? prepareSpeechAudio(item, index));
       if (!currentSpeech(item) || item.draining || item.index !== index) return;
       if ("error" in audio) throw audio.error;
-      if (item.presentation) {
+      if (item.presentation || item.paragraph || item.audioOnlyFallback) {
+        try { item.audioDuration = await wavDuration(audio.blob); } catch { /* Observer will fail closed. */ }
+      }
+      if (item.presentationToken !== undefined && !item.paragraph) {
+        const ready = await coordinator.current.prepareSentence(item.presentationToken, index, item.controller.signal);
+        if (!currentSpeech(item) || item.draining || item.index !== index) return;
+        recordTiming(item.timing, ready ? "image_decoded" : "sentence_audio_only", index);
+      }
+      if (item.paragraph) {
+        if (item.presentationToken !== undefined) await Promise.all(item.presentation!.sentences.map((_, i) =>
+          coordinator.current.prepareSentence(item.presentationToken!, i, item.controller.signal)));
+        if (!currentSpeech(item) || item.draining) return;
+        const unavailable = () => {
+          if (!currentSpeech(item) || item.draining) return;
+          if (item.presentationToken !== undefined) coordinator.current.hide(item.presentationToken);
+          item.audioOnlyFallback = true;
+          recordTiming(item.timing, "paragraph_clock_unavailable", 0); finishSpeech(item);
+        };
+        item.heard = new Set(); item.receiverEnded = false;
+        const observing = !!item.boundaries && !!session.playback?.timeline?.begin(item.segmentId!, (item.audioDuration ?? 0) * 1000, ms => {
+          if (!currentSpeech(item) || item.draining || item.audioOnlyFallback) return;
+          const boundaries = item.boundaries!;
+          const cue = boundaries.findIndex(b => ms >= b.start_ms && ms < b.end_ms);
+          if (cue >= 0) {
+            if (item.presentationToken !== undefined) coordinator.current.cue(item.presentationToken, cue);
+          }
+          if (cue >= 0 && cue !== item.lastCue) {
+            item.lastCue = cue;
+            recordTiming(item.timing, "paragraph_sentence_presented", cue);
+          }
+          if (cue < 0 && item.lastCue !== undefined && item.presentationToken !== undefined) {
+            coordinator.current.sentenceEnd(item.presentationToken, item.lastCue);
+          }
+          const heard = boundaries.flatMap((b, i) => ms >= b.end_ms ? [item.presentation?.sentences[i]?.id ?? `s${i + 1}`] : []);
+          const changed = heard.some(id => !item.heard!.has(id));
+          heard.forEach(id => item.heard!.add(id));
+          const completed = ms >= (item.audioDuration ?? 0) * 1000;
+          if ((changed || completed && !item.receiverEnded) && item.turnId && item.presentation) {
+            const receipt = { turn_id: item.turnId, turn_seq: item.timing.turnSeq, sentence_ids: [...item.heard!], completed };
+            const expires = performance.now() + 2500;
+            session.playbackReceipt = (session.playbackReceipt ?? Promise.resolve(true)).then(async () => {
+              try {
+                const remaining = expires - performance.now();
+                if (remaining <= 0) throw new RequestError("timeout");
+                await jsonRequest(`/guide/visitors/${encodeURIComponent(item.visitorId)}/playback`, post(receipt), Math.min(2000, remaining));
+                if (current(session)) setPlaybackWarning("");
+                return true;
+              } catch {
+                console.warn("guide_playback_receipt_unconfirmed", JSON.stringify({ turn_id: item.turnId, completed }));
+                if (current(session)) setPlaybackWarning("已播放内容的记录未确认，下一次可能再次介绍同一案例；您也可以指定另一个案例。");
+                return false;
+              }
+            });
+          }
+          if (completed && !item.receiverEnded) {
+            item.receiverEnded = true;
+            if (item.presentationToken !== undefined) coordinator.current.hide(item.presentationToken);
+            recordTiming(item.timing, "paragraph_receiver_complete", 0); finishSpeech(item);
+          }
+        }, unavailable, () => { if (item.presentationToken !== undefined) coordinator.current.hide(item.presentationToken); },
+        Math.min(500, item.boundaries![0].start_ms + 120, item.boundaries![0].end_ms - 1));
+        if (!observing) unavailable();
+      }
+      if (item.presentation && !item.paragraph) {
         const receiver = session.playback?.receiver;
-        let duration = 0, ready = false;
-        try { duration = await wavDuration(audio.blob); ready = !!receiver && await receiver.waitForQuiet(item.controller.signal); }
+        const duration = item.audioDuration ?? 0; let ready = false;
+        try { ready = duration > 0 && !!receiver && await receiver.waitForQuiet(item.controller.signal); }
         catch { /* Presentation observation is optional; no upload has happened yet. */ }
         if (!currentSpeech(item) || item.draining || item.index !== index) return;
         if (!ready) {
-          // Only unsent audio is regrouped. An already uploaded segment still
-          // needs its existing ACK + receiver drain barrier before arriving here.
           if (item.presentationToken !== undefined) coordinator.current.end(item.presentationToken);
-          item.presentation = undefined; item.presentationToken = undefined;
+          item.presentation = undefined; item.presentationToken = undefined; item.audioOnlyFallback = true;
           receiver?.cancel();
-          const preparedText = item.texts[index];
-          item.texts = answerSegments(item.texts.slice(index).join(""));
-          item.index = index = 0; item.future = undefined;
-          if (item.texts[0] !== preparedText) {
-            audio = await prepareSpeechAudio(item, index);
-            if (!currentSpeech(item) || item.draining) return;
-            if ("error" in audio) throw audio.error;
-          }
+          recordTiming(item.timing, "receiver_unavailable_audio_only", index);
         } else {
         item.receiverEnded = false;
         receiver!.arm(duration, () => {
@@ -1083,6 +1230,7 @@ export default function App() {
         }, () => {
           if (!currentSpeech(item) || item.index !== index) return;
           recordTiming(item.timing, "receiver_audio_drained", index);
+          if (item.presentationToken !== undefined) coordinator.current.sentenceEnd(item.presentationToken, index);
           item.receiverEnded = true; finishSpeech(item);
         }, mayUseServerCompletion => {
           if (!currentSpeech(item) || item.index !== index) return;
@@ -1092,12 +1240,13 @@ export default function App() {
           // Optional visual observation failed. Retain ACK/media_started/ended
           // checks and queued WAVs; never report this as receiver_audio_drained.
           recordTiming(item.timing, "receiver_unobservable_server_fallback", index);
-          item.presentation = undefined;
+          item.presentation = undefined; item.audioOnlyFallback = true;
           finishSpeech(item);
         });
         }
       }
       const form = new FormData();
+      form.set("segment_id", item.segmentId);
       form.set("file", audio.blob, kind === "welcome" ? "welcome.wav" : kind === "demo" ? "fixed-demo.wav" : "answer.wav");
       item.phase = "sent";
       setSpeechStatus(item, kind === "welcome" ? "正在发送欢迎语" : kind === "demo" ? "正在发送演示语音" : "正在发送回答语音");
@@ -1106,15 +1255,15 @@ export default function App() {
           endTiming(item.timing, "failed", index);
           void disconnect("播报等待超时，文字已保留，媒体已关闭，请重新连接。");
         }
-      }, 90000);
+      }, Math.max(90000, ((item.audioDuration ?? 0) * 2 + 30) * 1000));
       recordTiming(item.timing, "upload_started", index);
       session.upload = (async () => {
         try {
-          const result = await jsonRequest<{ session_id: string; status: string }>(
+          const result = await jsonRequest<{ session_id: string; status: string; segment_id: string }>(
             `/opentalking/sessions/${encodeURIComponent(sessionId)}/speak_flashtalk_audio`,
             { method: "POST", body: form }, 30000,
           );
-          if (result.session_id !== sessionId || result.status !== "queued") throw new RequestError("response");
+          if (result.session_id !== sessionId || result.status !== "queued" || result.segment_id !== item.segmentId) throw new RequestError("response");
           return true;
         } catch {
           session.uploadUnknown = true;
@@ -1150,7 +1299,8 @@ export default function App() {
 
   const connected = connection === "ready" || connection === "playing";
   return <main className="landscape-frame" style={{ transform: `translate(-50%, -50%) scale(${frameScale})` }}>
-    <div className="presentation-stage">
+    <div className="presentation-stage" data-mode={materialStage.active ? "material" : "conversation"} data-reserve={materialStage.reserve}>
+      <div className="stage-context" aria-hidden="true"><span>展厅导览</span><span>{materialStage.active ? "跟随讲解 · 了解设计" : "与您一起，发现更多"}</span></div>
       <AvatarPlayer ref={video} onPlaying={() => {
         if (active.current && !active.current.controller.signal.aborted) setConnection(value => value === "ready" ? "playing" : value);
       }}>
@@ -1158,7 +1308,16 @@ export default function App() {
         {soundBlocked && <button className="sound-button" onClick={() => void enableSound()}>开启声音</button>}
         {connected && <span className="sound-caption">{soundBlocked ? "当前静音 · 请开启声音" : "声音已启用"}</span>}
       </AvatarPlayer>
-      <MaterialPlayer ref={material} />
+      <MaterialPlayer ref={material} onStageChange={image => {
+        if (!image) { setMaterialStage({ active: false, reserve: false }); return; }
+        // Compare the current decoded image's contained pixels with the corner window.
+        // A wide image gets its own lower safety band; empty sentences keep this geometry.
+        const scale = Math.min(1872 / image.width, 738 / image.height);
+        const right = 960 + image.width * scale / 2;
+        const bottom = 48 + (738 + image.height * scale) / 2;
+        // Commit the safe rectangle in the same paint as the newly selected image.
+        flushSync(() => setMaterialStage({ active: true, reserve: right > 1656 && bottom > 486 }));
+      }} />
     </div>
     <section className="control-bar" aria-label="导览控制">
       <div className="control-heading">
@@ -1178,12 +1337,13 @@ export default function App() {
         {PRESET_QUESTIONS.map(text => <button type="button" key={text} className="preset-question" disabled={resettingVisitor || mode === "human" || !connected || transitioning} onClick={() => void selectPreset(text)}>{text}</button>)}
       </div>
       <div className="control-status">
-        <p className="preset-hint" role="status">{presetPreparing ? "正在准备新回答，当前段结束后会接着播报，人物保持连接…" : "点击问题或直接说话，开始了解展厅。"}</p>
+        <p className="preset-hint" role="status">{presetPreparing ? "正在准备新的回答，数字人会接着为您讲解…" : "点击问题或直接说话，开始了解展厅。"}</p>
         <p role="status" aria-label="收音状态">{captureHint}</p>
         {recordingHint && <p role="status" aria-label="语音识别状态">{recordingHint}</p>}
         {welcomeStatus && <small role="status">{welcomeStatus}</small>}
         {demoStatus && <small role="status">{demoStatus}</small>}
         {notice && <p className="notice" role="alert">{notice}</p>}
+        {playbackWarning && <p className="notice" role="alert">{playbackWarning}</p>}
         {businessWarning && <p className="notice business-warning" role="alert">{businessWarning}</p>}
         {mediaWarning && <p className="notice" role="alert" aria-label="媒体上传隔离">{mediaWarning}</p>}
         {voiceResourceUnknown && <p className="notice" role="alert" aria-label="语音识别资源状态">{VOICE_RESOURCE_UNKNOWN}</p>}

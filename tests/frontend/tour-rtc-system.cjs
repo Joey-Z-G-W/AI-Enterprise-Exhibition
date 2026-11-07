@@ -1,0 +1,34 @@
+// <导览功能 | main | 集成产物可定向到任务目录，不依赖企业文档路径>
+// Real browser RTCPeerConnection and RVFC against the pinned patched aiortc/program pipeline.
+const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs/promises'),{spawn}=require('node:child_process'),{createRequire}=require('node:module');
+process.chdir(path.resolve(__dirname,'../..'));
+const {chromium}=createRequire(path.resolve('frontend/package.json'))('playwright-core');
+const task=path.resolve(process.env.GUIDE_TEST_TASK_DIR || path.join(require('node:os').tmpdir(), 'exhibition-guide-integration')),temp=path.join(task,'tmp','rtc-system-'+Date.now());
+let child,browser;let logs='';
+(async()=>{
+ await fs.mkdir(temp,{recursive:true});child=spawn('.tools/opentalking-venv/bin/python',['tests/fixtures/tour_rtc_service.py'],{env:{...process.env,OPENTALKING_WEBRTC_SERVER_ICE_SERVERS:'[]'},stdio:['ignore','pipe','pipe']});child.stderr.on('data',b=>logs+=b);
+ const port=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('service startup timeout '+logs)),15000);child.stdout.on('data',b=>{logs+=b;const m=logs.match(/READY (\d+)/);if(m){clearTimeout(timer);resolve(Number(m[1]));}});child.on('exit',code=>reject(Error('service exited '+code+' '+logs)));});
+ browser=await chromium.launchPersistentContext(path.join(temp,'profile'),{channel:'chrome',headless:true,args:['--autoplay-policy=no-user-gesture-required']});const page=await browser.newPage();await page.goto('http://127.0.0.1:'+port+'/docs');
+ const result=await page.evaluate(async()=>{
+  const pc=new RTCPeerConnection({iceServers:[]}),stream=new MediaStream(),video=document.createElement('video');video.autoplay=true;document.body.append(video);video.srcObject=stream;
+  const messages=[],presented=[],matches=[],maps=new Map();let audioAt=null,videoAt=null;
+  const dc=pc.createDataChannel('guide-timeline');dc.onopen=()=>dc.send('hello');dc.onmessage=e=>{const m=JSON.parse(e.data);messages.push(m);if(m.type==='frame')maps.set(m.rtp_timestamp,m);};
+  pc.ontrack=e=>{stream.addTrack(e.track);void video.play();};pc.addTransceiver('video',{direction:'recvonly'});pc.addTransceiver('audio',{direction:'recvonly'});
+  await pc.setLocalDescription(await pc.createOffer());await new Promise(r=>{if(pc.iceGatheringState==='complete')r();else pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState==='complete')r();};});
+  const ans=await(await fetch('/offer',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(pc.localDescription)})).json();await pc.setRemoteDescription(ans);
+  const context=new AudioContext(),source=context.createMediaStreamSource(stream),analyser=context.createAnalyser();source.connect(analyser);const samples=new Float32Array(256);analyser.fftSize=256;
+  const timer=setInterval(()=>{analyser.getFloatTimeDomainData(samples);const rms=Math.sqrt(samples.reduce((a,v)=>a+v*v,0)/samples.length);if(rms>.01&&audioAt===null)audioAt=performance.now();},10);
+  const done=new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('not enough mapped presented frames '+JSON.stringify({messages:messages.length,presented:presented.length,matches:matches.length}))),15000);const cb=(now,metadata)=>{const m=maps.get(metadata.rtpTimestamp);presented.push(metadata.rtpTimestamp);if(m){matches.push({rtp:metadata.rtpTimestamp,ms:m.source_ms,at:now});if(m.source_ms>=400&&videoAt===null)videoAt=now;}if(matches.length>=80){clearTimeout(timeout);resolve();}else video.requestVideoFrameCallback(cb);};video.requestVideoFrameCallback(cb);});await done;clearInterval(timer);pc.close();await context.close();return{capabilities:messages.find(m=>m.type==='capabilities'),frames:messages.filter(m=>m.type==='frame').length,presented:presented.length,matches,audioAt,videoAt,onset_delta_ms:Math.abs(audioAt-videoAt)};
+ });
+ const origin='http://127.0.0.1:'+port;
+ const resetResponse=await fetch(origin+'/sessions/fixture/webrtc/reset',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({segment_id:'cancelled-fixture'})});assert.equal(resetResponse.status,200,await resetResponse.text());
+ const wav=Buffer.alloc(44+640);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(16000,24);wav.writeUInt32LE(32000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(640,40);
+ const upload=async segment=>{const form=new FormData();form.set('segment_id',segment);form.set('file',new Blob([wav],{type:'audio/wav'}),'probe.wav');return fetch(origin+'/sessions/fixture/speak_flashtalk_audio',{method:'POST',body:form});};
+ const rejected=await upload('cancelled-fixture');assert.equal(rejected.status,409);const accepted=await upload('fresh-fixture');assert.equal(accepted.status,200,await accepted.text());const queue=await(await fetch(origin+'/tasks')).json();assert.deepEqual(queue.tasks.map(t=>t.cmd),['speak_flashtalk_audio'],'identified upload cannot enqueue a bare interrupt');result.api_fence={cancelled_status:rejected.status,new_status:accepted.status,commands:queue.tasks.map(t=>t.cmd)};
+ const audioReset=async reset=>(await(await fetch(origin+'/program/reset-audio',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({reset})})).json()).peak;
+ const stalePeak=await audioReset(false),clearedPeak=await audioReset(true);assert.ok(stalePeak>0);assert.equal(clearedPeak,0);result.audio_filter_reset={without_reset_peak:stalePeak,after_reset_peak:clearedPeak};
+ const startNative=delay=>fetch(origin+'/native/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({delay})});
+ await startNative(.35);const native=await(await fetch(origin+'/native/reset',{method:'POST'})).json();assert.ok(native.ended);assert.ok(native.elapsed_ms>=200);assert.ok(native.loads.every(load=>!load.old_running));
+ await startNative(6);const timed=await fetch(origin+'/native/reset',{method:'POST'});assert.equal(timed.status,503);const held=await(await fetch(origin+'/native/status')).json();assert.equal(held.loads.length,1,'timeout must not initialize a new native model executor');result.native_barrier={normal:native,timeout_status:timed.status,after_timeout:held};
+ assert.equal(result.capabilities.clock,'rtp-video');assert.ok(result.matches.length>=80);assert.ok(result.matches.every((x,i,a)=>i===0||x.ms>=a[i-1].ms));assert.ok(result.audioAt!==null&&result.videoAt!==null);assert.ok(result.onset_delta_ms<=500,'paired receive PCM onset / presented frame <=500ms');console.log(JSON.stringify(result,null,2));
+})().catch(e=>{console.error(e.stack+'\n'+logs);process.exitCode=1;}).finally(async()=>{await browser?.close();child?.kill('SIGTERM');});

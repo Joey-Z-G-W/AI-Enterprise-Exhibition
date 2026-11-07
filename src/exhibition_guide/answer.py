@@ -7,13 +7,14 @@ import math
 from collections.abc import Awaitable, Callable
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationError, field_validator, model_validator
 
 from exhibition_guide.knowledge import (
     KnowledgeClient, KnowledgeEmpty, KnowledgeError, KnowledgeResults,
     KnownSource, UnknownSource,
 )
 from exhibition_guide.llm import ModelError
+from exhibition_guide.sentences import split_sentences
 
 
 class _StrictModel(BaseModel):
@@ -39,9 +40,26 @@ class EvidenceQuote(_StrictModel):
     excerpt: str = Field(min_length=1)
 
 
+class EvidenceSentence(_StrictModel):
+    narration_id: str | None = Field(default=None, min_length=1, max_length=128)
+    text: str | None = Field(default=None, min_length=1, max_length=1000)
+    fact_ids: list[str] = Field(default_factory=list, max_length=16)
+
+    @model_validator(mode="after")
+    def one_choice(self):
+        if self.narration_id is not None and self.fact_ids:
+            raise ValueError("legacy narration cannot include visual facts")
+        if (self.narration_id is None) == (self.text is None):
+            raise ValueError("select one narration or one free sentence")
+        if self.text is not None and (not self.text.strip() or len(split_sentences(self.text)) != 1):
+            raise ValueError("free text must be one sentence")
+        return self
+
+
 class EvidenceDecision(_StrictModel):
     verdict: Literal["sufficient", "ambiguous", "insufficient", "conflicting"]
-    answer_text: str = Field(max_length=1000)
+    answer_text: str = Field(default="", max_length=1000)
+    sentences: list[EvidenceSentence] | None = Field(default=None, min_length=1, max_length=64)
     quotes: list[EvidenceQuote] = Field(max_length=20)
 
 
@@ -78,6 +96,9 @@ class AnswerSource(BaseModel):
 
 
 class QuestionResponse(BaseModel):
+    # Request-local, source-verified retrieval snapshot; never serialized to clients.
+    _verified_snippets: list[AnswerSource] = PrivateAttr(default_factory=list)
+    _visual_plan: list[dict] = PrivateAttr(default_factory=list)
     visitor_id: str
     turn_id: str
     turn_seq: int
@@ -98,6 +119,8 @@ class AnswerService:
     def __init__(
         self, knowledge: KnowledgeClient, evaluator: EvidenceEvaluator, *,
         kb_id: str, timeout: float = 10.0,
+        narration_resolver: Callable[[str, list[AnswerSource], list[AnswerSource]], str | None] | None = None,
+        visual_resolver: Callable | None = None,
     ) -> None:
         if not kb_id.strip():
             raise ValueError("kb_id is required")
@@ -107,8 +130,10 @@ class AnswerService:
         self.evaluator = evaluator
         self.kb_id = kb_id
         self.timeout = timeout
+        self.narration_resolver = narration_resolver
+        self.visual_resolver = visual_resolver
 
-    async def answer(self, request: QuestionRequest, *, deadline: float | None = None) -> QuestionResponse:
+    async def answer(self, request: QuestionRequest, *, deadline: float | None = None, tour: dict | None = None) -> QuestionResponse:
         own_deadline = asyncio.get_running_loop().time() + self.timeout
         deadline = min(deadline, own_deadline) if deadline is not None else own_deadline
         identity = {"visitor_id": request.visitor_id, "turn_id": request.turn_id, "turn_seq": request.turn_seq}
@@ -142,9 +167,11 @@ class AnswerService:
         snippets = tuple(item.model_copy(deep=True) for item in retrieval.snippets)
         try:
             async with asyncio.timeout_at(deadline) as model_timer:
-                raw_decision = await self.evaluator(
-                    request.question.strip(), tuple(item.text for item in snippets),
-                )
+                evaluate_tour = getattr(self.evaluator, "evaluate_tour", None)
+                if tour is not None and evaluate_tour is not None:
+                    raw_decision = await evaluate_tour(request.question.strip(), tuple(item.text for item in snippets), tour)
+                else:
+                    raw_decision = await self.evaluator(request.question.strip(), tuple(item.text for item in snippets))
         except TimeoutError:
             return error_response(request, "model_timeout")
         except ModelError as error:
@@ -168,7 +195,7 @@ class AnswerService:
             )
         except ValidationError:
             return error_response(request, "invalid_model_response")
-        if decision.verdict in {"sufficient", "ambiguous"} and not decision.answer_text.strip():
+        if decision.verdict in {"sufficient", "ambiguous"} and not decision.answer_text.strip() and not decision.sentences:
             return error_response(request, "invalid_model_response")
         if decision.verdict == "sufficient" and not decision.quotes:
             return error_response(request, "invalid_model_response")
@@ -184,6 +211,29 @@ class AnswerService:
                 snippet_index=quote.snippet_index, excerpt=quote.excerpt,
                 source=snippets[quote.snippet_index].source,
             ))
+        snapshot = [AnswerSource(snippet_index=index, excerpt=item.text, source=item.source)
+                    for index, item in enumerate(snippets)]
+        answer_text = decision.answer_text
+        visual_plan = []
+        if decision.sentences is not None:
+            if decision.verdict != "sufficient" or decision.answer_text:
+                return error_response(request, "invalid_model_response")
+            parts = []
+            for sentence in decision.sentences:
+                text = sentence.text
+                if sentence.narration_id is not None:
+                    text = self.narration_resolver(sentence.narration_id, snapshot, sources) if self.narration_resolver else None
+                if text is None:
+                    return error_response(request, "invalid_model_response")
+                parts.append(text)
+                if sentence.text is not None:
+                    asset = self.visual_resolver(sentence.fact_ids, snapshot, sources, tour) if self.visual_resolver else None
+                    visual_plan.append({"text": text, "asset_id": asset, "fact_asset_id": asset, "fact_ids": sentence.fact_ids})
+                else:
+                    visual_plan.append({"text": text, "asset_id": None})
+            answer_text = "".join(parts)
+            if len(answer_text) > 1000:
+                return error_response(request, "invalid_model_response")
         if decision.verdict == "ambiguous":
             return QuestionResponse(**identity, status="clarify", text=decision.answer_text, sources=sources)
         if decision.verdict == "conflicting":
@@ -192,8 +242,25 @@ class AnswerService:
             )
         if decision.verdict == "insufficient":
             return unknown
-        return QuestionResponse(
-            **identity, status="answer",
-            text=decision.answer_text,
-            sources=sources,
+        reviewer = getattr(self.evaluator, "review_visual", None)
+        if reviewer and any(s.get("asset_id") for s in visual_plan):
+            try:
+                # Optional visual review shares the turn deadline but cannot discard a valid answer.
+                async with asyncio.timeout_at(min(deadline - 0.25, asyncio.get_running_loop().time() + 10)):
+                    review = await reviewer(visual_plan, tuple(s.text for s in snippets))
+                for index, sentence in enumerate(visual_plan):
+                    if index not in review["images"] or index not in review["grounded"]:
+                        sentence["asset_id"] = None
+                    if index not in review["grounded"]:
+                        sentence["fact_asset_id"] = None
+            except (TimeoutError, ModelError, ValueError, TypeError, KeyError):
+                for sentence in visual_plan:
+                    sentence["asset_id"] = None
+                    sentence["fact_asset_id"] = None
+        response = QuestionResponse(
+            **identity, status="answer", text=answer_text, sources=sources,
         )
+        response._verified_snippets = snapshot
+        if decision.sentences and any(s.fact_ids for s in decision.sentences):
+            response._visual_plan = visual_plan
+        return response

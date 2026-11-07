@@ -11,7 +11,7 @@ const { createRequire } = require('node:module');
 process.chdir(path.resolve(__dirname, '../..'));
 const { Fixture } = require('./speech-browser-integration.cjs');
 const { chromium } = createRequire(path.resolve('frontend/package.json'))('playwright-core');
-const task = path.resolve(process.env.LANDSCAPE_SYSTEM_TASK || 'docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图');
+const task = path.resolve(process.env.GUIDE_TEST_TASK_DIR || process.env.LANDSCAPE_SYSTEM_TASK || 'docs/dev/20261104-展厅导览-横屏16比9数字人与逐句资料配图');
 const run = 'landscape-system-' + (process.argv.includes('--red') ? 'red-' : 'green-') + Date.now();
 const evidence = path.join(task, 'evidence', run), temp = path.join(task, 'tmp', run), mediaRoot = path.join(temp, 'media');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -186,7 +186,7 @@ async function audioQuestion(text) {
   const records = [];
   for (const [id, kind, relative, mime, bytes, keyword] of [['robot', 'image', imagePath, imagePath.endsWith('.jpg') ? 'image/jpeg' : 'image/png', image, '机器人'], ['broken', 'image', 'broken.png', 'image/png', png, '失效素材'], ['hall', 'image', 'hall.png', 'image/png', png, '展厅图片']]) {
     await fs.writeFile(path.join(mediaRoot, relative), bytes);
-    records.push({ id, kind, relative_path: relative, mime, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), source_filename: 'opening.md', source_url: 'https://fixture.example/reviewed', alt: keyword, keywords: [keyword], reviewed: true });
+    records.push({ id, kind, relative_path: relative, mime, sha256: crypto.createHash('sha256').update(bytes).digest('hex'), source_filename: 'opening.md', source_url: 'https://fixture.example/reviewed', alt: keyword, keywords: [keyword], reviewed: true, narrations: (id === 'robot' ? ['机器人介绍。', '机器人恢复说明。', '机器人正在介绍。', '机器人完成恢复。', '机器人继续说明。'] : id === 'broken' ? ['失效素材介绍。'] : ['展厅图片说明。']).map(text => ({ text, evidence: [text] })) });
   }
   await fs.writeFile(path.join(mediaRoot, 'manifest.json'), JSON.stringify({ assets: records }));
   const ready = path.join(temp, 'backend-ready.json');

@@ -5,7 +5,10 @@ import runpy
 import sys
 import tomllib
 
+from opentalking_patch import apply_patch
+
 root = Path(__file__).resolve().parents[1]
+apply_patch(root / 'vendor/opentalking')
 config = tomllib.loads((root / 'config/local.toml').read_text())
 llm, embedding = config['llm'], config['embedding']
 if llm.get('enabled'):
