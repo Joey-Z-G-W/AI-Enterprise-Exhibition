@@ -32,7 +32,7 @@ test('runtime-only upstream selection and isolated preview assets', { timeout: 1
   }
   assert.equal(config.define, undefined);
   assert.equal(config.envPrefix, undefined);
-  const task = path.resolve('docs/dev/20261101-展厅AI导览-实时打断问答与锐伽样例知识库');
+  const task = path.resolve('docs/dev/20261101-展厅AI导览-实时打断问答与企业样例知识库');
   await fs.mkdir(path.join(task, 'tmp'), { recursive: true });
   const fixture = await fs.mkdtemp(path.join(task, 'tmp/task22-proxy-'));
   const build = path.join(fixture, 'selected-build');

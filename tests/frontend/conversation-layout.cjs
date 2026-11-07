@@ -3,7 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),http=require('node:http');
 const root=process.cwd(),modules=path.join(root,'frontend/node_modules');
 const ts=require(path.join(modules,'typescript')),React=require(path.join(modules,'react')),SSR=require(path.join(modules,'react-dom/server'));
-const task=path.join(root,'docs/dev/20261101-展厅AI导览-实时打断问答与锐伽样例知识库');const dest=path.join(task,'tmp/task12-layout');fs.mkdirSync(dest,{recursive:true});
+const task=path.join(root,'docs/dev/20261101-展厅AI导览-实时打断问答与企业样例知识库');const dest=path.join(task,'tmp/task12-layout');fs.mkdirSync(dest,{recursive:true});
 const fixture=Array.from({length:20},(_,i)=>({visitorId:'visual-only',turnId:'turn-'+i,input:i%2?'voice':'text',question:`隔离样例第${i+1}问：请介绍品牌设计与展厅服务。`,status:i===19?'cancelled':'completed',result:i===19?undefined:{visitor_id:'visual-only',turn_id:'turn-'+i,status:'answer',text:'此处为明确标记的布局样例文字，不是真实问答结果。用于检查中文换行、长来源和有界滚动。'.repeat(2),sources:[{excerpt:'用于布局验证的来源片段，不作为事实或知识库资料。',source:{status:'known',filename:'独立布局测试样例来源文件名用于窄屏换行验证.md'}}]},speechStatus:i===19?undefined:'播报已停止，文字保留。'}));
 const hooks={...React,useRef:initial=>({current:initial}),useEffect:()=>{},useState:initial=>[Array.isArray(initial)?fixture:initial,()=>{}]};
 const exported={};const code=ts.transpileModule(fs.readFileSync('frontend/src/App.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;

@@ -16,7 +16,7 @@ const switchOnly = switchRed || missingStartedRed || process.argv.includes('--sw
 const runId = (red ? 'red-' : 'green-') + Date.now();
 const evidence = path.join(task, 'evidence', 'browser-' + runId);
 const temp = path.join(task, 'tmp', 'browser-' + runId);
-const Q = '锐伽提供哪些服务？';
+const Q = '公司提供哪些服务？';
 const first = '这是第一句完整结论。';
 const second = '后续说明保持原文。'.repeat(12);
 const answer = first + second;
@@ -51,7 +51,7 @@ class Fixture {
       this.responses.push(entry); if (!this.holdQuestions) entry.release(); return true;
     }
     if (pathname === '/opentalking/tts/preview') {
-      const b = JSON.parse(body), welcome = b.text.includes('欢迎来到锐伽展厅'), demo = b.text.includes('这是一段固定文本演示');
+      const b = JSON.parse(body), welcome = b.text.includes('您好，欢迎来到我们的展厅！'), demo = b.text.includes('这是一段固定文本演示');
       const entry = { text: b.text, voice: b.voice, welcome, demo, marker: this.tts.length + 1, res, done: false, release: () => { if (entry.done || res.destroyed) return; entry.done = true; const audio = wav(); audio.writeInt16LE(entry.marker, 44); res.writeHead(this.failTTS && !welcome ? 503 : 200, { 'content-type': 'audio/wav' }); res.end(audio); } };
       this.tts.push(entry);
       const index = this.tts.filter(x => !x.welcome && !x.demo).length - 1;

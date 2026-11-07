@@ -224,16 +224,16 @@ async function suite() {
     await restored();
     noReplacement(f); f.pendingTranscripts[0].release(); await delay(100); noReplacement(f);
   });
-  for (const action of ['锐伽提供哪些服务？', '新一组访客', '停止录音', '断开']) {
+  for (const action of ['公司提供哪些服务？', '新一组访客', '停止录音', '断开']) {
     await scenario('late STT isolated after ' + action, async f => {
       f.text = '预设的有效回答。';
       const pending = await transcribe(f, { text: '迟到问题不得提交', hold: true });
       await page.getByRole('button', { name: action, exact: true }).click();
-      if (action === '锐伽提供哪些服务？') await until(() => f.questions.length === 1, 'preset question submitted');
+      if (action === '公司提供哪些服务？') await until(() => f.questions.length === 1, 'preset question submitted');
       if (action === '新一组访客') await until(() => f.serial === 2, 'new visitor session');
       if (action === '停止录音') await restored();
       pending.release(); await delay(150);
-      assert.equal(f.questions.length, action === '锐伽提供哪些服务？' ? 1 : 0);
+      assert.equal(f.questions.length, action === '公司提供哪些服务？' ? 1 : 0);
       assert.ok(f.questions.every(q => q.question !== '迟到问题不得提交'));
     });
   }
@@ -269,7 +269,7 @@ async function suite() {
     // Finish welcome, then hold a real answer's upload response while audio arrives.
     f.emit(f.sid(1), 'speech.ended'); await page.getByText('欢迎语播报结束，您可以继续提问', { exact: true }).waitFor();
     f.text = '原回答。'; f.holdUploads = true;
-    await page.getByRole('button', { name: '锐伽提供哪些服务？', exact: true }).click();
+    await page.getByRole('button', { name: '公司提供哪些服务？', exact: true }).click();
     await until(() => f.uploads.length === 2, 'held answer upload');
     const pending = await transcribe(f, { text: '请换一个问题', hold: true }); pending.release();
     await until(() => f.questions.length === 2, 'new business prepares independently of old ACK');
@@ -283,7 +283,7 @@ async function suite() {
   await scenario('unknown old upload blocks valid interruption replacement', async f => {
     f.emit(f.sid(1), 'speech.ended'); await page.getByText('欢迎语播报结束，您可以继续提问', { exact: true }).waitFor();
     f.text = '原回答。'; f.holdUploads = true; f.failUpload = true;
-    await page.getByRole('button', { name: '锐伽提供哪些服务？', exact: true }).click();
+    await page.getByRole('button', { name: '公司提供哪些服务？', exact: true }).click();
     await until(() => f.uploads.length === 2, 'held uncertain upload');
     await transcribe(f, { text: '新的问题' }); await delay(100);
     await until(() => f.questions.length === 2, 'new question before unknown ACK');
