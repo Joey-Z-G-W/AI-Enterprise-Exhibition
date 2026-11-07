@@ -33,18 +33,16 @@ jobs:
           test -x /usr/bin/google-chrome
       - name: Verify Python and real browsers
         run: ./tools/course_verify.sh
-      - name: Build CPU image
-        run: docker build --build-arg GUIDE_RELEASE_ID="$GITHUB_SHA" -t "exhibition-course:$GITHUB_SHA" .
-      - name: Smoke-test container readiness
+      - name: Start CPU UI, API and SQLite with documented Compose command
+        env:
+          GUIDE_RELEASE_ID: ${{ github.sha }}
+        run: docker compose up --build --wait
+      - name: Verify Compose browser journey and recreate persistence
+        env:
+          GUIDE_RELEASE_ID: ${{ github.sha }}
         run: |
-          docker run -d --name course-ci --volume course-ci-data:/data --read-only --tmpfs /tmp -p 127.0.0.1:8090:8080 "exhibition-course:$GITHUB_SHA"
-          for n in $(seq 1 60); do
-            if curl --fail http://127.0.0.1:8090/health > /tmp/health.json; then break; fi
-            sleep 2
-          done
-          python -c 'import json,os; x=json.load(open("/tmp/health.json")); assert x["status"] == "ok" and x["release"] == os.environ["GITHUB_SHA"]'
           DEMO_BASE_URL=http://127.0.0.1:8090 node tests/frontend/demo-system.cjs
-          docker rm -f course-ci
+          python tests/deployment/compose_persistence.py --release "$GITHUB_SHA"
       - name: Package verified image
         run: |
           mkdir -p release
@@ -56,6 +54,11 @@ jobs:
           path: release/
           retention-days: 14
           compression-level: 1
+      - name: Stop only the course Compose stack, retaining its data volume
+        if: always()
+        env:
+          GUIDE_RELEASE_ID: ${{ github.sha }}
+        run: docker compose -p course-demo down
       - uses: actions/upload-artifact@v4
         if: always()
         with:

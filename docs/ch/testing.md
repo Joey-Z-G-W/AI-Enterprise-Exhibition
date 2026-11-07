@@ -78,7 +78,7 @@ COURSE_RELEASE_RUN_B=SECOND_SUCCESSFUL_MAIN_RUN_ID \
 
 缺少任一 run ID 时明确报告 skip；普通 CI 不得声称已经执行这项主机专用验收。
 
-托管 workflow 执行全部既有 Python 回归、五组浏览器测试、CPU 镜像构建以及针对容器的浏览器流程；只有成功的 push/main run 上传可部署 artifact。
+托管 workflow 执行全部既有 Python 回归、五组浏览器测试、文档中的 `docker compose up --build --wait`、针对完整环境的浏览器流程以及[真实 Compose 重建/持久化验收](../../tests/deployment/compose_persistence.py)；只有成功的 push/main run 上传可部署 artifact。
 
 验证步骤失败会阻止镜像发布，控制器忽略失败的 CI run；PR 验证不会在本机 Docker 主机运行。
 

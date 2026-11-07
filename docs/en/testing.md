@@ -68,7 +68,7 @@ Assertions cover exact release identity, retained history, failed-candidate reje
 
 Without both run IDs the test reports an explicit skip; ordinary CI cannot claim that this host-specific acceptance has run.
 
-The hosted workflow executes all existing Python regressions, the five browser suites, a CPU image build and a browser journey against the container; only successful push/main runs upload deployable artifacts.
+The hosted workflow executes all existing Python regressions, the five browser suites, the documented `docker compose up --build --wait`, a browser journey against the full stack and [real Compose recreation/persistence acceptance](../../tests/deployment/compose_persistence.py); only successful push/main runs upload deployable artifacts.
 
 A failing verification step prevents image publication and the controller ignores failed CI runs; PR validation never runs on the local Docker host.
 
