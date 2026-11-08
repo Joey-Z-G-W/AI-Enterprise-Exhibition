@@ -16,15 +16,16 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = ROOT / '.tools/opentalking-venv/bin/python'
 MODEL = 'BAAI/bge-small-zh-v1.5'
+pytestmark = pytest.mark.system
 
 
 @pytest.fixture(scope='module')
 def embedding_http(tmp_path_factory):
     if not PYTHON.exists() or not (ROOT / 'models/bge-small-zh-v1.5/pytorch_model.bin').exists():
-        pytest.skip('本地模型可选部署尚未安装')
+        pytest.fail('本地模型部署尚未安装：需要 .tools/opentalking-venv 和 models/bge-small-zh-v1.5')
     config = tomllib.loads((ROOT / 'config/local.toml').read_text())['embedding']
     if not config.get('enabled'):
-        pytest.skip('本地 embedding 未启用')
+        pytest.fail('config/local.toml 中 embedding 未启用')
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]

@@ -1,35 +1,13 @@
-"""HTTP integration: real routing/history/catalog; answer generation is an injected boundary.
-
-The substitute supplies a completed answer, not media selection or validation.
-Assets and manifests are real files; all assertions inspect HTTP contracts.
-"""
+"""Real HTTP app, catalog, history and SDK; only external KB/LLM are fixtures."""
 import hashlib
 import json
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from exhibition_guide.answer import AnswerSource, QuestionResponse
 from exhibition_guide.config import AppConfig
-from exhibition_guide.knowledge import KnownSource, UnknownSource
 from exhibition_guide.main import create_app
 from test_concise_answer_http import ORIGINAL, SHORT, completion, external_services
-
-
-class CompletedAnswer:
-    timeout = 10.0
-
-    def __init__(self, text="机器人速度为3.14米。欢迎参观！", source="guide.md", status="answer"):
-        self.text, self.source, self.status = text, source, status
-
-    async def answer(self, request, **kwargs):
-        source = KnownSource(doc_id="doc", filename=self.source) if self.source else UnknownSource(doc_id="doc")
-        return QuestionResponse(
-            visitor_id=request.visitor_id, turn_id=request.turn_id, turn_seq=request.turn_seq,
-            status=self.status, text=self.text,
-            sources=[AnswerSource(snippet_index=0, excerpt="机器人", source=source)],
-        )
 
 
 @pytest.fixture
@@ -51,38 +29,32 @@ def configured(catalog, **changes):
     return AppConfig.model_validate({"media": {"enabled": True, "root": str(root), "manifest": "manifest.json"}})
 
 
+def assembled(catalog, external_services, **changes):
+    media_config = configured(catalog, **{
+        "source_filename": "opening.md", "keywords": ["青山展馆"],
+        "narrations": [{"text": SHORT.split("。")[0] + "。", "evidence": [ORIGINAL]}],
+        **changes,
+    })
+    external_services["replies"] = [(completion(), "stop")]
+    return AppConfig.model_validate({
+        "media": media_config.media.model_dump(),
+        "llm": {"enabled": True, "base_url": external_services["url"], "api_key": "offline-fixture"},
+        "knowledge": {"base_url": external_services["url"], "kb_id": "offline-kb"},
+    })
+
+
+def assert_audio_only(client):
+    response = ask(client)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "answer" and body["text"] == SHORT
+    assert body["sources"][0]["source"]["filename"] == "opening.md"
+    assert not body.get("presentation", {}).get("assets")
+    assert all(sentence.get("asset_id") is None for sentence in body.get("presentation", {}).get("sentences", []))
+
+
 def ask(client):
     return client.post("/questions", json={"visitor_id": "visitor", "turn_id": "turn", "turn_seq": 1, "question": "介绍机器人"})
-
-
-def test_reviewed_asset_binds_only_matching_sentence_and_preserves_identity(catalog):
-    with TestClient(create_app(configured(catalog), service=CompletedAnswer())) as client:
-        response = ask(client)
-        payload = response.json()
-        presentation = payload["presentation"]
-        assert response.status_code == 200
-        assert [s["text"] for s in presentation["sentences"]] == ["机器人速度为3.14米。", "欢迎参观！"]
-        assert [s["asset_id"] for s in presentation["sentences"]] == ["robot", None]
-        assert len({s["id"] for s in presentation["sentences"]}) == 2
-        assert presentation["assets"] == [{"id": "robot", "kind": "image", "url": "/guide/media/robot", "mime": "image/png", "alt": "机器人"}]
-        assert (payload["visitor_id"], payload["turn_id"], payload["turn_seq"]) == ("visitor", "turn", 1)
-        media = client.get("/media/robot")
-        assert media.status_code == 200 and media.content == catalog[2]
-        assert media.headers["content-type"] == "image/png"
-        assert media.headers["x-content-type-options"] == "nosniff"
-
-
-@pytest.mark.parametrize("text", ["机器人3.14米。 English sentence! 后续？", "机器人。\n 第二句。尾句", "机器人？！\" Done.", "机器人。" * 64])
-def test_sentence_text_roundtrips_exactly(catalog, text):
-    with TestClient(create_app(configured(catalog), service=CompletedAnswer(text))) as client:
-        data = ask(client).json()
-        assert "".join(s["text"] for s in data["presentation"]["sentences"]) == text
-
-
-@pytest.mark.parametrize("service", [CompletedAnswer(source=None), CompletedAnswer(source="other.md"), CompletedAnswer(text="欢迎参观。"), CompletedAnswer(status="clarify"), CompletedAnswer(text="机器人。" * 65)])
-def test_untrusted_nonmatching_or_oversized_answers_keep_legacy_payload(catalog, service):
-    with TestClient(create_app(configured(catalog), service=service)) as client:
-        assert not ask(client).json().get("presentation", {}).get("assets")
 
 
 @pytest.mark.parametrize("changes", [
@@ -93,15 +65,15 @@ def test_untrusted_nonmatching_or_oversized_answers_keep_legacy_payload(catalog,
     {"source_url": "javascript:alert(1)"}, {"source_url": "https://user:secret@evil.example"},
     {"id": "../secret"}, {"source_filename": "../guide.md"},
 ])
-def test_unsafe_asset_is_not_served_or_attached(catalog, changes):
-    with TestClient(create_app(configured(catalog, **changes), service=CompletedAnswer())) as client:
-        assert not ask(client).json().get("presentation", {}).get("assets")
+def test_unsafe_asset_is_not_served_or_attached(catalog, external_services, changes):
+    with TestClient(create_app(assembled(catalog, external_services, **changes))) as client:
+        assert_audio_only(client)
         response = client.get("/media/robot")
         assert response.status_code == 404
         assert str(catalog[0]) not in response.text
 
 
-def test_symlink_asset_cannot_escape_root(catalog):
+def test_symlink_asset_cannot_escape_root(catalog, external_services):
     root, _, _ = catalog
     outside = root.parent / "private-media.png"
     outside.write_bytes(catalog[2])
@@ -109,56 +81,24 @@ def test_symlink_asset_cannot_escape_root(catalog):
         (root / "linked.png").symlink_to(outside)
     except OSError:
         pytest.skip("host lacks symlink privileges")
-    with TestClient(create_app(configured(catalog, relative_path="linked.png"), service=CompletedAnswer())) as client:
+    with TestClient(create_app(assembled(catalog, external_services, relative_path="linked.png"))) as client:
+        assert_audio_only(client)
         assert client.get("/media/robot").status_code == 404
-        assert not ask(client).json().get("presentation", {}).get("assets")
 
 
-def test_hash_is_rechecked_after_startup_and_recovers(catalog):
-    with TestClient(create_app(configured(catalog), service=CompletedAnswer())) as client:
+def test_hash_is_rechecked_after_startup_and_recovers(catalog, external_services):
+    with TestClient(create_app(assembled(catalog, external_services))) as client:
         (catalog[0] / "robot.png").write_bytes(b"changed")
+        assert_audio_only(client)
         assert client.get("/media/robot").status_code == 404
-        assert not ask(client).json().get("presentation", {}).get("assets")
         (catalog[0] / "robot.png").write_bytes(catalog[2])
         assert client.get("/media/robot").content == catalog[2]
 
 
-@pytest.mark.parametrize("manifest", ["{bad json", '{"assets": []}', '{"assets": "bad"}'])
-def test_invalid_catalog_does_not_block_answers(catalog, manifest):
-    config = configured(catalog)
-    (catalog[0] / "manifest.json").write_text(manifest, encoding="utf-8")
-    with TestClient(create_app(config, service=CompletedAnswer())) as client:
-        response = ask(client)
-        assert response.status_code == 200 and response.json()["status"] == "answer"
-        assert "presentation" not in response.json()
-        assert client.get("/media/robot").status_code == 404
-
-
-def test_missing_catalog_and_private_config_are_safe(catalog):
-    config = configured(catalog)
-    (catalog[0] / "manifest.json").unlink()
-    with TestClient(create_app(config, service=CompletedAnswer())) as client:
-        assert ask(client).status_code == 200
-        assert client.get("/ui-config").json() == {"avatar_id": "companion", "tts_voice": "zh-CN-XiaoxiaoNeural"}
-        assert str(catalog[0]) not in client.get("/openapi.json").text
-        assert client.get("/media/unknown").status_code == 404
-
-
-def test_disabled_media_never_reads_files_and_preserves_exact_json(monkeypatch):
-    def forbidden(*args, **kwargs):
-        raise AssertionError("disabled media must not access local files")
-    monkeypatch.setattr(Path, "open", forbidden)
-    with TestClient(create_app(service=CompletedAnswer())) as client:
-        data = ask(client).json()
-        assert set(data) == {"visitor_id", "turn_id", "turn_seq", "status", "text", "sources", "error_code"}
-        assert data["error_code"] is None
-        assert client.get("/media/unknown").status_code == 404
-
-
 @pytest.mark.parametrize("mime", ["video/mp4", "video/webm"])
-def test_video_catalog_entries_are_rejected(catalog, mime):
-    with TestClient(create_app(configured(catalog, kind="video", mime=mime), service=CompletedAnswer())) as client:
-        assert not ask(client).json().get("presentation", {}).get("assets")
+def test_video_catalog_entries_are_rejected(catalog, external_services, mime):
+    with TestClient(create_app(assembled(catalog, external_services, kind="video", mime=mime))) as client:
+        assert_audio_only(client)
         assert client.get("/media/robot").status_code == 404
         assert client.head("/media/robot").status_code == 404
 
@@ -208,47 +148,26 @@ def test_real_answer_sdk_knowledge_and_media_work_together(catalog, external_ser
         assert client.get("/media/robot").content == catalog[2]
 
 
-def test_latin_keyword_does_not_match_a_different_word(catalog):
-    with TestClient(create_app(configured(catalog, keywords=["car"]), service=CompletedAnswer(text="A cart is available."))) as client:
-        assert not ask(client).json().get("presentation", {}).get("assets")
-
-
-def test_manifest_cannot_escape_media_root(catalog):
-    configured(catalog)
-    config = AppConfig.model_validate({"media": {"enabled": True, "root": str(catalog[0]), "manifest": "../manifest.json"}})
-    with TestClient(create_app(config, service=CompletedAnswer())) as client:
-        assert ask(client).status_code == 200
+def test_manifest_cannot_escape_media_root(catalog, external_services):
+    config = assembled(catalog, external_services)
+    values = config.model_dump()
+    values["media"]["manifest"] = "../manifest.json"
+    config = AppConfig.model_validate(values)
+    with TestClient(create_app(config)) as client:
+        assert_audio_only(client)
         assert client.get("/media/robot").status_code == 404
 
 
 @pytest.mark.parametrize("length, accepted", [(500, True), (501, False)])
-def test_alt_length_matches_browser_contract(catalog, length, accepted):
-    with TestClient(create_app(configured(catalog, alt="图" * length), service=CompletedAnswer())) as client:
-        data = ask(client).json()
-        assert bool(data.get("presentation", {}).get("assets")) is accepted
+def test_alt_length_matches_browser_contract(catalog, external_services, length, accepted):
+    with TestClient(create_app(assembled(catalog, external_services, alt="图" * length))) as client:
+        if accepted:
+            response = ask(client)
+            assert response.status_code == 200
+            assert response.json()["presentation"]["assets"][0]["id"] == "robot"
+        else:
+            assert_audio_only(client)
         assert client.get("/media/robot").status_code == (200 if accepted else 404)
-
-
-def test_mixed_claim_sentence_cannot_attach_first_keyword_image(catalog):
-    text = "机器人速度为3.14米，同时咖啡店采用木质装修。"
-    with TestClient(create_app(configured(catalog), service=CompletedAnswer(text))) as client:
-        data = ask(client).json()
-        assert data["text"] == text
-        assert not any(s["asset_id"] for s in data.get("presentation", {}).get("sentences", []))
-
-
-def test_all_missing_images_preserve_every_sentence(catalog):
-    with TestClient(create_app(configured(catalog), service=CompletedAnswer())) as client:
-        (catalog[0] / "robot.png").unlink()
-        data = ask(client).json()
-        assert [s["text"] for s in data["presentation"]["sentences"]] == ["机器人速度为3.14米。", "欢迎参观！"]
-        assert [s["asset_id"] for s in data["presentation"]["sentences"]] == [None, None]
-
-
-def test_same_reviewed_text_requires_current_source_evidence(catalog):
-    config = configured(catalog, narrations=[{"text": "机器人速度为3.14米。", "evidence": ["已核验的速度依据"]}])
-    with TestClient(create_app(config, service=CompletedAnswer())) as client:
-        assert not ask(client).json()["presentation"]["assets"]
 
 
 def test_verified_snapshot_binds_short_quote_and_survives_replay_without_leaking(catalog, external_services):

@@ -24,3 +24,8 @@ packages = ["src/exhibition_guide"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not acceptance and not system'"
+markers = [
+    "acceptance: explicitly selected deployed services and real providers",
+    "system: system inputs/outputs, health and runtime integration",
+]

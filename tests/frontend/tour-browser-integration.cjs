@@ -5,7 +5,7 @@ const { pathToFileURL } = require('node:url'), { createRequire } = require('node
 process.chdir(path.resolve(__dirname, '../..'));
 const { chromium } = createRequire(path.resolve('frontend/package.json'))('playwright-core');
 const { Fixture } = require('./speech-browser-integration.cjs');
-const task = path.resolve(process.env.GUIDE_TEST_TASK_DIR || path.join(require('node:os').tmpdir(), 'exhibition-guide-integration'));
+const task = path.resolve(process.env.TEST_TASK_DIR || process.env.GUIDE_TEST_TASK_DIR || path.join(require('node:os').tmpdir(), 'exhibition-guide-integration'));
 const dir = path.join(task, 'tmp', 'tour-browser-' + Date.now());
 const texts = ['先看整体的开放布局。', '接着，这里的吊楣让品牌更醒目。', '内侧通过通透隔断划分区域。'];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
