@@ -12,31 +12,56 @@
 
 [E1 验收标准](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12)、[E2 角色活动](tracker.md#current-role-activity)、[E3 测试命令](testing.md)和 [E4 CI workflow](../../.github/workflows/ci.yml)是审计入口。
 
-源码实现与已执行证据分开；只有记录独立 QA 和最终远端发布验收后，才可认为任务完成。
+实现 A 通过 [PR #13](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/pull/13) 合并为 `0a0ca69e4ac3f72b7280f9e542b32e7f061786a1`，文件树与独立审核的 `23179cc` 相同。
+
+其[可信 main CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385984934)已成功；[合并前独立验收](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862)明确区分已完成的源码/本机检查与后续发布操作。
 
 <a id="current-delivery-checks"></a>
 
 ## 当前交付检查
 
-部署 CLI 的四个接口测试先因命令不存在而失败，实现后通过；可选的双 release 系统测试在未提供真实 main CI run ID 时报告 skip。
-
-本机 Docker Compose 配置校验通过；首次本机镜像构建在编译前被主机 Docker daemon 的镜像仓库请求 EOF 阻塞。
-
-这个网络失败不是容器测试通过；仍需托管镜像构建和实际本机容器/浏览器验收。
-
-新增交付脚本的 shell 语法与 Python 编译检查通过。
-
-| 关卡 | 状态与所需证据 |
+| 已执行检查 | 证据与范围 |
 | --- | --- |
-| 完整 Python 与真实浏览器回归 | 待最终统一结果与独立 QA。 |
-| CPU Compose 启动/重启及浏览器流程 | 待真实镜像和 SQLite 记录保留证据。 |
-| PR/main CI 成功 | 待公开 run URL 和精确提交。 |
-| 受控验证失败 | 待失败 run 或坏候选记录，证明交付保持阻断。 |
-| 自动 dev 部署 | 待成功 GitHub Deployment，包含精确 CI run/镜像/提交。 |
-| 人工 prod 晋级和回滚 | 待两个真实 release、记录保留和坏候选拒绝。 |
-| 发布 | 待最终审核后的 main 提交、公开链接和独立验收。 |
+| Python 与浏览器回归 | [最终 PR CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385501939)：402 项 Python 通过、六项明确可选跳过、五组浏览器测试、两种构建及 Compose 浏览器/重建检查。 |
+| 精确 Compose 启动 | 托管 CI 从干净检出执行文档中的 `docker compose up --build --wait`，并验证真实重建后 SQLite 记录保留。 |
+| 真实本机 Docker | [独立 QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862)在 8092 端口使用单独批准的 QA 镜像，验证真实 Chrome cookie/会话/问题/引用/评分在 Docker 重启和同一命名卷重建后均保留。 |
+| 隔离与运行边界 | QA 验证不同访客拒绝访问、已清空的历史正文、存储型 XSS 处理、非 root/只读容器，以及无关容器身份/镜像/配置保持不变。 |
+| 验证失败阻止交付 | [失败 PR run](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42382556438)未发布可部署镜像；真实控制器部署尝试被拒绝，未改变容器或路由。 |
+| 可信 main 构建 | [实现 A main CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385984934)已针对上面的精确合并提交成功完成。 |
+| 自动 dev 部署 | [Deployment 7623123912](https://api.github.com/repos/Joey-Z-G-W/AI-Enterprise-Exhibition/deployments/7623123912/statuses)已在回环端口 8090 成功，版本为 `0a0ca69e4ac3f72b7280f9e542b32e7f061786a1`；控制器在 main CI 完成前已处于运行状态。 |
+| 人工生产晋级 | [Deployment 7623145538](https://api.github.com/repos/Joey-Z-G-W/AI-Enterprise-Exhibition/deployments/7623145538/statuses)已在回环端口 8091 成功，对应相同的实现 A 提交与 main CI run。 |
 
-PM 在 #12 的最终发布回执必须用真实 run/deployment 链接替换待完成的运行声明；仅有配置文件不能满足这些关卡。
+自动 dev 部署使用 main CI run `42385984934` 的已验证镜像 `sha256:51ea7b584be5e66daa6649a9ae5d3164dea863e9ee73cbda19fa9210a53522de`，对外健康接口版本与已部署提交一致。
+
+六项可选跳过分别为四项本地 embedding/模型检查、一项显式启用的真实 GPU 取消检查和一项双 main 发布 opt-in 测试；CPU 必需检查没有跳过。
+
+双发布部署测试使用独立运行回执，不计作标准 CI 套件中已经执行的项目。
+
+首次本机镜像仓库 EOF 是构建网络故障，不是测试通过；托管环境干净检出的 Compose 验收及后续真实本机容器检查提供已执行证据。
+
+<a id="local-sample-demonstration"></a>
+
+## 本机样例演示
+
+这张未编辑截图来自生产端口 8091 上的独立真实 Chrome 验收，当时提供的版本为实现 A `0a0ca69e4ac3f72b7280f9e542b32e7f061786a1`。
+
+截图展示原创虚构展品、有依据/未知/歧义/冲突四类响应、来源引用，以及已保存的访客反馈 5/5；不包含企业语料或凭据。
+
+![实现 A 生产环境 CPU 样例导览，展示四类响应与已保存反馈](../en/assets/cpu-sample-demo.png)
+
+浏览器流程还验证了刷新保留、独立访客、跨访客反馈拒绝、重试冲突、清历史、新访客和手机布局；仅凭截图不能证明容器重启或回滚。
+
+<a id="release-acceptance-and-publication"></a>
+
+## 发布验收与公开结果
+
+[#12 发布回执](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12)记录发布身份、自动 dev 部署、人工生产晋级、双发布回滚、坏候选下记录保留检查，以及最终 main 发布与独立验收。
+
+请查看回执中实际链接的 run/deployment 结果；仅有源码、截图或合并前 QA 结论，不能证明这些运行结果。
+
+最终部署版本、CI 结果及晋级/回滚验收持续记录在该回执中。
+
+本次选择本机 Docker，端口只监听回环地址，并非公网托管应用。
 
 <a id="current-localization-checks"></a>
 
