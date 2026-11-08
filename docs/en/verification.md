@@ -16,9 +16,13 @@ Its [trusted-main CI run](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition
 
 ## Current delivery checks
 
+[E5 Main CI for `f4d8732`](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42441943726) passed on November 8, 2026 after the test suite was reorganized.
+
 | Executed check | Evidence and scope |
 | --- | --- |
-| Python and browser regression | [Final PR CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385501939): 402 Python passes, six explicit optional skips, five browser suites, both builds and Compose browser/recreation checks. |
+| Python regression | [CI job log](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42441943726/job/128612836437) reports 124 passed, 1 skipped and 6 deselected. The skipped test requires two release artifacts and an authorized Docker target. The deselected cases are four embedding system tests and two live acceptance tests. |
+| Browser regression | The same job passed browser integration, both guide E2E scenarios and the CPU demo browser journey. |
+| Latest Docker verification | The same job passed Compose startup, the browser journey against Compose and SQLite persistence after container recreation. |
 | Exact Compose startup | Hosted CI ran the documented `docker compose up --build --wait` from a clean checkout and verified actual recreation with retained SQLite records. |
 | Actual local Docker | [Independent QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862) verified the real Chrome cookie/session/question/citations/rating through both Docker restart and recreation on the same named volume, using a separately approved QA image on port 8092. |
 | Isolation and runtime boundaries | QA verified different-visitor rejection, cleared payloads, stored-XSS handling, non-root/read-only containers and unchanged unrelated container identities/images/configurations. |
@@ -28,8 +32,6 @@ Its [trusted-main CI run](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition
 | Manual production promotion | [Deployment 7623145538](https://api.github.com/repos/Joey-Z-G-W/AI-Enterprise-Exhibition/deployments/7623145538/statuses) succeeded on loopback port 8091 for the same implementation A commit and main CI run. |
 
 The automatic dev deployment used verified image `sha256:51ea7b584be5e66daa6649a9ae5d3164dea863e9ee73cbda19fa9210a53522de` from main CI run `42385984934`, and the served health release matched the deployed commit.
-
-The six optional skips are four local embedding/model checks, one explicit live-GPU cancellation check and one two-main-release opt-in test; mandatory CPU checks were not skipped.
 
 The two-release deployment test has its own operational receipt rather than being counted as executed in the standard CI suite.
 
@@ -64,6 +66,8 @@ The delivery update must preserve reciprocal links, exact command blocks, no Chi
 Independent QA must check the final diff and both language sets, not only the earlier localization baseline.
 
 ## Historical evidence
+
+The [implementation A final PR run](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385501939) recorded 402 Python passes and six optional skips before the test reorganization.
 
 The [#8 migration QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8#issuecomment-6707409190) reported 366 Python passes and five optional skips at baseline `4e81d9d`; those results remain historical.
 

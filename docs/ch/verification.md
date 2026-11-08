@@ -20,9 +20,13 @@
 
 ## 当前交付检查
 
+测试重整后，[E5 `f4d8732` 的 main CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42441943726) 于 2026 年 11 月 8 日通过。
+
 | 已执行检查 | 证据与范围 |
 | --- | --- |
-| Python 与浏览器回归 | [最终 PR CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385501939)：402 项 Python 通过、六项明确可选跳过、五组浏览器测试、两种构建及 Compose 浏览器/重建检查。 |
+| Python 回归 | [CI 作业日志](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42441943726/job/128612836437)记录 124 项通过、1 项跳过、6 项未选入。跳过项需要两个发布产物及已授权的 Docker 环境。未选入的用例包括 4 项 embedding 系统测试及 2 项真实环境验收测试。 |
+| 浏览器回归 | 同一作业通过浏览器集成测试、两条导览 E2E 及 CPU 演示浏览器流程。 |
+| 最新 Docker 验证 | 同一作业通过 Compose 启动、Compose 环境下的浏览器流程及容器重建后的 SQLite 持久化检查。 |
 | 精确 Compose 启动 | 托管 CI 从干净检出执行文档中的 `docker compose up --build --wait`，并验证真实重建后 SQLite 记录保留。 |
 | 真实本机 Docker | [独立 QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862)在 8092 端口使用单独批准的 QA 镜像，验证真实 Chrome cookie/会话/问题/引用/评分在 Docker 重启和同一命名卷重建后均保留。 |
 | 隔离与运行边界 | QA 验证不同访客拒绝访问、已清空的历史正文、存储型 XSS 处理、非 root/只读容器，以及无关容器身份/镜像/配置保持不变。 |
@@ -32,8 +36,6 @@
 | 人工生产晋级 | [Deployment 7623145538](https://api.github.com/repos/Joey-Z-G-W/AI-Enterprise-Exhibition/deployments/7623145538/statuses)已在回环端口 8091 成功，对应相同的实现 A 提交与 main CI run。 |
 
 自动 dev 部署使用 main CI run `42385984934` 的已验证镜像 `sha256:51ea7b584be5e66daa6649a9ae5d3164dea863e9ee73cbda19fa9210a53522de`，对外健康接口版本与已部署提交一致。
-
-六项可选跳过分别为四项本地 embedding/模型检查、一项显式启用的真实 GPU 取消检查和一项双 main 发布 opt-in 测试；CPU 必需检查没有跳过。
 
 双发布部署测试使用独立运行回执，不计作标准 CI 套件中已经执行的项目。
 
@@ -76,6 +78,8 @@
 <a id="historical-evidence"></a>
 
 ## 历史证据
+
+测试重整前，[实现 A 的最终 PR CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385501939)记录 402 项 Python 通过和 6 项可选跳过。
 
 [#8 迁移 QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/8#issuecomment-6707409190)在基线 `4e81d9d` 报告 366 个 Python 通过和五个可选 skip；这些仍是历史结果。
 

@@ -27,7 +27,7 @@
 | 代理团队规格（Agent Team Specification） | 2 | [团队角色](team.md)、[流程](process.md)和[独立实现 QA](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12#issuecomment-6708934862)。 | 最终运行验收记录在 #12。 |
 | 上下文管理（Context Management） | 2 | [根 AGENTS 的中文译文](agent-guide.md)对应链接模块化仓内文档的英文权威指引。 | 在推送后的分支验证每个链接。 |
 | 应用（Application） | 2 | [CPU React 界面](../../frontend/src/DemoApp.tsx)、[FastAPI/SQLite](../../src/exhibition_guide/demo.py)及[已执行的持久化/隔离检查](verification.md#current-delivery-checks)。 | 原 GPU 模式仍可使用；CPU 样例明确采用本地检索，不是实时 LLM。 |
-| 测试（Testing） | 2 | [统一命令](testing.md)及[实际 402 项通过的 CI/浏览器证据](verification.md#current-delivery-checks)，六项可选跳过均已归因。 | 保守按 1 分规划；政策禁止新增单元测试，历史边界审计仍待完成。 |
+| 测试（Testing） | 2 | [统一命令](testing.md)及 [Python、浏览器和 Compose 的当前 CI 证据](verification.md#current-delivery-checks)。 | 保守按 1 分规划。真实环境验收单独执行。 |
 | 容器化（Containerization） | 2 | [Dockerfile](../../Dockerfile)、[Compose](../../compose.yaml)及[已执行的干净构建/重建](verification.md#current-delivery-checks)。 | 真实命名卷持久化已独立验证，不需要开发环境或 GPU。 |
 | 部署（Deployment） | 2 | [本机部署命令](README.md#local-deployment-and-rollback)与[真实本机 Docker 演示与验收](verification.md#local-sample-demonstration)。 | 仅回环地址演示，并非公网托管 URL；托管发布身份见 #12。 |
 | CI/CD | 3 | [成功 main CI](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/actions/runs/42385984934)、[真实自动 dev/人工 prod 部署](verification.md#current-delivery-checks)及验证失败拒绝交付。 | 最终部署版本与双发布回滚验收持续记录在 [#12 发布回执](https://github.com/Joey-Z-G-W/AI-Enterprise-Exhibition/issues/12)。 |
