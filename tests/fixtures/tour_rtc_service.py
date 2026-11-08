@@ -56,79 +56,7 @@ async def shutdown():
     for peer in peers:await peer.close()
 
 
-# Model boundary substitution: deliberately non-cancellable native inference.
 from types import SimpleNamespace
-import threading
-import time
-from fastapi import HTTPException
-from opentalking.providers.synthesis.audio2video_client import LocalAudio2VideoClient
-native = {}
-class DelayedModel:
-    model_type = "fixture"
-    def __init__(self, delay):
-        self.delay = delay; self.running = threading.Event(); self.ended = False; self.loads = []
-    def load_model(self, device):
-        self.loads.append({"at": time.monotonic(), "old_running": self.running.is_set()})
-    def load_avatar(self, path):
-        return SimpleNamespace(extra={}, manifest=SimpleNamespace(fps=25, width=64, height=64, sample_rate=16000))
-    def extract_features(self, chunk):
-        return SimpleNamespace(vector=np.zeros((1,1)), frame_count=1)
-    def infer(self, features, state):
-        self.running.set(); time.sleep(self.delay); self.running.clear(); self.ended = True
-        return [np.zeros((64,64,3),dtype=np.uint8)]
-    def compose_frame(self, state, index, prediction):
-        return VideoFrameData(prediction,64,64,index*40)
-
-@app.post('/native/start')
-async def native_start(body: dict):
-    model = DelayedModel(body['delay'])
-    client = LocalAudio2VideoClient(model, device='cpu')
-    await client.init_session(avatar_path='fixture')
-    task = asyncio.create_task(client.generate(np.zeros(640,dtype=np.int16)))
-    native.update(model=model,client=client,task=task)
-    while not model.running.is_set():await asyncio.sleep(.005)
-    return {'started': True}
-
-@app.post('/native/reset')
-async def native_reset():
-    native['task'].cancel()
-    await asyncio.gather(native['task'],return_exceptions=True)
-    start = time.monotonic()
-    try:
-        await native['client'].close()
-    except TimeoutError:
-        raise HTTPException(status_code=503, detail='native producer not stopped')
-    await native['client'].connect()
-    await native['client'].init_session(avatar_path='fixture')
-    return {'elapsed_ms':(time.monotonic()-start)*1000,'ended':native['model'].ended,'loads':native['model'].loads}
-
-@app.get('/native/status')
-async def native_status():
-    return {'running':native['model'].running.is_set(),'loads':native['model'].loads}
-
-
-@app.post('/program/reset-audio')
-async def reset_program_audio(body: dict):
-    program = ProgramOutputManager(sample_rate=48000, audio_tick_ms=20)
-    async def old_audio(item):
-        await asyncio.sleep(.01)
-    program.add_branch('receiver', audio_callback=old_audio)
-    await program.offer_audio(np.full(640,15000,dtype=np.int16), sample_rate=16000)
-    await program.detach_branch('receiver')
-    if body['reset']:
-        program.reset_audio_processing()
-    captured = []
-    async def new_audio(item):
-        captured.append(item.data)
-    program.add_branch('receiver', audio_callback=new_audio)
-    await program.offer_audio(np.zeros(640,dtype=np.int16), sample_rate=16000)
-    for _ in range(20):
-        if captured:break
-        await asyncio.sleep(.01)
-    peak = int(np.max(np.abs(np.concatenate(captured))))
-    await program.close()
-    return {'peak':peak}
-
 
 # Real public upload/reset routes, real single-process store; only remote worker
 # HTTP is substituted for this API contract check (the live test covers the worker).
@@ -143,14 +71,6 @@ async def seed_api_session():
 @app.post('/webrtc/{session_id}/reset')
 async def external_worker_reset(session_id: str, body: dict):
     return {'session_id':session_id,'status':'receiver_reset','generation':'fixture-generation'}
-@app.get('/tasks')
-async def queued_tasks():
-    import json
-    tasks = []
-    while not app.state.redis.task_queue.empty():
-        tasks.append(json.loads(app.state.redis.task_queue.get_nowait()))
-    return {'tasks':tasks}
-
 if __name__ == '__main__':
     sock=socket.socket();sock.bind(('127.0.0.1',0));sock.listen(128)
     app.state.settings = SimpleNamespace(worker_url='http://127.0.0.1:'+str(sock.getsockname()[1]))

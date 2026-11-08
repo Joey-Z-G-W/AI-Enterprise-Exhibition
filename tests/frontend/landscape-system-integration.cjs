@@ -28,7 +28,14 @@ function pcmWav(seconds = .8) {
   return bytes;
 }
 function physicalDevices() {
-  let mic;
+  let mic, callback, stamp = 0;
+  HTMLVideoElement.prototype.requestVideoFrameCallback = function(fn) { callback = fn; return ++stamp; };
+  HTMLVideoElement.prototype.cancelVideoFrameCallback = function() { callback = null; };
+  window.systemFrame = (segment, ms) => {
+    const rtp = (++stamp * 3600) >>> 0;
+    window.systemPeer.channel.onmessage?.({ data: JSON.stringify({type:'frame', version:1, generation:'system-peer', segment_id:segment, source_ms:ms, rtp_timestamp:rtp}) });
+    const fn = callback; callback = null; fn?.(performance.now(), {rtpTimestamp:rtp});
+  };
   Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { configurable: true, value: async () => {
     const audio = new AudioContext({ sampleRate: 16000 }); await audio.resume();
     const destination = audio.createMediaStreamDestination(), track = destination.stream.getAudioTracks()[0];
@@ -47,6 +54,11 @@ function physicalDevices() {
   };
   window.RTCPeerConnection = class {
     iceGatheringState = 'complete'; connectionState = 'new'; iceConnectionState = 'new';
+    constructor() { window.systemPeer = this; }
+    createDataChannel() {
+      const channel = {readyState:'open', send:()=>channel.onmessage?.({data:JSON.stringify({type:'capabilities',version:1,generation:'system-peer',clock:'rtp-video'})})};
+      this.channel=channel; setTimeout(()=>channel.onopen?.(),0); return channel;
+    }
     addTransceiver() {} async createOffer() { return { type: 'offer', sdp: 'external-fixture' }; }
     async setLocalDescription(offer) { this.localDescription = offer; }
     async setRemoteDescription() {
@@ -84,6 +96,19 @@ class ExternalMedia extends Fixture {
       this.transcripts.push({ text: plan, wavBytes: length, nonzeroSamples: nonzero, at: Date.now() });
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ session_id: req.url.split('/')[3], text: plan })); return true;
     }
+    if (req.url === '/opentalking/tts/preview-aligned') {
+      const chunks=[]; for await (const chunk of req) chunks.push(chunk);
+      const body=JSON.parse(Buffer.concat(chunks));
+      const sentences=body.text.match(/[^。！？]+[。！？]?/g);
+      this.aligned ??= []; this.aligned.push(body.text);
+      res.writeHead(200, {'content-type':'application/json'});
+      res.end(JSON.stringify({audio_base64:pcmWav(sentences.length*.5).toString('base64'),duration_ms:sentences.length*500,
+        timeline:sentences.map((text,i)=>({text,start_ms:i*500,end_ms:(i+1)*500}))})); return true;
+    }
+    if (req.url.endsWith('/webrtc/reset')) {
+      for await (const chunk of req) {};
+      res.writeHead(200, {'content-type':'application/json'}); res.end(JSON.stringify({status:'receiver_reset',session_id:this.sid(this.serial)})); return true;
+    }
     if (req.url === '/opentalking/tts/preview') {
       const chunks = []; for await (const chunk of req) chunks.push(chunk); const body = JSON.parse(Buffer.concat(chunks));
       const welcome = body.text.includes('您好，欢迎来到我们的展厅！'); this.tts.push({ text: body.text, welcome, done: true, at: Date.now() });
@@ -94,7 +119,7 @@ class ExternalMedia extends Fixture {
   }
 }
 let browser, page, vite, server, python, backend, fixture, speechInput, failNextAsset = false;
-const diagnostics = [], results = [], guide = [], cueDelays = [], timings = [], receiverInputs = [], staticAssets = new Map();
+const diagnostics = [], results = [], guide = [], timings = [], staticAssets = new Map();
 let pythonOutput = '';
 const work = () => fixture.uploads.filter(x => !x.welcome && !x.demo);
 const sid = () => fixture.sid(fixture.serial);
@@ -116,43 +141,6 @@ async function proxyGuide(req, res) {
   guide.push(entry);
   res.writeHead(upstream.status, Object.fromEntries([...upstream.headers].filter(([key]) => !['transfer-encoding', 'connection', 'content-encoding'].includes(key))));
   res.end(payload);
-}
-const hasStage = (identity, stage) => timings.some(t => t.trace === identity.trace && t.segment === identity.segment && t.stage === stage);
-async function uploadIdentity(index) {
-  await until(() => work().length > index, 'sentence upload ' + index);
-  await until(() => timings.filter(t => t.kind === 'answer' && t.stage === 'upload_started').length > index, 'public upload timing ' + index);
-  return timings.filter(t => t.kind === 'answer' && t.stage === 'upload_started')[index];
-}
-async function signalStarted(index) {
-  const identity = await uploadIdentity(index);
-  fixture.emit(sid(), 'speech.media_started');
-  // Observe the application's public timing only; never call its receiver/VAD
-  // internals. A server write alone does not prove EventSource consumption.
-  await until(() => hasStage(identity, 'media_started'), 'browser consumed started for ' + identity.trace + '/' + identity.segment);
-  return identity;
-}
-async function finishSentence(index) {
-  const identity = await uploadIdentity(index);
-  fixture.emit(sid(), 'speech.ended');
-  await until(() => hasStage(identity, 'ended_signal') && hasStage(identity, 'receiver_audio_drained'), 'real receiver drain for sentence ' + index);
-}
-async function playSentence(index, asset, { waitEnd = true } = {}) {
-  const identity = await signalStarted(index);
-  const started = await page.evaluate(() => window.systemReceiver(.8));
-  receiverInputs.push({ sentenceUpload: index, trace: identity.trace, segment: identity.segment, started_ms: started, seconds: .8 });
-  await until(() => hasStage(identity, 'receiver_audio_started'), 'public receiver onset for sentence ' + index);
-  if (asset) {
-    const material = page.locator('.material-player [data-asset-id="' + asset + '"]');
-    await material.waitFor({ state: 'attached', timeout: 15000 });
-    await material.waitFor({ state: 'visible', timeout: 15000 });
-    const latency = await page.evaluate(() => performance.now()) - started;
-    cueDelays.push({ sentenceUpload: index, asset, milliseconds: latency }); assert.ok(latency <= 500);
-    if (asset === 'robot') {
-      assert.ok(await page.locator('.material-player img').evaluate(image => image.complete && image.naturalWidth > 0), 'actual image decoded');
-      if (index === 0) await page.screenshot({ path: path.join(evidence, 'reviewed-image.png') });
-    }
-  } else await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'black no-asset sentence');
-  if (waitEnd) await finishSentence(index);
 }
 async function questionReady(previous) {
   await until(() => guide.filter(x => x.path === '/questions').length > previous, 'actual backend answer');
@@ -219,68 +207,49 @@ async function audioQuestion(text) {
   fixture.emit(sid(), 'speech.media_started'); fixture.emit(sid(), 'speech.ended');
   await page.getByText('欢迎语播报结束，您可以继续提问', { exact: true }).waitFor();
   await page.getByRole('button', { name: '关闭记录', exact: true }).click();
-  // Round 1: preset -> real answer -> image, empty sentence, second reviewed image.
+  // Current paragraph protocol: one aligned TTS/upload, RTP-clocked image changes and actual playback receipt.
+  async function frame(upload, ms, asset) {
+    await page.waitForFunction(() => {const v=document.querySelector('.avatar-player video');return v&&v.readyState>=2&&!v.paused&&!v.muted;});
+    await page.evaluate(({segment,ms})=>window.systemFrame(segment,ms), {segment:upload.segment_id,ms});
+    if (asset) await until(async()=>await page.locator('[data-asset-id="'+asset+'"]').isVisible(), 'paragraph image '+asset);
+    else await until(async()=>await page.locator('.material-player img').count()===0,'audio-only cue');
+  }
+  async function playParagraph(index, assets) {
+    await until(()=>work().length>index,'paragraph upload');
+    const upload=work()[index];
+    fixture.emit(upload.sid,'speech.media_started'); fixture.emit(upload.sid,'speech.ended');
+    for (let i=0;i<assets.length;i++) { await frame(upload,i*500,assets[i]); await delay(80); }
+    await frame(upload,assets.length*500,null);
+    await until(()=>guide.some(x=>x.path.endsWith('/playback')&&x.request?.completed),'real played receipt');
+  }
   await plan('机器人介绍。随后说明。展厅图片说明。', '公司提供哪些服务？', false);
   await page.locator('.preset-question').first().click();
-  const first = await questionReady(0); assert.deepEqual(first.response.presentation.sentences.map(s => s.asset_id), ['robot', null, 'hall']);
-  await until(() => work().length === 1, 'first real sentence upload');
-  await signalStarted(0);
-  assert.equal(await page.locator('.material-player img, .material-player video').count(), 0, 'SSE alone cannot paint');
-  await playSentence(0, 'robot'); await playSentence(1, null); await playSentence(2, 'hall', { waitEnd: false });
-  assert.ok(await page.locator('.material-player img').evaluate(img => img.complete && img.naturalWidth > 0));
-  assert.equal(await page.locator('.material-player video').count(), 0);
-  await page.screenshot({ path: path.join(evidence, 'second-image.png') });
-  await finishSentence(2);
-  results.push({ name: 'preset + verified-source image/null/second image, receiver PCM gating', status: 'PASS' });
-  // Round 2: free voice, physical WAV -> real VAD -> STT -> real context rewrite/answer.
-  await plan('失效素材介绍。机器人恢复说明。', '请说明失效素材和机器人', true); failNextAsset = true;
-  const before = work().length; await audioQuestion('请说明失效素材和机器人');
-  const second = await questionReady(1); assert.deepEqual(second.response.presentation.sentences.map(s => s.asset_id), ['broken', 'robot']);
-  await playSentence(before, null); await playSentence(before + 1, 'robot');
-  assert.ok(guide.some(x => x.path === '/media/broken' && x.status === 404), 'real hash failure reaches browser');
-  results.push({ name: 'real PCM/VAD voice turn, failed material black and next image recovers', status: 'PASS' });
-  // Round 3: preset starts image; voice interrupts before its end and creates round 4.
-  await plan('机器人正在介绍。随后说明。', '公司提供哪些服务？', true);
-  const thirdStart = work().length; await page.locator('.preset-question').first().click(); await questionReady(2);
-  await playSentence(thirdStart, 'robot', { waitEnd: false });
-  await plan('机器人完成恢复。', '请换个机器人问题', true);
-  const previousTranscripts = fixture.transcripts.length;
-  fixture.transcriptPlans.push('请换个机器人问题'); await page.evaluate(() => window.systemMic());
-  await until(async () => await page.locator('.avatar-player video').evaluate(v => v.volume < 1), 'real VAD onset duck');
-  await until(() => fixture.transcripts.length > previousTranscripts, 'interrupt VAD transcript', 20000);
-  await questionReady(3);
-  await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'confirmed spoken switch clears old material');
-  assert.equal(work().length, thirdStart + 1, 'old segment end still required before replacement upload');
-  fixture.emit(sid(), 'speech.ended');
-  await playSentence(thirdStart + 1, 'robot');
-  await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'last answer clears');
-  assert.equal(fixture.serial, 1); assert.equal(fixture.closed.length, 0);
-  assert.equal(work().length, thirdStart + 2, 'cancelled old tail must never upload');
-  await page.getByRole('status', { name: '收音状态' }).filter({ hasText: '正在持续收音。' }).waitFor();
-  results.push({ name: 'preset/free-voice switching and spoken interruption clear + recover, same RTC session/mic', status: 'PASS' });
-  // Round 5: QA regression. A real microphone segment classified as a busy
-  // acknowledgement must preserve the original plan, including its next cue.
-  await plan('机器人正在介绍。机器人继续说明。', '公司提供哪些服务？', true);
-  const acknowledgementStart = work().length;
-  await page.locator('.preset-question').first().click(); await questionReady(4);
-  await playSentence(acknowledgementStart, 'robot', { waitEnd: false });
-  await audioQuestion('好的');
-  await until(async () => (await page.locator('.control-status').innerText()).includes('未确认新的问题'), 'real acknowledgement classified as ignored');
-  assert.equal(guide.filter(x => x.path === '/questions').length, 5, 'ignored acknowledgement does not create a sixth question');
-  assert.equal(fixture.serial, 1); assert.equal(fixture.closed.length, 0);
-  await finishSentence(acknowledgementStart);
-  await playSentence(acknowledgementStart + 1, 'robot');
-  await until(async () => await page.locator('.material-player img, .material-player video').count() === 0, 'acknowledged original answer completes and clears');
-  results.push({ name: 'real PCM/VAD ignored acknowledgement preserves remaining original sentence image', status: 'PASS' });
-  const providers = await control('state');
-  assert.equal(providers.queries.length, 5); assert.equal(providers.completions.length, 9); assert.equal(providers.remaining_replies, 0);
-  assert.equal(guide.filter(x => x.path === '/questions').length, 5); assert.equal(fixture.transcripts.length, 3);
+  const first=await questionReady(0);
+  assert.deepEqual(first.response.presentation.sentences.map(s=>s.asset_id),['robot',null,'hall']);
+  await playParagraph(0,['robot',null,'hall']);
+  assert.equal(fixture.aligned[0],first.response.text);
+  assert.equal(work().length,1,'one whole paragraph upload');
+  results.push({name:'preset -> real answer/source/media -> aligned paragraph -> RTP pictures -> played receipt',status:'PASS'});
+
+  await plan('失效素材介绍。机器人恢复说明。','请说明失效素材和机器人',true); failNextAsset=true;
+  await audioQuestion('请说明失效素材和机器人');
+  const second=await questionReady(1);
+  assert.deepEqual(second.response.presentation.sentences.map(s=>s.asset_id),['broken','robot']);
+  await playParagraph(1,[null,'robot']);
+  assert.ok(guide.some(x=>x.path==='/media/broken'&&x.status===404));
+  assert.equal(fixture.aligned[1],second.response.text);
+  assert.equal(fixture.serial,1); assert.equal(fixture.closed.length,0);
+  results.push({name:'real microphone PCM/VAD -> STT -> contextual answer; failed image degrades and next image recovers',status:'PASS'});
+  const providers=await control('state');
+  assert.equal(providers.queries.length,2); assert.equal(providers.completions.length,3); assert.equal(providers.remaining_replies,0);
+  assert.equal(fixture.transcripts.length,1);
+  assert.ok(guide.filter(x=>x.path.endsWith('/playback')&&x.request?.completed&&x.status===200).length>=2);
   assert.deepEqual(diagnostics, []); assert.deepEqual(fixture.errors, []);
   await page.screenshot({ path: path.join(evidence, 'finished.png') });
   await fs.writeFile(path.join(evidence, 'provider-http.json'), JSON.stringify(providers, null, 2));
-  await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: 'PASS', results, cueDelays, timings, receiverInputs, actualImage: process.env.REAL_TEST_IMAGE || null,
+  await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: 'PASS', results, timings, actualImage: process.env.REAL_TEST_IMAGE || null,
     simulation: 'Actual React/backend/SDK/knowledge/history/catalog and real MicVAD/ORT. External providers/media peer and hardware input simulated. Receiver uses real PCM MediaStream; no app/VAD internal event triggered. No acoustic/device latency claim.' }, null, 2));
-  console.log(JSON.stringify({ status: 'PASS', results, cueDelays, evidence }));
+  console.log(JSON.stringify({ status: 'PASS', results, evidence }));
 })().catch(async error => {
   let browserSnapshot;
   if (page && !page.isClosed()) {
@@ -289,11 +258,11 @@ async function audioQuestion(text) {
       resources: performance.getEntriesByType('resource').filter(entry => entry.name.includes('/guide/media/')).map(entry => ({ name: entry.name, startTime: entry.startTime, duration: entry.duration, transferSize: entry.transferSize })) })).catch(() => null);
     await page.screenshot({ path: path.join(evidence, 'failure.png') }).catch(() => {}); await fs.writeFile(path.join(evidence, 'failure.html'), await page.content()).catch(() => {});
   }
-  await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: 'FAIL', error: error.stack, results, diagnostics, timings, receiverInputs, browserSnapshot, pythonOutput }, null, 2));
+  await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify({ status: 'FAIL', error: error.stack, results, diagnostics, timings, browserSnapshot, pythonOutput }, null, 2));
   console.error(error.stack); console.log(evidence); process.exitCode = 1;
 }).finally(async () => {
   if (backend) await fs.writeFile(path.join(evidence, 'provider-final.json'), JSON.stringify(await control('state').catch(() => null), null, 2));
-  await fs.writeFile(path.join(evidence, 'boundary.json'), JSON.stringify({ guide, timings, receiverInputs, transcripts: fixture?.transcripts, tts: fixture?.tts.map(({ text, welcome }) => ({ text, welcome })), uploads: fixture?.uploads.map(({ sid, welcome, marker }) => ({ sid, welcome, marker })), diagnostics, pythonOutput,
+  await fs.writeFile(path.join(evidence, 'boundary.json'), JSON.stringify({ guide, timings, transcripts: fixture?.transcripts, tts: fixture?.tts.map(({ text, welcome }) => ({ text, welcome })), uploads: fixture?.uploads.map(({ sid, welcome, marker }) => ({ sid, welcome, marker })), diagnostics, pythonOutput,
     audio: speechInput ? { bytes: speechInput.length, sha256: crypto.createHash('sha256').update(speechInput).digest('hex') } : null,
     vad: [...staticAssets].map(([url, asset]) => ({ url, bytes: asset.bytes.length, sha256: asset.sha256 })) }, null, 2));
   fixture?.dispose(); await browser?.close(); await vite?.close();

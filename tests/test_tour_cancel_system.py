@@ -14,8 +14,9 @@ import httpx
 import pytest
 
 
-@pytest.mark.skipif(not os.getenv("TOUR_LIVE_ORIGIN"), reason="requires explicitly selected live QuickTalk service")
+@pytest.mark.acceptance
 def test_cancel_receipt_blocks_later_queued_upload_but_allows_new_segment():
+    assert os.getenv("TOUR_LIVE_ORIGIN"), "真实取消验收缺少 TOUR_LIVE_ORIGIN"
     async def run():
         origin = os.environ["TOUR_LIVE_ORIGIN"]
         events = []

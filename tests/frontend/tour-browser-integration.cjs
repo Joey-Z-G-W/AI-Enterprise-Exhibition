@@ -4,7 +4,7 @@ const { pathToFileURL } = require('node:url'), { createRequire } = require('node
 process.chdir(path.resolve(__dirname, '../..'));
 const { chromium } = createRequire(path.resolve('frontend/package.json'))('playwright-core');
 const { Fixture } = require('./speech-browser-integration.cjs');
-const task = path.resolve('docs/dev/20261107-导览讲解-整段自然播报与多图同步及案例记忆');
+const task = path.resolve(process.env.TEST_TASK_DIR || 'docs/dev/20261107-导览讲解-整段自然播报与多图同步及案例记忆');
 const dir = path.join(task, 'tmp', 'tour-browser-' + Date.now());
 const texts = ['先看整体的开放布局。', '接着，这里的吊楣让品牌更醒目。', '内侧通过通透隔断划分区域。'];
 const sleep = ms => new Promise(r => setTimeout(r, ms));

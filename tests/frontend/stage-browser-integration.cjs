@@ -4,7 +4,7 @@ const {pathToFileURL}=require('node:url'),{createRequire}=require('node:module')
 process.chdir(path.resolve(__dirname,'../..'));
 const {chromium}=createRequire(path.resolve('frontend/package.json'))('playwright-core');
 const {TourFixture,platform}=require('./tour-browser-integration.cjs');
-const task=path.resolve('docs/dev/20261107-导览舞台-人物资料主次切换与无图平滑过渡'), dir=path.join(task,'tmp','stage-'+Date.now());
+const task=path.resolve(process.env.TEST_TASK_DIR || 'docs/dev/20261107-导览舞台-人物资料主次切换与无图平滑过渡'), dir=path.join(task,'tmp','stage-'+Date.now());
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(fn,label){for(let i=0;i<400;i++){if(await fn())return;await sleep(20);}throw Error(label);}
 class StageFixture extends TourFixture{

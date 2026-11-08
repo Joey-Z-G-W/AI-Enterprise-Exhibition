@@ -85,12 +85,7 @@ case "${1:-help}" in
     ;;
   test)
     require_runtime
-    mkdir -p "$TASK/evidence"
-    .venv/bin/python -m pytest -q --basetemp "$TASK/tmp/pytest"
-    npm --prefix frontend run build
-    npm --prefix frontend run test:browser
-    npm --prefix frontend run test:landscape
-    npm --prefix frontend run test:system
+    bash tools/test.sh "${2:-daily}"
     ;;
   opentalking)
     require_runtime

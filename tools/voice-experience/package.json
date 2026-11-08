@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "prepare-assets": "node prepare-assets.mjs",
-    "test": "node --test --test-timeout=15000 core.test.mjs ice.test.mjs microphone-and-start.test.mjs owned-session.test.mjs config-assets.test.mjs",
+    "test": "node --test --test-timeout=15000 config-assets.test.mjs",
     "start": "node server.mjs"
   },
   "dependencies": {

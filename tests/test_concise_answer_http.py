@@ -8,6 +8,7 @@ import hashlib
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -47,10 +48,21 @@ def external_services():
             self.send_header("Content-Type", "application/json" if not isinstance(body, bytes) else "text/plain")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
-            self.wfile.write(data)
+            try:
+                self.wfile.write(data)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
 
         def do_POST(self):
             body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            gate = state.get("gate")
+            if gate and self.path == gate["path"]:
+                gate["entered"].set()
+                if not gate["release"].wait(8):
+                    return self.respond(504, {})
+            if self.path == state.get("failure_path"):
+                return self.respond(state.get("failure_status", 500), {"error": "fixture-private-secret"})
+            time.sleep(state.get("delays", {}).get(self.path, 0))
             if self.path == "/chat/completions":
                 state["completions"].append(body)
                 if not state["replies"]:
@@ -80,7 +92,7 @@ def external_services():
                     "filename": "opening.md", "bytes": len(original),
                     "sha256": hashlib.sha256(original).hexdigest()}]})
             if self.path == "/agent/knowledge-bases/offline-kb/documents/opening/file":
-                return self.respond(200, original)
+                return self.respond(200, state.get("file_bytes", original))
             self.respond(404, {})
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)

@@ -8,13 +8,18 @@
     "typecheck": "tsc --noEmit",
     "test:browser": "node ../tests/frontend/speech-browser-integration.cjs",
     "test:landscape": "node ../tests/frontend/landscape-browser-integration.cjs",
-    "test:system": "node ../tests/frontend/landscape-system-integration.cjs",
+    "test:system": "bash ../tools/test.sh system",
     "test:vad-dev": "npm run prepare-vad-assets && node ../tests/frontend/vad-dev-integration.cjs",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5290 --strictPort",
     "prepare-vad-assets": "node scripts/prepare-vad-assets.mjs",
     "predev": "npm run prepare-vad-assets",
-    "prebuild": "npm run prepare-vad-assets"
+    "prebuild": "npm run prepare-vad-assets",
+    "test": "bash ../tools/test.sh daily",
+    "test:components": "bash ../tools/test.sh components",
+    "test:e2e": "bash ../tools/test.sh e2e",
+    "test:acceptance": "bash ../tools/test.sh acceptance",
+    "test:deployment": "bash ../tools/test.sh deployment"
   },
   "dependencies": {
     "@ricky0123/vad-web": "0.0.31",
