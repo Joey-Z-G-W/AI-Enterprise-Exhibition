@@ -214,19 +214,24 @@ async function audioQuestion(text) {
     if (asset) await until(async()=>await page.locator('[data-asset-id="'+asset+'"]').isVisible(), 'paragraph image '+asset);
     else await until(async()=>await page.locator('.material-player img').count()===0,'audio-only cue');
   }
-  async function playParagraph(index, assets) {
+  async function playParagraph(index, turnId, assets) {
     await until(()=>work().length>index,'paragraph upload');
     const upload=work()[index];
     fixture.emit(upload.sid,'speech.media_started'); fixture.emit(upload.sid,'speech.ended');
     for (let i=0;i<assets.length;i++) { await frame(upload,i*500,assets[i]); await delay(80); }
     await frame(upload,assets.length*500,null);
-    await until(()=>guide.some(x=>x.path.endsWith('/playback')&&x.request?.completed),'real played receipt');
+    await until(() => guide.some(entry =>
+      entry.path.endsWith('/playback') &&
+      entry.request?.turn_id === turnId &&
+      entry.request.completed === true &&
+      entry.status === 200
+    ), 'successful playback receipt for turn ' + turnId);
   }
   await plan('机器人介绍。随后说明。展厅图片说明。', '公司提供哪些服务？', false);
   await page.locator('.preset-question').first().click();
   const first=await questionReady(0);
   assert.deepEqual(first.response.presentation.sentences.map(s=>s.asset_id),['robot',null,'hall']);
-  await playParagraph(0,['robot',null,'hall']);
+  await playParagraph(0,first.request.turn_id,['robot',null,'hall']);
   assert.equal(fixture.aligned[0],first.response.text);
   assert.equal(work().length,1,'one whole paragraph upload');
   results.push({name:'preset -> real answer/source/media -> aligned paragraph -> RTP pictures -> played receipt',status:'PASS'});
@@ -234,8 +239,9 @@ async function audioQuestion(text) {
   await plan('失效素材介绍。机器人恢复说明。','请说明失效素材和机器人',true); failNextAsset=true;
   await audioQuestion('请说明失效素材和机器人');
   const second=await questionReady(1);
+  assert.notEqual(second.request.turn_id, first.request.turn_id, 'each question has a distinct turn ID');
   assert.deepEqual(second.response.presentation.sentences.map(s=>s.asset_id),['broken','robot']);
-  await playParagraph(1,[null,'robot']);
+  await playParagraph(1,second.request.turn_id,[null,'robot']);
   assert.ok(guide.some(x=>x.path==='/media/broken'&&x.status===404));
   assert.equal(fixture.aligned[1],second.response.text);
   assert.equal(fixture.serial,1); assert.equal(fixture.closed.length,0);
@@ -243,7 +249,6 @@ async function audioQuestion(text) {
   const providers=await control('state');
   assert.equal(providers.queries.length,2); assert.equal(providers.completions.length,3); assert.equal(providers.remaining_replies,0);
   assert.equal(fixture.transcripts.length,1);
-  assert.ok(guide.filter(x=>x.path.endsWith('/playback')&&x.request?.completed&&x.status===200).length>=2);
   assert.deepEqual(diagnostics, []); assert.deepEqual(fixture.errors, []);
   await page.screenshot({ path: path.join(evidence, 'finished.png') });
   await fs.writeFile(path.join(evidence, 'provider-http.json'), JSON.stringify(providers, null, 2));
